@@ -58,5 +58,65 @@ describe('Scope', () => {
 
       expect((<any>scope).counter).toBe(2);
     });
+
+    it('calls listener when watch value is first undefined', () => {
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).someValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++)
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(1);
+    });
+
+    it('may have watchers that omit the listener function', () => {
+      const watchFunction = jasmine.createSpy('watchFunction').and.returnValue('something');
+      scope.$watch(watchFunction);
+
+      scope.$digest();
+
+      expect(watchFunction).toHaveBeenCalled();
+    });
+
+    it('triggers chained watchers in the same digest', () => {
+      (<any>scope).name = 'Jane';
+
+      scope.$watch(
+        (scope) => (<any>scope).nameUpper,
+        (newValue, oldValue, scope) => {
+          if (newValue) {
+            (<any>scope).initial = newValue.substring(0, 1) + '.';
+          }
+        });
+
+      scope.$watch(
+        (scope) => (<any>scope).name,
+        (newValue, oldValue, scope) => {
+          if (newValue) {
+            (<any>scope).nameUpper = newValue.toUpperCase();
+          }
+        })
+
+      scope.$digest();
+      expect((<any>scope).initial).toBe('J.');
+
+      (<any>scope).name = 'Bob';
+      scope.$digest();
+      expect((<any>scope).initial).toBe('B.');
+    });
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+

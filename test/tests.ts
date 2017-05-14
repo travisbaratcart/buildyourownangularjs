@@ -1,1 +1,1 @@
-require('./scope_spec');
+require('./scope.spec');
