@@ -2,10 +2,13 @@
     "compilerOptions": {
          "types": [
             "requirejs",
-            "jasmine"
+            "jasmine",
+            "lodash",
+            "jquery"
          ],
          "typeRoots": [
             "node_modules/@types"
-         ]
+         ],
+         "noImplicitAny": true
     }
 }

@@ -3,7 +3,60 @@ import { Scope } from '../src/scope';
 describe('Scope', () => {
   it('can be constructed and used as an object', () => {
     const scope = new Scope();
-    scope.aProperty = 1;
-    expect(scope.aProperty).toBe(1);
+    (<any>scope).aProperty = 1;
+    expect((<any>scope).aProperty).toBe(1);
+  });
+
+  describe('digest', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('calls the listener function of a watch on the first $digest', () => {
+      const watchFunction = () => 'wat';
+      const listenerFunction = jasmine.createSpy('spyFunction');
+      scope.$watch(watchFunction, listenerFunction);
+
+      scope.$digest();
+
+      expect(listenerFunction).toHaveBeenCalled();
+    });
+
+    it('calls the watch function with the scope as the argument', () => {
+      const watchFunction = jasmine.createSpy('watchFunction');
+      const listenerFunction = jasmine.createSpy('listenerFunction');
+
+      scope.$watch(watchFunction, listenerFunction);
+
+      scope.$digest();
+
+      expect(watchFunction).toHaveBeenCalledWith(scope);
+    });
+
+    it('calls the listener function when the value changes', () => {
+      (<any>scope).someValue = 'a';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope: Scope) => (<any>scope).someValue,
+        (newValue: any, oldValue: any, scope: Scope) => (<any>scope).counter++);
+
+      expect((<any>scope).counter).toBe(0);
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(1);
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).someValue = 'b';
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(2);
+    });
   });
 });
