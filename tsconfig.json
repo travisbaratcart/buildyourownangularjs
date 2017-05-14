@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+         "types": [
+            "requirejs",
+            "jasmine"
+         ],
+         "typeRoots": [
+            "node_modules/@types"
+         ]
+    }
+}

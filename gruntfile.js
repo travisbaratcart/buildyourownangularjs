@@ -1,47 +1,34 @@
+const webpackConfig = require('./webpack.config');
+
 module.exports = function(grunt) {
   grunt.initConfig({
-    jshint: {
-      all: ['src/**/*.js', 'test/**/*.js'],
-      options: {
-        globals: {
-          _: false,
-          $: false,
-          jasmine: false,
-          describe: false,
-          it: false,
-          expect: false,
-          beforeEach: false,
-          afterEach: false,
-          sinon: false
-        },
-        browser: true,
-        devel: true
-      },
+    webpack: {
+      default: webpackConfig
     },
     testem: {
       unit: {
         options: {
           framework: 'jasmine2',
           launch_in_dev: ['PhantomJS'],
-          before_tests: 'grunt jshint',
+          before_tests: 'grunt webpack',
           serve_files: [
+            'node_modules/requirejs/require.js',
             'node_modules/lodash/lodash.js',
             'node_modules/jquery/dist/jquery.js',
             'node_modules/sinon/pkg/sinon.js',
-            'src/**/*.js',
-            'test/**/*.js'
+            'tests.js'
           ],
           watch_files: [
-            'src/**/*.js',
-            'test/**/*.js'
+            'src/**/*.ts',
+            'test/**/*.ts'
           ]
         }
       }
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-testem');
+  grunt.loadNpmTasks('grunt-webpack');
 
   grunt.registerTask('default', ['testem:run:unit']);
 };

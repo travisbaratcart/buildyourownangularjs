@@ -1,1 +1,15 @@
 node_modules
+
+/.tscache/
+
+tscommand*
+
+*.map
+
+/app.js
+/tests.js
+
+
+/app.js.map
+/src/*.js
+/test/*.js
