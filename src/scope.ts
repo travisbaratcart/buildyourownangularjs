@@ -26,10 +26,20 @@ export class Scope {
   }
 
   public $digest() {
-    let isDirty = false;
+    const maxChainedDigestCycles = 10;
+
+    let isDirty = false
+    let numberOfChainedDigestCycles = 0;
 
     do {
       isDirty = this.$$digestOnce();
+
+      numberOfChainedDigestCycles++;
+
+      if (isDirty && numberOfChainedDigestCycles == maxChainedDigestCycles) {
+        throw '10 digest iterations reached';
+      }
+
     } while (isDirty);
   }
 

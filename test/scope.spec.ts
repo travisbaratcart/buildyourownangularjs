@@ -106,6 +106,21 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).initial).toBe('B.');
     });
+
+    it('gives up on the watches after 10 iterations', () => {
+      (<any>scope).counterA = 0;
+      (<any>scope).counterB = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).counterB,
+        (newValue, oldValue, scope) => (<any>scope).counterA++);
+
+      scope.$watch(
+        (scope) => (<any>scope).counterA,
+        (newValue, oldValue, scope) => (<any>scope).counterB++);
+
+      expect(() => scope.$digest()).toThrow();
+    });
   });
 });
 
