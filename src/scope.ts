@@ -87,6 +87,16 @@ export class Scope {
     newValue: any,
     oldValue: any,
     checkValueEquality: boolean): boolean {
+
+    // NaN is not === to NaN in javascript. But for our cases is it.
+    if (
+      typeof newValue === 'number'
+      && typeof oldValue === 'number'
+      && isNaN(newValue)
+      && isNaN(oldValue)) {
+      return true;
+    }
+
     return checkValueEquality
       ? _.isEqual(newValue, oldValue)
       : newValue === oldValue;

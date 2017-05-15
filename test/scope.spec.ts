@@ -178,6 +178,21 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(2);
     });
+
+    it('correctly handles NaN', () => {
+      (<any>scope).number = 0 / 0; // NaN
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).number,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
   });
 });
 
