@@ -15,6 +15,9 @@ interface IAsyncQueueItem {
 const initialWatchValue = (): any => null;
 
 export class Scope {
+  // as the name implies not supposed to be public in angular, but we need it public for test
+  public $$phase: string;
+
   private $$watchers: IWatcher[] = [];
   private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
   private $$asyncQueue: IAsyncQueueItem[] = [];
@@ -43,6 +46,8 @@ export class Scope {
   public $digest() {
     const maxChainedDigestCycles = 10;
 
+    this.$beginPhase('$digest')
+
     this.isDirty = false;
     this.$$lastDirtyWatch = null;
 
@@ -59,10 +64,13 @@ export class Scope {
       numberOfChainedDigestCycles++;
 
       if (this.shouldTriggerChainedDigestCycle() && numberOfChainedDigestCycles === maxChainedDigestCycles) {
+        this.$clearPhase();
         throw '10 digest iterations reached';
       }
 
     } while (this.shouldTriggerChainedDigestCycle());
+
+    this.$clearPhase();
   }
 
   public $eval(
@@ -73,9 +81,12 @@ export class Scope {
   }
 
   public $apply(applyFunction: (scope: Scope) => void) {
+    this.$beginPhase('$apply');
+
     try {
       this.$eval(applyFunction);
     } finally {
+      this.$clearPhase();
       this.$digest();
     }
   }
@@ -143,6 +154,18 @@ export class Scope {
     return checkValueEquality
       ? _.isEqual(newValue, oldValue)
       : newValue === oldValue;
+  }
+
+  private $beginPhase(phase: string) {
+    if (this.$$phase) {
+      throw `${this.$$phase} already in progress`;
+    }
+
+    this.$$phase = phase;
+  }
+
+  private $clearPhase() {
+    this.$$phase = null;
   }
 }
 

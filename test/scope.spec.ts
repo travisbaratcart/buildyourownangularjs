@@ -317,6 +317,35 @@ describe('Scope', () => {
       expect(() => scope.$digest()).toThrow();
     });
   });
+
+  describe('Scope phases', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('should reflect the current digest phase', () => {
+      (<any>scope).aValue = [1, 2, 3];
+
+      let phaseInWatchFunction: string;
+      let phaseInListenerFunction: string;
+      let phaseInApplyFunction: string;
+
+      scope.$watch(
+        (scope) => {
+          phaseInWatchFunction = scope.$$phase;
+          return (<any>scope).aValue;
+        },
+        (newValue, oldValue, scope) => phaseInListenerFunction = scope.$$phase);
+
+      scope.$apply((scope) => phaseInApplyFunction = scope.$$phase);
+
+      expect(phaseInWatchFunction).toBe('$digest');
+      expect(phaseInListenerFunction).toBe('$digest');
+      expect(phaseInApplyFunction).toBe('$apply');
+    });
+  });
 });
 
 
