@@ -58,6 +58,14 @@ export class Scope {
     return evalFunction(this, passThroughArg);
   }
 
+  public $apply(applyFunction: (scope: Scope) => void) {
+    try {
+      this.$eval(applyFunction);
+    } finally {
+      this.$digest();
+    }
+  }
+
   private $$digestOnce(): boolean {
     let newValue: any, oldValue: any;
 

@@ -220,6 +220,30 @@ describe('Scope', () => {
       expect(result).toBe(44);
     });
   });
+
+  describe('$apply', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    })
+
+    it('executes the $apply\'d function and starts the digest', () => {
+      (<any>scope).aValue = 'someValue';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        () => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      scope.$apply((scope) => (<any>scope).aValue = 'someOtherValue');
+
+      expect((<any>scope).counter).toBe(2);
+    });
+  });
 });
 
 
