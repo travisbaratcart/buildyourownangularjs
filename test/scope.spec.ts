@@ -123,7 +123,7 @@ describe('Scope', () => {
       expect(() => scope.$digest()).toThrow();
     });
 
-    it('ends the digest when the last watch is clean', () => {
+   it('ends the digest when the last watch is clean', () => {
       (<any>scope).array = _.range(100);
 
       let watchExecutions = 0;
@@ -226,7 +226,7 @@ describe('Scope', () => {
 
     beforeEach(() => {
       scope = new Scope();
-    })
+    });
 
     it('executes the $apply\'d function and starts the digest', () => {
       (<any>scope).aValue = 'someValue';
@@ -242,6 +242,79 @@ describe('Scope', () => {
       scope.$apply((scope) => (<any>scope).aValue = 'someOtherValue');
 
       expect((<any>scope).counter).toBe(2);
+    });
+  });
+
+  describe('$evalAsync', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('executes $evalAsync\'d function later in the same cycle', () => {
+      (<any>scope).aValue = [1, 2, 3];
+      (<any>scope).asyncEvaluated = false;
+      (<any>scope).asyncEvaluatedImmediately = false;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => {
+          scope.$evalAsync(scope => (<any>scope).asyncEvaluated = true);
+
+          (<any>scope).asyncEvaluatedImmediately = (<any>scope).asyncEvaluated;
+        });
+
+      scope.$digest();
+      expect((<any>scope).asyncEvaluated).toBe(true);
+      expect((<any>scope).asyncEvaluatedImmediately).toBe(false);
+    });
+
+    it('executes $evalAsync\'d functions added by watch functions', () => {
+      (<any>scope).aValue = [1, 2, 3];
+      (<any>scope).asyncEvaluated = false;
+
+      scope.$watch(
+        (scope) => {
+          if (!(<any>scope).asyncEvaluated) {
+            scope.$evalAsync((scope) => (<any>scope).asyncEvaluated = true)
+          }
+
+          return (<any>scope).aValue;
+        },
+        (newValue, oldValue, scope) => null);
+
+      scope.$digest();
+
+      expect((<any>scope).asyncEvaluated).toBe(true);
+    });
+
+    it('executes $evalAsync\'d functions even when not dirty', () => {
+      (<any>scope).aValue = [1, 2, 3];
+      (<any>scope).asyncEvaluatedTimes = 0;
+
+      scope.$watch(
+        (scope) => {
+          if ((<any>scope).asyncEvaluatedTimes < 2) {
+            scope.$evalAsync((scope) => (<any>scope).asyncEvaluatedTimes++);
+          }
+
+          return (<any>scope).aValue;
+        });
+
+      scope.$digest();
+
+      expect((<any>scope).asyncEvaluatedTimes).toBe(2);
+    });
+
+    it('eventually halts $evalAsyncs added by watches', () => {
+      (<any>scope).aValue = [1, 2, 3];
+
+      scope.$watch((scope) => {
+        scope.$evalAsync(() => null);
+      });
+
+      expect(() => scope.$digest()).toThrow();
     });
   });
 });

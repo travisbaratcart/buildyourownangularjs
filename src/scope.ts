@@ -7,11 +7,19 @@ interface IWatcher {
   checkValueEquality: boolean
 };
 
+interface IAsyncQueueItem {
+  functionToEvaluate: (scope: Scope) => void;
+  scope: Scope;
+}
+
 const initialWatchValue = (): any => null;
 
 export class Scope {
   private $$watchers: IWatcher[] = [];
   private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
+  private $$asyncQueue: IAsyncQueueItem[] = [];
+
+  private isDirty = false;
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
@@ -35,20 +43,26 @@ export class Scope {
   public $digest() {
     const maxChainedDigestCycles = 10;
 
-    let isDirty = false;
+    this.isDirty = false;
     this.$$lastDirtyWatch = null;
+
     let numberOfChainedDigestCycles = 0;
 
     do {
-      isDirty = this.$$digestOnce();
+      while (this.$$asyncQueue.length) {
+        const asyncTask = this.$$asyncQueue.shift();
+        asyncTask.scope.$eval(asyncTask.functionToEvaluate);
+      }
+
+      this.$$digestOnce();
 
       numberOfChainedDigestCycles++;
 
-      if (isDirty && numberOfChainedDigestCycles == maxChainedDigestCycles) {
+      if (this.shouldTriggerChainedDigestCycle() && numberOfChainedDigestCycles === maxChainedDigestCycles) {
         throw '10 digest iterations reached';
       }
 
-    } while (isDirty);
+    } while (this.shouldTriggerChainedDigestCycle());
   }
 
   public $eval(
@@ -66,10 +80,19 @@ export class Scope {
     }
   }
 
-  private $$digestOnce(): boolean {
+  public $evalAsync(functionToEvaluate: (scope: Scope) => void) {
+    let newAsyncQueueItem: IAsyncQueueItem = {
+      functionToEvaluate,
+      scope: this
+    };
+
+    this.$$asyncQueue.push(newAsyncQueueItem);
+  }
+
+  private $$digestOnce(): void {
     let newValue: any, oldValue: any;
 
-    let isDirty = false;
+    this.isDirty = false;
 
     _.forEach(this.$$watchers, (watcher) => {
       newValue = watcher.watchFunction(this);
@@ -89,13 +112,18 @@ export class Scope {
             this);
         }
 
-        isDirty = true;
+        this.isDirty = true;
       } else if (this.$$lastDirtyWatch === watcher) {
+        // Performance optimization: If we reach the last dirty watch, we've
+        // gone a full cycle and can therefore stop here.
+        this.isDirty = false;
         return false;
       }
     });
+  }
 
-    return isDirty;
+  private  shouldTriggerChainedDigestCycle(): boolean {
+    return this.isDirty || this.$$asyncQueue.length > 0;
   }
 
   private $$areEqual(
