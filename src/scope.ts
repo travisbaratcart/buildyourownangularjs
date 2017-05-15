@@ -3,23 +3,30 @@ import * as _ from 'lodash';
 interface IWatcher {
   watchFunction: (scope: Scope) => any,
   listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any,
-  last: any
+  lastWatchValue: any,
+  checkValueEquality: boolean
 };
 
 const initialWatchValue = (): any => null;
 
 export class Scope {
   private $$watchers: IWatcher[] = [];
+  private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
     watchFunction: (scope: Scope) => any,
-    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): void {
+    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any,
+    checkValueEquality: boolean = false): void {
+
+    /* Watchers can add other watchers. Avoid optimizations when adding new watchers */
+    this.$$lastDirtyWatch = null;
 
     const watcher: IWatcher = {
       watchFunction: watchFunction,
       listenerFunction: listenerFunction,
-      last: initialWatchValue
+      lastWatchValue: initialWatchValue,
+      checkValueEquality: checkValueEquality
     };
 
     this.$$watchers.push(watcher);
@@ -28,7 +35,8 @@ export class Scope {
   public $digest() {
     const maxChainedDigestCycles = 10;
 
-    let isDirty = false
+    let isDirty = false;
+    this.$$lastDirtyWatch = null;
     let numberOfChainedDigestCycles = 0;
 
     do {
@@ -50,10 +58,14 @@ export class Scope {
 
     _.forEach(this.$$watchers, (watcher) => {
       newValue = watcher.watchFunction(this);
-      oldValue = watcher.last;
+      oldValue = watcher.lastWatchValue;
 
-      if (oldValue !== newValue) {
-        watcher.last = newValue;
+      if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
+        this.$$lastDirtyWatch = watcher;
+
+        watcher.lastWatchValue = watcher.checkValueEquality
+          ? _.cloneDeep(newValue)
+          : newValue;
 
         if (watcher.listenerFunction) {
           watcher.listenerFunction(
@@ -63,10 +75,21 @@ export class Scope {
         }
 
         isDirty = true;
+      } else if (this.$$lastDirtyWatch === watcher) {
+        return false;
       }
     });
 
     return isDirty;
+  }
+
+  private $$areEqual(
+    newValue: any,
+    oldValue: any,
+    checkValueEquality: boolean): boolean {
+    return checkValueEquality
+      ? _.isEqual(newValue, oldValue)
+      : newValue === oldValue;
   }
 }
 

@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { Scope } from '../src/scope';
 
 describe('Scope', () => {
@@ -120,6 +121,62 @@ describe('Scope', () => {
         (newValue, oldValue, scope) => (<any>scope).counterB++);
 
       expect(() => scope.$digest()).toThrow();
+    });
+
+    it('ends the digest when the last watch is clean', () => {
+      (<any>scope).array = _.range(100);
+
+      let watchExecutions = 0;
+
+      _.times(100, i => {
+        scope.$watch(
+          scope => {
+            watchExecutions++;
+            return (<any>scope).array[i];
+          },
+          (newValue, oldValue, scope) => null)
+      });
+
+      scope.$digest();
+      expect(watchExecutions).toBe(200);
+
+      (<any>scope).array[0] = 42;
+      scope.$digest();
+      expect(watchExecutions).toBe(301);
+    });
+
+    it('does not end digest so that new watches are not run', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => {
+          scope.$watch(
+            (scope) => (<any>scope).aValue,
+            (newValue, oldValue, scope) => (<any>scope).counter++);
+        })
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(1);
+    });
+
+    it('compares based on value if enabled', () => {
+      (<any>scope).aValue = [1, 2, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++,
+        true);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).aValue.push(4);
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
     });
   });
 });
