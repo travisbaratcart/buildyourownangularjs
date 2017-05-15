@@ -194,6 +194,32 @@ describe('Scope', () => {
       expect((<any>scope).counter).toBe(1);
     });
   });
+
+  describe('$eval', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('executes $eval\'d function and returns result', () => {
+      (<any>scope).aValue = 42;
+
+      const result = scope.$eval((scope) => (<any>scope).aValue);
+
+      expect(result).toBe(42);
+    });
+
+    it('passes the second $eval argument straight through', () => {
+      (<any>scope).aValue = 42;
+
+      const result = scope.$eval(
+        (scope, arg) => (<any>scope).aValue + arg,
+        2);
+
+      expect(result).toBe(44);
+    });
+  });
 });
 
 

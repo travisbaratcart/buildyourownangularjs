@@ -51,6 +51,13 @@ export class Scope {
     } while (isDirty);
   }
 
+  public $eval(
+    evalFunction: (scope: Scope, passThroughArg?: any) => any,
+    passThroughArg?: any): any {
+
+    return evalFunction(this, passThroughArg);
+  }
+
   private $$digestOnce(): boolean {
     let newValue: any, oldValue: any;
 
