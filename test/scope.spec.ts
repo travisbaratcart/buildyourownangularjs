@@ -316,6 +316,24 @@ describe('Scope', () => {
 
       expect(() => scope.$digest()).toThrow();
     });
+
+    it('schedules a digest in $evalAsync', (done) => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$evalAsync(() => null);
+
+      expect((<any>scope).counter).toBe(0);
+
+      setTimeout(() => {
+        expect((<any>scope).counter).toBe(1);
+        done();
+      }, 50);
+    });
   });
 
   describe('Scope phases', () => {

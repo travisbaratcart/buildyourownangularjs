@@ -92,6 +92,16 @@ export class Scope {
   }
 
   public $evalAsync(functionToEvaluate: (scope: Scope) => void) {
+    if (!this.$$phase && !this.$$asyncQueue.length) {
+      // If the queue item added below isn't picked up by another digest cycle,
+      // this will set another digest cycle on the next js turn.
+      setTimeout(() => {
+        if (this.$$asyncQueue.length) {
+          this.$digest();
+        }
+      }, 0);
+    }
+
     let newAsyncQueueItem: IAsyncQueueItem = {
       functionToEvaluate,
       scope: this
