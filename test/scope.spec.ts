@@ -364,6 +364,52 @@ describe('Scope', () => {
       expect(phaseInApplyFunction).toBe('$apply');
     });
   });
+
+  describe('$applyAsync', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('allows async $apply with $applyAsync', (done) => {
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      scope.$applyAsync((scope) => (<any>scope).aValue = 'abc');
+      expect((<any>scope).counter).toBe(1);
+
+      setTimeout(() => {
+        expect((<any>scope).counter).toBe(2);
+        done();
+      }, 50);
+    });
+
+    it('never executes $applyAsync\'d function in the same cycle', (done) => {
+      (<any>scope).aValue = [1, 2, 3];
+      (<any>scope).asyncApplied = false;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => {
+          scope.$applyAsync((scope) => (<any>scope).asyncApplied = true);
+        });
+
+      scope.$digest();
+      expect((<any>scope).asyncApplied).toBe(false);
+
+      setTimeout(() => {
+        expect((<any>scope).asyncApplied).toBe(true);
+        done();
+      }, 50);
+    });
+  });
 });
 
 
