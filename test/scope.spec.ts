@@ -219,6 +219,36 @@ describe('Scope', () => {
 
       expect(result).toBe(44);
     });
+
+    it('catches exceptions in watch functions and continues', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch((scope) => { throw 'error'; });
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
+
+    it('catches exceptions in listener functions and continues', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => { throw 'Error'; });
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
   });
 
   describe('$apply', () => {
