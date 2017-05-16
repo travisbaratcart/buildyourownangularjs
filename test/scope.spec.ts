@@ -409,6 +409,24 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('coalesces many calls to $applyAsync', (done) => {
+      (<any>scope).counter = 0;
+
+      scope.$watch((scope) => {
+        (<any>scope).counter++;
+        return (<any>scope).aValue;
+      });
+
+      scope.$applyAsync((scope) => (<any>scope).aValue = 'abc');
+
+      scope.$applyAsync((scope) => (<any>scope).aValue = 'def');
+
+      setTimeout(() => {
+        expect((<any>scope).counter).toBe(2);
+        done();
+      }, 50);
+    });
   });
 });
 

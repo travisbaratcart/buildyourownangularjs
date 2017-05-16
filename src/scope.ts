@@ -20,8 +20,11 @@ export class Scope {
 
   private $$watchers: IWatcher[] = [];
   private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
+
   private $$asyncQueue: IAsyncQueueItem[] = [];
-  private $$applyAsyncQueue = [];
+
+  private $$applyAsyncQueue: (() => any)[] = [];
+  private $$applyAsyncDigestMarker: number = null;
 
   private isDirty = false;
 
@@ -111,17 +114,21 @@ export class Scope {
     this.$$asyncQueue.push(newAsyncQueueItem);
   }
 
-  public $applyAsync(functionToEvaluate: () => void) {
+  public $applyAsync(functionToEvaluate: (scope: Scope) => void) {
     this.$$applyAsyncQueue.push(() => this.$eval(functionToEvaluate));
 
     // Ensure functions executed on next turn.
-    setTimeout(() => {
-      this.$apply(() => {
-        while (this.$$applyAsyncQueue.length) {
-          this.$$applyAsyncQueue.shift()();
-        }
+    if (this.$$applyAsyncDigestMarker === null) {
+      this.$$applyAsyncDigestMarker = setTimeout(() => {
+        this.$apply(() => {
+          while (this.$$applyAsyncQueue.length) {
+            this.$$applyAsyncQueue.shift()();
+          }
+
+          this.$$applyAsyncDigestMarker = null;
+        });
       });
-    });
+    }
   }
 
   private $$digestOnce(): void {
