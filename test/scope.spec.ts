@@ -364,6 +364,22 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('catches exceptions', (done) => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$evalAsync((scope) => { throw 'Error'; });
+
+      setTimeout(() => {
+        expect((<any>scope).counter).toBe(1);
+        done();
+      }, 50);
+    });
   });
 
   describe('Scope phases', () => {
@@ -478,6 +494,17 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('catches exceptions', (done) => {
+      scope.$applyAsync((scope) => { throw 'Error'; });
+      scope.$applyAsync((scope) => { throw 'Error'; });
+      scope.$applyAsync((scope) => (<any>scope).applied = true);
+
+      setTimeout(() => {
+        expect((<any>scope).applied).toBe(true);
+        done();
+      }, 50);
+    });
   });
 
   describe('$$postDigest', () => {
@@ -515,6 +542,16 @@ describe('Scope', () => {
 
       scope.$digest();
       expect((<any>scope).watchedValue).toBe('changed value');
+    });
+
+    it('catches exceptions', () => {
+      let didRun = false;
+
+      scope.$$postDigest(() => { throw 'Error'; });
+      scope.$$postDigest(() => didRun = true);
+
+      scope.$digest();
+      expect(didRun).toBe(true);
     });
   });
 });

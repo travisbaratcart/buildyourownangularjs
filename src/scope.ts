@@ -66,8 +66,12 @@ export class Scope {
 
     do {
       while (this.$$asyncQueue.length) {
-        const asyncTask = this.$$asyncQueue.shift();
-        asyncTask.scope.$eval(asyncTask.functionToEvaluate);
+        try {
+          const asyncTask = this.$$asyncQueue.shift();
+          asyncTask.scope.$eval(asyncTask.functionToEvaluate);
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       this.$$digestOnce();
@@ -84,7 +88,11 @@ export class Scope {
     this.$clearPhase();
 
     while (this.$$postDigestQueue.length) {
-      this.$$postDigestQueue.shift()();
+      try {
+        this.$$postDigestQueue.shift()();
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 
@@ -143,7 +151,11 @@ export class Scope {
 
   private $$flushApplyAsync(): void {
     while (this.$$applyAsyncQueue.length) {
-      this.$$applyAsyncQueue.shift()();
+      try {
+        this.$$applyAsyncQueue.shift()();
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     this.$$applyAsyncDigestMarker = null;
