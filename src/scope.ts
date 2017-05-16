@@ -57,6 +57,11 @@ export class Scope {
 
     let numberOfChainedDigestCycles = 0;
 
+    if (this.$$applyAsyncDigestMarker) {
+      clearTimeout(this.$$applyAsyncDigestMarker);
+      this.$$flushApplyAsync();
+    }
+
     do {
       while (this.$$asyncQueue.length) {
         const asyncTask = this.$$asyncQueue.shift();
@@ -120,15 +125,17 @@ export class Scope {
     // Ensure functions executed on next turn.
     if (this.$$applyAsyncDigestMarker === null) {
       this.$$applyAsyncDigestMarker = setTimeout(() => {
-        this.$apply(() => {
-          while (this.$$applyAsyncQueue.length) {
-            this.$$applyAsyncQueue.shift()();
-          }
-
-          this.$$applyAsyncDigestMarker = null;
-        });
+        this.$apply(() => this.$$flushApplyAsync());
       });
     }
+  }
+
+  private $$flushApplyAsync(): void {
+    while (this.$$applyAsyncQueue.length) {
+      this.$$applyAsyncQueue.shift()();
+    }
+
+    this.$$applyAsyncDigestMarker = null;
   }
 
   private $$digestOnce(): void {

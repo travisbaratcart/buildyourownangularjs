@@ -427,6 +427,27 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('cancels and flushes $applyAsync if digested first', (done) => {
+      (<any>scope).counter = 0;
+
+      scope.$watch((scope) => {
+        (<any>scope).counter++;
+        return (<any>scope).aValue;
+      });
+
+      scope.$applyAsync((scope) => (<any>scope).aValue = 'abc');
+      scope.$applyAsync((scope) => (<any>scope).aValue = 'def');
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+      expect((<any>scope).aValue).toBe('def');
+
+      setTimeout(() => {
+        expect((<any>scope).counter).toBe(2);
+        done();
+      }, 50);
+    });
   });
 });
 
