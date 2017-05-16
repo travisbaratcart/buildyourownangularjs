@@ -26,6 +26,8 @@ export class Scope {
   private $$applyAsyncQueue: (() => any)[] = [];
   private $$applyAsyncDigestMarker: number = null;
 
+  private $$postDigestQueue: (() => void)[] = [];
+
   private isDirty = false;
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
@@ -80,6 +82,10 @@ export class Scope {
     } while (this.shouldTriggerChainedDigestCycle());
 
     this.$clearPhase();
+
+    while (this.$$postDigestQueue.length) {
+      this.$$postDigestQueue.shift()();
+    }
   }
 
   public $eval(
@@ -128,6 +134,11 @@ export class Scope {
         this.$apply(() => this.$$flushApplyAsync());
       });
     }
+  }
+
+  // intended private in angular, but we need public to test
+  public $$postDigest(functionToEvaluate: () => void) {
+    this.$$postDigestQueue.push(functionToEvaluate);
   }
 
   private $$flushApplyAsync(): void {

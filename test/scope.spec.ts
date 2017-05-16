@@ -449,6 +449,44 @@ describe('Scope', () => {
       }, 50);
     });
   });
+
+  describe('$$postDigest', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('runs after each digest', () => {
+      (<any>scope).counter = 0;
+
+      scope.$$postDigest(() => (<any>scope).counter++);
+
+      expect((<any>scope).counter).toBe(0);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
+
+    it('does is not included in the digest', () => {
+      (<any>scope).aValue = 'original value';
+
+      scope.$$postDigest(() => (<any>scope).aValue = 'changed value');
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).watchedValue = newValue);
+
+      scope.$digest();
+      expect((<any>scope).watchedValue).toBe('original value');
+
+      scope.$digest();
+      expect((<any>scope).watchedValue).toBe('changed value');
+    });
+  });
 });
 
 
