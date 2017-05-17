@@ -46,7 +46,7 @@ export class Scope {
       checkValueEquality: checkValueEquality
     };
 
-    this.$$watchers.push(watcher);
+    this.$$watchers.unshift(watcher);
 
     return () => {
       const watcherIndex = this.$$watchers.indexOf(watcher);
@@ -174,7 +174,7 @@ export class Scope {
 
     this.isDirty = false;
 
-    _.forEach(this.$$watchers, (watcher) => {
+    _.forEachRight(this.$$watchers, (watcher) => {
       try {
         newValue = watcher.watchFunction(this);
         oldValue = watcher.lastWatchValue;

@@ -214,6 +214,32 @@ describe('Scope', () => {
       (<any>scope).$digest();
       expect((<any>scope).counter).toBe(2);
     });
+
+    it('allows destroying a $watch during digest', () => {
+      (<any>scope).aValue = 'abc';
+
+      const watchCalls: string[] = [];
+
+      scope.$watch(
+        (scope) => {
+          watchCalls.push('first');
+          return (<any>scope).aValue;
+        });
+
+      const destroyWatch = scope.$watch(
+        (scope) => {
+          watchCalls.push('second');
+          destroyWatch();
+        });
+
+      scope.$watch((scope) => {
+        watchCalls.push('third');
+        return (<any>scope).aValue;
+      });
+
+      scope.$digest();
+      expect(watchCalls).toEqual(['first', 'second', 'third', 'first', 'third']);
+    });
   });
 
   describe('$eval', () => {
