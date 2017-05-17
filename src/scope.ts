@@ -177,29 +177,31 @@ export class Scope {
 
     _.forEachRight(this.$$watchers, (watcher) => {
       try {
-        newValue = watcher.watchFunction(this);
-        oldValue = watcher.lastWatchValue;
+        if (watcher) {
+          newValue = watcher.watchFunction(this);
+          oldValue = watcher.lastWatchValue;
 
-        if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
-          this.$$lastDirtyWatch = watcher;
+          if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
+            this.$$lastDirtyWatch = watcher;
 
-          watcher.lastWatchValue = watcher.checkValueEquality
-          ? _.cloneDeep(newValue)
-          : newValue;
+            watcher.lastWatchValue = watcher.checkValueEquality
+            ? _.cloneDeep(newValue)
+            : newValue;
 
-          if (watcher.listenerFunction) {
-            watcher.listenerFunction(
-              newValue,
-              oldValue === initialWatchValue ? newValue : oldValue,
-              this);
+            if (watcher.listenerFunction) {
+              watcher.listenerFunction(
+                newValue,
+                oldValue === initialWatchValue ? newValue : oldValue,
+                this);
+            }
+
+            this.isDirty = true;
+          } else if (this.$$lastDirtyWatch === watcher) {
+            // Performance optimization: If we reach the last dirty watch, we've
+            // gone a full cycle and can therefore stop here.
+            this.isDirty = false;
+            return false;
           }
-
-          this.isDirty = true;
-        } else if (this.$$lastDirtyWatch === watcher) {
-          // Performance optimization: If we reach the last dirty watch, we've
-          // gone a full cycle and can therefore stop here.
-          this.isDirty = false;
-          return false;
         }
       } catch (error) {
         console.error(error);

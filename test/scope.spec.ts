@@ -258,6 +258,23 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(1);
     });
+
+    it('allows destroying several $watches during digest', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      const destroyWatch1 = scope.$watch((scope) => {
+        destroyWatch1();
+        destroyWatch2();
+      });
+
+      const destroyWatch2 = scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(0);
+    });
   });
 
   describe('$eval', () => {
