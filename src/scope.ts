@@ -177,11 +177,20 @@ export class Scope {
     const newValues = new Array(watchFunctions.length);
     const oldValues = new Array(watchFunctions.length);
 
+    let changeReactionScheduled = false;
+
+    const watchGroupListener = () => {
+      listenerFunction(newValues, oldValues, this);
+    }
+
     _.forEach(watchFunctions, (watchFunction, i) => {
       this.$watch(watchFunction, (newValue, oldValue) => {
         newValues[i] = newValue;
         oldValues[i] = oldValue;
-        listenerFunction(newValues, oldValues, this);
+        if (!changeReactionScheduled) {
+          changeReactionScheduled = true;
+          this.$evalAsync(watchGroupListener);
+        }
       });
     });
   }

@@ -666,6 +666,23 @@ describe('Scope', () => {
 
       expect(gotOldValues).toEqual([1, 2]);
     });
+
+    it('only calls listener once per digest', () => {
+      let counter = 0;
+
+      (<any>scope).aValue = 1;
+      (<any>scope).anotherValue = 2;
+
+      scope.$watchGroup([
+          (scope) => (<any>scope).aValue,
+          (scope) => (<any>scope).anotherValue
+        ],
+        (newValues, oldValues, scope) => counter++);
+
+      scope.$digest();
+
+      expect(counter).toEqual(1);
+    });
   });
 });
 
