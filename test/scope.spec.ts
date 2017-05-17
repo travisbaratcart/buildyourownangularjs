@@ -764,6 +764,20 @@ describe('Scope', () => {
 
       expect(counter).toBe(1);
     });
+
+    it('does not call the zero-watch listener when deregistered first', () => {
+      let counter = 0;
+
+      const destroyGroup = scope.$watchGroup([], (newValues, oldValues, scope) => {
+        counter++;
+      });
+
+      destroyGroup();
+
+      scope.$digest();
+
+      expect(counter).toBe(0);
+    });
   });
 });
 

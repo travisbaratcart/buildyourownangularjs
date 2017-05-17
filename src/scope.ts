@@ -182,11 +182,14 @@ export class Scope {
     let isFirstRun = true;
 
     if (watchFunctions.length === 0) {
+      let shouldCall = true;
       this.$evalAsync(() => {
-        listenerFunction(newValues, oldValues, this);
+        if (shouldCall) {
+          listenerFunction(newValues, oldValues, this);
+        }
       });
 
-      return;
+      return () => shouldCall = false;
     }
 
     const watchGroupListener = () => {
