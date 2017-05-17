@@ -170,6 +170,22 @@ export class Scope {
     this.$$applyAsyncDigestMarker = null;
   }
 
+  public $watchGroup(
+    watchFunctions: ((scope: Scope) => any)[],
+    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): void {
+
+    const newValues = new Array(watchFunctions.length);
+    const oldValues = new Array(watchFunctions.length);
+
+    _.forEach(watchFunctions, (watchFunction, i) => {
+      this.$watch(watchFunction, (newValue, oldValue) => {
+        newValues[i] = newValue;
+        oldValues[i] = oldValue;
+        listenerFunction(newValues, oldValues, this);
+      });
+    });
+  }
+
   private $$digestOnce(): void {
     let newValue: any, oldValue: any;
 

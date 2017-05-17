@@ -636,6 +636,37 @@ describe('Scope', () => {
       expect(didRun).toBe(true);
     });
   });
+
+  describe('$watchGroup', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('takes watches as an array and calls listener with arrays', () => {
+      let gotNewValues, gotOldValues;
+
+      (<any>scope).aValue = 1;
+
+      (<any>scope).anotherValue = 2;
+
+      scope.$watchGroup([
+          (scope) => (<any>scope).aValue,
+          (scope) => (<any>scope).anotherValue
+        ],
+        (newValues, oldValues, scope) => {
+          gotNewValues = newValues;
+          gotOldValues = oldValues
+        });
+
+      scope.$digest();
+
+      expect(gotNewValues).toEqual([1, 2]);
+
+      expect(gotOldValues).toEqual([1, 2]);
+    });
+  });
 });
 
 
