@@ -240,6 +240,24 @@ describe('Scope', () => {
       scope.$digest();
       expect(watchCalls).toEqual(['first', 'second', 'third', 'first', 'third']);
     });
+
+    it('allows a $watch to destroy another during digest', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => destroyWatch());
+
+      const destroyWatch = scope.$watch((scope) => null);
+
+      scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
   });
 
   describe('$eval', () => {

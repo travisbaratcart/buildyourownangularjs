@@ -53,6 +53,7 @@ export class Scope {
 
       if (watcherIndex >= 0) {
         this.$$watchers.splice(watcherIndex, 1);
+        this.$$lastDirtyWatch = null;
       }
     }
   }
