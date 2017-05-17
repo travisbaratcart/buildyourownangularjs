@@ -727,6 +727,20 @@ describe('Scope', () => {
       expect(gotNewValues).toEqual([1, 3]);
       expect(gotOldValues).toEqual([1, 2]);
     });
+
+    it('calls the listener once when the watch array is empty', () => {
+      let gotNewValues, gotOldValues;
+
+      scope.$watchGroup([], (newValues, oldValues, scope) => {
+        gotNewValues = newValues;
+        gotOldValues = oldValues;
+      });
+
+      scope.$digest();
+
+      expect(gotNewValues).toEqual([]);
+      expect(gotOldValues).toEqual([]);
+    });
   });
 });
 
