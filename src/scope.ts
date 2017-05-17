@@ -179,8 +179,17 @@ export class Scope {
 
     let changeReactionScheduled = false;
 
+    let isFirstRun = true;
+
     const watchGroupListener = () => {
-      listenerFunction(newValues, oldValues, this);
+      if (isFirstRun) {
+        isFirstRun = false;
+        listenerFunction(newValues, newValues, this);
+      } else {
+        listenerFunction(newValues, oldValues, this);
+      }
+
+      changeReactionScheduled = false;
     }
 
     _.forEach(watchFunctions, (watchFunction, i) => {

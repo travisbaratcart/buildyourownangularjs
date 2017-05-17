@@ -683,6 +683,50 @@ describe('Scope', () => {
 
       expect(counter).toEqual(1);
     });
+
+    it('uses the same array of old and new values on first run', () => {
+      let gotNewValues, gotOldValues;
+
+      (<any>scope).aValue = 1;
+      (<any>scope).anotherValue = 2;
+
+      scope.$watchGroup([
+          (scope) => (<any>scope).aValue,
+          (scope) => (<any>scope).anotherValue
+        ],
+        (newValues, oldValues, scope) => {
+          gotNewValues = newValues;
+          gotOldValues = oldValues;
+        });
+
+      scope.$digest();
+
+      expect(gotNewValues).toBe(gotOldValues);
+    });
+
+    it('uses different arrays for old and new values on subsequent runs', () => {
+      let gotNewValues, gotOldValues;
+
+      (<any>scope).aValue = 1;
+      (<any>scope).anotherValue = 2;
+
+      scope.$watchGroup([
+          (scope) => (<any>scope).aValue,
+          (scope) => (<any>scope).anotherValue
+        ],
+        (newValues, oldValues, scope) => {
+          gotOldValues = oldValues;
+          gotNewValues = newValues;
+        });
+
+      scope.$digest();
+
+      (<any>scope).anotherValue = 3;
+      scope.$digest();
+
+      expect(gotNewValues).toEqual([1, 3]);
+      expect(gotOldValues).toEqual([1, 2]);
+    });
   });
 });
 
