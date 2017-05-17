@@ -172,7 +172,7 @@ export class Scope {
 
   public $watchGroup(
     watchFunctions: ((scope: Scope) => any)[],
-    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): void {
+    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): () => void {
 
     const newValues = new Array(watchFunctions.length);
     const oldValues = new Array(watchFunctions.length);
@@ -200,8 +200,8 @@ export class Scope {
       changeReactionScheduled = false;
     }
 
-    _.forEach(watchFunctions, (watchFunction, i) => {
-      this.$watch(watchFunction, (newValue, oldValue) => {
+    const destroyFunctions =  _.map(watchFunctions, (watchFunction, i) => {
+      return this.$watch(watchFunction, (newValue, oldValue) => {
         newValues[i] = newValue;
         oldValues[i] = oldValue;
         if (!changeReactionScheduled) {
@@ -210,6 +210,12 @@ export class Scope {
         }
       });
     });
+
+    return () => {
+      _.forEach(destroyFunctions, (destroyFunction) => {
+        destroyFunction();
+      });
+    }
   }
 
   private $$digestOnce(): void {

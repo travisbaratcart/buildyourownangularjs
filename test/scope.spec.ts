@@ -741,6 +741,29 @@ describe('Scope', () => {
       expect(gotNewValues).toEqual([]);
       expect(gotOldValues).toEqual([]);
     });
+
+    it('can be deregistered', () => {
+      let counter = 0;
+
+      (<any>scope).aValue = 1;
+      (<any>scope).anotherValue = 2;
+
+      const destroyGroup = scope.$watchGroup([
+          (scope) => (<any>scope).aValue,
+          (scope) => (<any>scope).anotherValue
+        ],
+        (newValues, oldValues scope) => {
+          counter++;
+        });
+
+      scope.$digest();
+
+      (<any>scope).anotherValue = 3;
+      destroyGroup();
+      scope.$digest();
+
+      expect(counter).toBe(1);
+    });
   });
 });
 
