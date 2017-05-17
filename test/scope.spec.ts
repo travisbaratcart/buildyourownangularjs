@@ -193,6 +193,27 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(1);
     });
+
+    it('allows destroying a $watch with a removal function', () => {
+      (<any>scope).aValue = 'abc';
+      (<any>scope).counter = 0;
+
+      const destroyWatch = scope.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).aValue = 'def';
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      destroyWatch();
+
+      (<any>scope).$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
   });
 
   describe('$eval', () => {

@@ -34,7 +34,7 @@ export class Scope {
   public $watch(
     watchFunction: (scope: Scope) => any,
     listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any,
-    checkValueEquality: boolean = false): void {
+    checkValueEquality: boolean = false): () => void {
 
     /* Watchers can add other watchers. Avoid optimizations when adding new watchers */
     this.$$lastDirtyWatch = null;
@@ -47,6 +47,14 @@ export class Scope {
     };
 
     this.$$watchers.push(watcher);
+
+    return () => {
+      const watcherIndex = this.$$watchers.indexOf(watcher);
+
+      if (watcherIndex >= 0) {
+        this.$$watchers.splice(watcherIndex, 1);
+      }
+    }
   }
 
   public $digest() {
