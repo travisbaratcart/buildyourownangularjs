@@ -221,6 +221,17 @@ export class Scope {
     }
   }
 
+  public $new(): Scope {
+    class ChildScope extends Scope {
+    }
+
+    ChildScope.prototype = this;
+
+    const child: Scope = new ChildScope();
+
+    return child;
+  }
+
   private $$digestOnce(): void {
     let newValue: any, oldValue: any;
 

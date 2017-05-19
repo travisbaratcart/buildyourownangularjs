@@ -752,7 +752,7 @@ describe('Scope', () => {
           (scope) => (<any>scope).aValue,
           (scope) => (<any>scope).anotherValue
         ],
-        (newValues, oldValues scope) => {
+        (newValues, oldValues, scope) => {
           counter++;
         });
 
@@ -777,6 +777,92 @@ describe('Scope', () => {
       scope.$digest();
 
       expect(counter).toBe(0);
+    });
+  });
+
+  describe('inheritance', () => {
+    it('inherits the parent\'s properties', () => {
+      const parent = new Scope();
+
+      (<any>parent).aValue = [1, 2, 3];
+
+      const child = parent.$new();
+
+      expect((<any>child).aValue).toEqual([1, 2, 3]);
+    });
+
+    it('does not cause a parent to inherit its properties', () => {
+      const parent = new Scope();
+
+      const child = parent.$new();
+      (<any>child).aValue = [1, 2, 3];
+
+      expect((<any>parent).aValue).toBeUndefined();
+    });
+
+    it('inherits the parent\'s properties whenever they are defined', () => {
+      const parent = new Scope();
+
+      const child = parent.$new();
+
+      (<any>parent).aValue = [1, 2, 3];
+
+      expect((<any>child).aValue).toEqual([1, 2, 3]);
+    });
+
+    it('can manipulate a parent scope\'s property', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+      (<any>parent).aValue = [1, 2, 3];
+
+      (<any>child).aValue.push(4);
+
+      expect((<any>child).aValue).toEqual([1, 2, 3, 4]);
+      expect((<any>parent).aValue).toEqual([1, 2, 3, 4]);
+    });
+
+    it('can watch a property in the parent', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>parent).aValue = [1, 2, 3];
+      (<any>child).counter = 0;
+
+      child.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++,
+        true);
+
+      child.$digest();
+      expect((<any>child).counter).toBe(1);
+
+      (<any>parent).aValue.push(4);
+
+      child.$digest();
+      expect((<any>child).counter).toBe(2);
+    });
+
+    it('can be nested at any depth', () => {
+      const a = new Scope();
+      const aa = a.$new();
+      const aaa = aa.$new();
+      const aab = aa.$new();
+      const ab = a.$new();
+      const abb = ab.$new();
+
+      (<any>a).value = 1;
+
+      expect((<any>aa).value).toBe(1);
+      expect((<any>aaa).value).toBe(1);
+      expect((<any>aab).value).toBe(1);
+      expect((<any>ab).value).toBe(1);
+      expect((<any>abb).value).toBe(1);
+
+      (<any>ab).anotherValue = 2;
+
+      expect((<any>abb).anotherValue).toBe(2);
+      expect((<any>aa).anotherValue).toBeUndefined();
+      expect((<any>aaa).anotherValue).toBeUndefined();
     });
   });
 });
