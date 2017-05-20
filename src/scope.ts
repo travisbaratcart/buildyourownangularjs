@@ -30,7 +30,7 @@ export class Scope {
 
   private isDirty = false;
 
-  private $$children: Scope[] = [];
+  public $$children: Scope[] = [];
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
@@ -237,15 +237,17 @@ export class Scope {
   }
 
   private $$digestOnce(): void {
-    let newValue: any, oldValue: any;
+    this.isDirty = this.$$digestScopeOnce();
+  }
 
-    this.isDirty = false;
+  private $$digestScopeOnce(): boolean {
+    let isScopeDirty = false
 
     _.forEachRight(this.$$watchers, (watcher) => {
       try {
         if (watcher) {
-          newValue = watcher.watchFunction(this);
-          oldValue = watcher.lastWatchValue;
+          let newValue = watcher.watchFunction(this);
+          let oldValue = watcher.lastWatchValue;
 
           if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
             this.$$lastDirtyWatch = watcher;
@@ -261,11 +263,11 @@ export class Scope {
                 this);
             }
 
-            this.isDirty = true;
+            isScopeDirty = true;
           } else if (this.$$lastDirtyWatch === watcher) {
             // Performance optimization: If we reach the last dirty watch, we've
             // gone a full cycle and can therefore stop here.
-            this.isDirty = false;
+            isScopeDirty = false;
             return false;
           }
         }
@@ -273,6 +275,16 @@ export class Scope {
         console.error(error);
       }
     });
+
+    return isScopeDirty;
+  }
+
+  private $$everyScope(test: (scope: Scope) => boolean): boolean {
+    if (test(this)) {
+      return this.$$children.every(child => child.$$everyScope(test));
+    } else {
+      return false;
+    }
   }
 
   private  shouldTriggerChainedDigestCycle(): boolean {

@@ -915,6 +915,20 @@ describe('Scope', () => {
       expect(child2.$$children.length).toBe(1);
       expect(child2.$$children[0]).toBe(child2_1);
     });
+
+    it('digests its children', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>parent).aValue = 'abc';
+
+      child.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).aValueWas = newValue);
+
+      parent.$digest();
+      expect((<any>child).aValueWas).toBe('abc');
+    });
   });
 });
 
