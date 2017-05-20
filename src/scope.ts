@@ -23,7 +23,7 @@ export class Scope {
 
   private $$asyncQueue: IAsyncQueueItem[];
 
-  private $$applyAsyncQueue: (() => any)[] = [];
+  private $$applyAsyncQueue: (() => any)[];
   private $$applyAsyncDigestMarker: number = null;
 
   private $$postDigestQueue: (() => void)[] = [];
@@ -38,6 +38,10 @@ export class Scope {
 
     this.$$asyncQueue = $root
       ? $root.$$asyncQueue
+      : [];
+
+    this.$$applyAsyncQueue = $root
+      ? $root.$$applyAsyncQueue
       : [];
   }
 
@@ -79,8 +83,8 @@ export class Scope {
 
     let numberOfChainedDigestCycles = 0;
 
-    if (this.$$applyAsyncDigestMarker) {
-      clearTimeout(this.$$applyAsyncDigestMarker);
+    if (this.getApplyAsyncDigestMarker()) {
+      clearTimeout(this.getApplyAsyncDigestMarker());
       this.$$flushApplyAsync();
     }
 
@@ -157,10 +161,12 @@ export class Scope {
     this.$$applyAsyncQueue.push(() => this.$eval(functionToEvaluate));
 
     // Ensure functions executed on next turn.
-    if (this.$$applyAsyncDigestMarker === null) {
-      this.$$applyAsyncDigestMarker = setTimeout(() => {
+    if (this.getApplyAsyncDigestMarker() === null) {
+      const newApplyAsyncDigestMarker = setTimeout(() => {
         this.$apply(() => this.$$flushApplyAsync());
       });
+
+      this.setApplyAsyncDigestMarker(newApplyAsyncDigestMarker);
     }
   }
 
@@ -178,7 +184,7 @@ export class Scope {
       }
     }
 
-    this.$$applyAsyncDigestMarker = null;
+    this.setApplyAsyncDigestMarker(null);
   }
 
   public $watchGroup(
@@ -335,6 +341,14 @@ export class Scope {
 
   private $clearPhase() {
     this.$$phase = null;
+  }
+
+  private getApplyAsyncDigestMarker(): number {
+    return this.$root.$$applyAsyncDigestMarker;
+  }
+
+  private setApplyAsyncDigestMarker(newDigestMarker: number): void {
+    this.$root.$$applyAsyncDigestMarker = newDigestMarker;
   }
 }
 
