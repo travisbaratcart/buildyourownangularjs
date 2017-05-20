@@ -85,7 +85,7 @@ export class Scope {
         }
       }
 
-      this.$$digestOnce();
+      this.$$digestFullScopeOnce();
 
       numberOfChainedDigestCycles++;
 
@@ -236,21 +236,25 @@ export class Scope {
     return child;
   }
 
-  private $$digestOnce(): void {
-    this.isDirty = this.$$digestScopeOnce();
+  private $$digestFullScopeOnce(): void {
+    const isEveryScopeClean = this.$$everyScope((scope: Scope) => {
+      return !this.$$digestScopeLevelOnce(scope);
+    });
+
+    this.isDirty = !isEveryScopeClean;
   }
 
-  private $$digestScopeOnce(): boolean {
+  private $$digestScopeLevelOnce(scope: Scope): boolean {
     let isScopeDirty = false
 
-    _.forEachRight(this.$$watchers, (watcher) => {
+    _.forEachRight(scope.$$watchers, (watcher) => {
       try {
         if (watcher) {
-          let newValue = watcher.watchFunction(this);
+          let newValue = watcher.watchFunction(scope);
           let oldValue = watcher.lastWatchValue;
 
           if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
-            this.$$lastDirtyWatch = watcher;
+            scope.$$lastDirtyWatch = watcher;
 
             watcher.lastWatchValue = watcher.checkValueEquality
             ? _.cloneDeep(newValue)
@@ -260,11 +264,11 @@ export class Scope {
               watcher.listenerFunction(
                 newValue,
                 oldValue === initialWatchValue ? newValue : oldValue,
-                this);
+                scope);
             }
 
             isScopeDirty = true;
-          } else if (this.$$lastDirtyWatch === watcher) {
+          } else if (scope.$$lastDirtyWatch === watcher) {
             // Performance optimization: If we reach the last dirty watch, we've
             // gone a full cycle and can therefore stop here.
             isScopeDirty = false;
