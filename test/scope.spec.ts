@@ -975,6 +975,73 @@ describe('Scope', () => {
 
       expect((<any>child).aValue).toBeUndefined();
     });
+
+    it('cannot watch parent attributes when isolated', () => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+
+      (<any>parent).aValue = 'abc';
+
+      child.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).aValueWas = newValue);
+
+      child.$digest();
+
+      expect((<any>child).aValueWas).toBeUndefined();
+    });
+
+    it('digests its isolated children', () => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+
+      (<any>child).aValue = 'abc';
+
+      child.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).aValueWas = newValue);
+
+      parent.$digest();
+
+      expect((<any>child).aValueWas).toBe('abc');
+    });
+
+    it('digests from the root on $apply when isolated', () => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+      const child2 = child.$new();
+
+      (<any>parent).aValue = 'abc';
+      (<any>parent).counter = 0;
+
+      parent.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      child2.$apply(() => null);
+
+      expect((<any>parent).counter).toBe(1);
+    });
+
+    it('schedules a digest from root on $evalAsync when isolated', (done) => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+      const child2 = child.$new();
+
+      (<any>parent).aValue = 'abc';
+      (<any>parent).counter = 0;
+
+      parent.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      child2.$evalAsync(() => null);
+
+      setTimeout(() => {
+        expect((<any>parent).counter).toBe(1);
+        done();
+      }, 50);
+    });
   });
 });
 
