@@ -1042,6 +1042,29 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('executes $evalAsync functions on isolate scopes', (done) => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+
+      child.$evalAsync((scope) => (<any>scope).didEvalAsync = true);
+
+      setTimeout(() => {
+        expect((<any>child).didEvalAsync).toBe(true);
+        done();
+      }, 50);
+    });
+
+    it('executes $$postDigest functions on isolated scopes', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      child.$$postDigest(() => (<any>child).didPostDigest = true);
+
+      child.$digest();
+
+      expect((<any>child).didPostDigest).toBe(true);
+    });
   });
 });
 

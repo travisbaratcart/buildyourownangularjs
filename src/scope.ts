@@ -21,7 +21,7 @@ export class Scope {
   private $$watchers: IWatcher[] = [];
   private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
 
-  private $$asyncQueue: IAsyncQueueItem[] = [];
+  private $$asyncQueue: IAsyncQueueItem[];
 
   private $$applyAsyncQueue: (() => any)[] = [];
   private $$applyAsyncDigestMarker: number = null;
@@ -35,6 +35,10 @@ export class Scope {
 
   constructor($root?: Scope) {
     this.$root = $root || this;
+
+    this.$$asyncQueue = $root
+      ? $root.$$asyncQueue
+      : [];
   }
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
