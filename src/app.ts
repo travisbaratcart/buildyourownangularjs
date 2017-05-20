@@ -1,3 +1,1 @@
-//require('./scope');
-
-console.log('hello');
+require('./scope');

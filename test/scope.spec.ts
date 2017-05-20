@@ -1269,6 +1269,46 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(1);
     });
+
+    it('notices an item replaced in an arguments object', () => {
+      (function(a: any, b: any, c: any) { (<any>scope).arrayLike = arguments })(1, 2, 3);
+
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).arrayLike,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).arrayLike[1] = 42;
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices an item replaced in a NodeList object', () => {
+      document.documentElement.appendChild(document.createElement('div'));
+      (<any>scope).arrayLike = document.getElementsByTagName('div');
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).arrayLike,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      document.documentElement.appendChild(document.createElement('div'));
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
   });
 });
 

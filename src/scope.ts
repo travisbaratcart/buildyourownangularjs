@@ -271,9 +271,8 @@ export class Scope {
 
     const internalWatchFunction = (scope: Scope) => {
       newValue = watchFunction(scope);
-
       if (_.isObject(newValue)) {
-        if (_.isArray(newValue)) {
+        if (_.isArrayLikeObject(newValue)) {
           if (!_.isArray(oldValue)) {
             changeCount++;
             oldValue = [];
