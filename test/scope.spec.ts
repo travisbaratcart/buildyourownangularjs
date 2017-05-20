@@ -1088,6 +1088,33 @@ describe('Scope', () => {
       expect((<any>child).counter).toBe(2);
     });
   });
+
+  describe('$destroy', () => {
+    it('is no longer digested when $destroy has been called', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>child).aValue = [1, 2, 3];
+      (<any>child).counter = 0;
+
+      child.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++,
+        true);
+
+      parent.$digest();
+      expect((<any>child).counter).toBe(1);
+
+      (<any>child).aValue.push(4);
+      parent.$digest();
+      expect((<any>child).counter).toBe(2);
+
+      child.$destroy();
+      (<any>child).aValue.push(5);
+      parent.$digest();
+      expect((<any>child).counter).toBe(2);
+    });
+  });
 });
 
 

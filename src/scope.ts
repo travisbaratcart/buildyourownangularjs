@@ -30,11 +30,13 @@ export class Scope {
 
   private isDirty = false;
 
-  public $$children: Scope[] = [];
   private $root: Scope;
+  private $parent: Scope;
+  public $$children: Scope[] = [];
 
-  constructor($root?: Scope) {
+  constructor($parent: Scope, $root?: Scope) {
     this.$root = $root || this;
+    this.$parent = $parent || null;
 
     this.$$asyncQueue = $root
       ? $root.$$asyncQueue
@@ -245,12 +247,28 @@ export class Scope {
     ChildScope.prototype = this;
 
     const child: Scope = isIsolateScope
-      ? new Scope(parent.$root)
-      : new ChildScope(parent.$root);
+      ? new Scope(parent, parent.$root)
+      : new ChildScope(parent, parent.$root);
 
     parent.$$children.push(child);
 
     return child;
+  }
+
+  public $destroy(): void {
+    this.removeScopeFromParentChildren();
+    this.$$watchers = null;
+  }
+
+  private removeScopeFromParentChildren(): void {
+    if (this.$parent) {
+      const siblings = this.$parent.$$children;
+      const indexOfThisScope = siblings.indexOf(this);
+
+      if (indexOfThisScope > -1) {
+        siblings.splice(indexOfThisScope, 1);
+      }
+    }
   }
 
   private $$digestFullScopeOnce(): void {
