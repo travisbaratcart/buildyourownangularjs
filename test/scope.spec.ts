@@ -864,6 +864,41 @@ describe('Scope', () => {
       expect((<any>aa).anotherValue).toBeUndefined();
       expect((<any>aaa).anotherValue).toBeUndefined();
     });
+
+    it('shadows a parent\'s property with the same name', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>parent).name = 'Joe';
+      (<any>child).name = 'Jill';
+
+      expect((<any>child).name).toBe('Jill');
+      expect((<any>parent).name).toBe('Joe');
+    });
+
+    it('does not shadow member of parent scope\'s attributes', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>parent).user = { name: 'Joe' };
+      (<any>child).user.name = 'Jill';
+
+      expect((<any>child).user.name).toBe('Jill');
+      expect((<any>parent).user.name).toBe('Jill');
+    });
+
+    it('does not digest its parent(s)', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+
+      (<any>parent).aValue = 'abc';
+      parent.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).aValueWas = newValue);
+
+      child.$digest();
+      expect((<any>child).aValueWas).toBeUndefined();
+    });
   });
 });
 
