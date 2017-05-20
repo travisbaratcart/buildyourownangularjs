@@ -929,6 +929,23 @@ describe('Scope', () => {
       parent.$digest();
       expect((<any>child).aValueWas).toBe('abc');
     });
+
+    it('digests from root on $apply', () => {
+      const parent = new Scope();
+      const child = parent.$new();
+      const child2 = child.$new();
+
+      (<any>parent).aValue = 'abc';
+      (<any>parent).counter = 0;
+
+      parent.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      child2.$apply(() => null);
+
+      expect((<any>parent).counter).toBe(1);
+    });
   });
 });
 

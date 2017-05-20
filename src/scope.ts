@@ -31,6 +31,11 @@ export class Scope {
   private isDirty = false;
 
   public $$children: Scope[] = [];
+  private $root: Scope;
+
+  constructor($root: Scope) {
+    this.$root = $root || this;
+  }
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
@@ -121,7 +126,7 @@ export class Scope {
       this.$eval(applyFunction);
     } finally {
       this.$clearPhase();
-      this.$digest();
+      this.$root.$digest();
     }
   }
 
@@ -229,7 +234,7 @@ export class Scope {
 
     ChildScope.prototype = this;
 
-    const child: Scope = new ChildScope();
+    const child: Scope = new ChildScope(this.$root);
 
     this.$$children.push(child);
 
