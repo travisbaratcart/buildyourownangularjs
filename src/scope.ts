@@ -33,7 +33,7 @@ export class Scope {
   public $$children: Scope[] = [];
   private $root: Scope;
 
-  constructor($root: Scope) {
+  constructor($root?: Scope) {
     this.$root = $root || this;
   }
 
@@ -136,7 +136,7 @@ export class Scope {
       // this will set another digest cycle on the next js turn.
       setTimeout(() => {
         if (this.$$asyncQueue.length) {
-          this.$digest();
+          this.$root.$digest();
         }
       }, 0);
     }

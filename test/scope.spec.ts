@@ -946,6 +946,26 @@ describe('Scope', () => {
 
       expect((<any>parent).counter).toBe(1);
     });
+
+    it('schedules a digest from root on $evalAsync', (done) => {
+      const parent = new Scope();
+      const child = parent.$new();
+      const child2 = child.$new();
+
+      (<any>parent).aValue = 'abc';
+      (<any>parent).counter = 0;
+
+      parent.$watch(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      child2.$evalAsync(() => null);
+
+      setTimeout(() => {
+        expect((<any>parent).counter).toBe(1);
+        done();
+      }, 50);
+    });
   });
 });
 
