@@ -966,6 +966,15 @@ describe('Scope', () => {
         done();
       }, 50);
     });
+
+    it('does not have access to parent attributes when isolated', () => {
+      const parent = new Scope();
+      const child = parent.$new(true);
+
+      (<any>parent).aValue = 'abc';
+
+      expect((<any>child).aValue).toBeUndefined();
+    });
   });
 });
 

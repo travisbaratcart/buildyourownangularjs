@@ -44,7 +44,7 @@ export class Scope {
     checkValueEquality: boolean = false): () => void {
 
     /* Watchers can add other watchers. Avoid optimizations when adding new watchers */
-    this.$$lastDirtyWatch = null;
+    this.$root.$$lastDirtyWatch = null;
 
     const watcher: IWatcher = {
       watchFunction: watchFunction,
@@ -60,7 +60,7 @@ export class Scope {
 
       if (watcherIndex >= 0) {
         this.$$watchers.splice(watcherIndex, 1);
-        this.$$lastDirtyWatch = null;
+        this.$root.$$lastDirtyWatch = null;
       }
     }
   }
@@ -71,7 +71,7 @@ export class Scope {
     this.$beginPhase('$digest')
 
     this.isDirty = false;
-    this.$$lastDirtyWatch = null;
+    this.$root.$$lastDirtyWatch = null;
 
     let numberOfChainedDigestCycles = 0;
 
@@ -228,13 +228,15 @@ export class Scope {
     }
   }
 
-  public $new(): Scope {
+  public $new(isIsolateScope?: boolean): Scope {
     class ChildScope extends Scope {
     }
 
     ChildScope.prototype = this;
 
-    const child: Scope = new ChildScope(this.$root);
+    const child: Scope = isIsolateScope
+      ? new Scope(this.$root)
+      : new ChildScope(this.$root);
 
     this.$$children.push(child);
 
@@ -259,7 +261,7 @@ export class Scope {
           let oldValue = watcher.lastWatchValue;
 
           if (!this.$$areEqual(newValue, oldValue, watcher.checkValueEquality)) {
-            scope.$$lastDirtyWatch = watcher;
+            scope.$root.$$lastDirtyWatch = watcher;
 
             watcher.lastWatchValue = watcher.checkValueEquality
             ? _.cloneDeep(newValue)
@@ -273,7 +275,7 @@ export class Scope {
             }
 
             isScopeDirty = true;
-          } else if (scope.$$lastDirtyWatch === watcher) {
+          } else if (scope.$root.$$lastDirtyWatch === watcher) {
             // Performance optimization: If we reach the last dirty watch, we've
             // gone a full cycle and can therefore stop here.
             isScopeDirty = false;
