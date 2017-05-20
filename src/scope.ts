@@ -238,17 +238,17 @@ export class Scope {
     }
   }
 
-  public $new(isIsolateScope?: boolean): Scope {
+  public $new(isIsolateScope = false, parent = this): Scope {
     class ChildScope extends Scope {
     }
 
     ChildScope.prototype = this;
 
     const child: Scope = isIsolateScope
-      ? new Scope(this.$root)
-      : new ChildScope(this.$root);
+      ? new Scope(parent.$root)
+      : new ChildScope(parent.$root);
 
-    this.$$children.push(child);
+    parent.$$children.push(child);
 
     return child;
   }

@@ -1065,6 +1065,28 @@ describe('Scope', () => {
 
       expect((<any>child).didPostDigest).toBe(true);
     });
+
+    it('can take some other scope as the parent', () => {
+      const prototypeParent = new Scope();
+
+      const hierarchyParent = new Scope();
+      const child = prototypeParent.$new(false, hierarchyParent);
+
+      (<any>prototypeParent).a = 42;
+      // expect((<any>child).a).toBe(42);
+
+      (<any>child).counter = 0;
+      child.$watch((scope) => {
+        (<any>scope).counter++
+      });
+
+      prototypeParent.$digest();
+
+      expect((<any>child).counter).toBe(0);
+
+      hierarchyParent.$digest();
+      expect((<any>child).counter).toBe(2);
+    });
   });
 });
 
