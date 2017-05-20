@@ -34,7 +34,7 @@ export class Scope {
   private $parent: Scope;
   public $$children: Scope[] = [];
 
-  constructor($parent: Scope, $root?: Scope) {
+  constructor($parent?: Scope, $root?: Scope) {
     this.$root = $root || this;
     this.$parent = $parent || null;
 
@@ -258,6 +258,58 @@ export class Scope {
   public $destroy(): void {
     this.removeScopeFromParentChildren();
     this.$$watchers = null;
+  }
+
+  public $watchCollection(
+    watchFunction: (scope: Scope) => any,
+    listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): () => void {
+
+    let newValue: any;
+    let oldValue: any;
+
+    let changeCount = 0;
+
+    const internalWatchFunction = (scope: Scope) => {
+      newValue = watchFunction(scope);
+
+      if (_.isObject(newValue)) {
+        if (_.isArray(newValue)) {
+          if (!_.isArray(oldValue)) {
+            changeCount++;
+            oldValue = [];
+          }
+
+          if (newValue.length !== oldValue.length) {
+            changeCount++;
+            oldValue.length = newValue.length;
+          }
+
+          _.forEach(newValue, (newItem, i) => {
+            if (!this.$$areEqual(newItem, oldValue[i], false)) {
+              changeCount++;
+              oldValue[i] = newItem;
+            }
+          })
+        } else {
+          // Object case
+        }
+      } else {
+        // Trivial Case
+        if (!this.$$areEqual(newValue,  oldValue, false)) {
+          changeCount++;
+        }
+
+        oldValue = newValue;
+      }
+
+      return changeCount;
+    };
+
+    const internalListenerFunction = () => {
+      listenerFunction(newValue, oldValue, this);
+    };
+
+    return this.$watch(internalWatchFunction, internalListenerFunction);
   }
 
   private removeScopeFromParentChildren(): void {

@@ -1115,6 +1115,161 @@ describe('Scope', () => {
       expect((<any>child).counter).toBe(2);
     });
   });
+
+  describe('$watchCollection', () => {
+    let scope: Scope;
+
+    beforeEach(() => {
+      scope = new Scope();
+    });
+
+    it('works like a normal watch for non-collections', () => {
+      let valueProvided;
+
+      (<any>scope).aValue = 42;
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => {
+          valueProvided = newValue;
+          (<any>scope).counter++;
+        });
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+      expect(valueProvided).toBe((<any>scope).aValue);
+
+      (<any>scope).aValue = 43;
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('works like a normal watch for NaNs', () => {
+      (<any>scope).aValue = 0/0; // NaN
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).aValue,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+        scope.$digest();
+        expect((<any>scope).counter).toBe(1);
+
+        scope.$digest();
+        expect((<any>scope).counter).toBe(1);
+    });
+
+    it('notices when the value becomes an array', () => {
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).array = [1, 2, 3];
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices when an item is added to an array', () => {
+      (<any>scope).array = [1, 2, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest()
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).array.push(4);
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices when an item is removed from an array', () => {
+      (<any>scope).array = [1, 2, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).array.shift();
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices an item replaced in an array', () => {
+      (<any>scope).array = [1, 2, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).array[1] = 42;
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices an item replaced in an array', () => {
+      (<any>scope).array = [2, 1, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).array.sort();
+      scope.$digest();
+
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('does not fail on NaNs in arrays', () => {
+      (<any>scope).array = [2, NaN, 3];
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).array,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
+  });
 });
 
 
