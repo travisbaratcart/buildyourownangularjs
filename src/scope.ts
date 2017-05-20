@@ -30,6 +30,8 @@ export class Scope {
 
   private isDirty = false;
 
+  private $$children: Scope[] = [];
+
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
     watchFunction: (scope: Scope) => any,
@@ -228,6 +230,8 @@ export class Scope {
     ChildScope.prototype = this;
 
     const child: Scope = new ChildScope();
+
+    this.$$children.push(child);
 
     return child;
   }
