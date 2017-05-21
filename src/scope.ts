@@ -421,6 +421,7 @@ export class Scope {
       event.currentScope = scope;
 
       scope.$$fireEventOnScope(eventName, event, ...args);
+
       return true;
     });
 
@@ -433,7 +434,13 @@ export class Scope {
 
     const eventListeners = this.$$listeners[eventName] || [];
 
-    _.forEachRight(eventListeners, (listener) => listener(event, ...args));
+    _.forEachRight(eventListeners, (listener) => {
+      try {
+        listener(event, ...args)
+      } catch (error) {
+        console.error(error);
+      }
+    });
 
     return event;
   }

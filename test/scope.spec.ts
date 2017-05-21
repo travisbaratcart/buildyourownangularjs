@@ -1638,6 +1638,23 @@ describe('Scope', () => {
 
         expect(event.defaultPrevented).toBe(true);
       });
+
+      it(`does not stop propagating when exceptions thrown in ${method}`, () => {
+        const listener1 = jasmine.createSpy('listener1');
+        const listener2 = (event: IEvent) => {
+          throw 'listener2 throwing exception';
+        };
+        const listener3 = jasmine.createSpy('listener3');
+
+        scope.$on('someEvent', listener1);
+        scope.$on('someEvent', listener2);
+        scope.$on('someEvent', listener3);
+
+        (<any>scope)[method]('someEvent');
+
+        expect(listener1).toHaveBeenCalled();
+        expect(listener3).toHaveBeenCalled();
+      });
     });
 
     it('propagates up the scope hierarchy on $emit', () => {
