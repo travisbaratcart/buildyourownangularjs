@@ -1572,6 +1572,22 @@ describe('Scope', () => {
 
         expect(listener).not.toHaveBeenCalled();
       });
+
+      it(`does not skip the next listener on ${method} when listener removed`, () => {
+        let deregisterFunction: () => void;
+
+        const listener = () => deregisterFunction();
+
+        const nextListener = jasmine.createSpy('nextListener');
+
+        deregisterFunction = scope.$on('someEvent', listener);
+
+        scope.$on('someEvent', nextListener);
+
+        (<any>scope)[method]('someEvent');
+
+        expect(nextListener).toHaveBeenCalled();
+      });
     });
   });
 });

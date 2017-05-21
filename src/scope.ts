@@ -398,7 +398,7 @@ export class Scope {
 
     const eventListeners = this.$$listeners[eventName] || [];
 
-    eventListeners.forEach(listener => listener(event, ...args));
+    _.forEachRight(eventListeners, (listener) => listener(event, ...args));
 
     return event;
   }
