@@ -34,6 +34,8 @@ export class Scope {
   private $parent: Scope;
   public $$children: Scope[] = [];
 
+  public $$listeners: { [event: string]: (() => any)[] } = {}
+
   constructor($parent?: Scope, $root?: Scope) {
     this.$root = $root || this;
     this.$parent = $parent || null;
@@ -356,6 +358,15 @@ export class Scope {
     };
 
     return this.$watch(internalWatchFunction, internalListenerFunction);
+  }
+
+  public $on(eventName: string, listener: () => any): void {
+
+    if (!this.$$listeners[eventName]) {
+      this.$$listeners[eventName] = [];
+    }
+
+    this.$$listeners[eventName].push(listener);
   }
 
   private removeScopeFromParentChildren(): void {

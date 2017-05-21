@@ -1460,6 +1460,35 @@ describe('Scope', () => {
       expect(oldValueGiven).toEqual({ a: 1, b: 2});
     });
   });
+
+  describe('events', () => {
+    let parent: Scope;
+    let scope: Scope;
+    let child: Scope;
+    let isolatedChild: Scope;
+
+    beforeEach(() => {
+      parent = new Scope();
+      scope = parent.$new();
+      child = scope.$new();
+      isolatedChild = scope.$new(true);
+    });
+
+    it('allows registering listeners', () => {
+      const listener1 = () => null;
+      const listener2 = () => null;
+      const listener3 = () => null;
+
+      scope.$on('someEvent', listener1);
+      scope.$on('someEvent', listener2);
+      scope.$on('someOtherEvent', listener3);
+
+      expect((<any>scope).$$listeners).toEqual({
+        someEvent: [listener1, listener2],
+        someOtherEvent: [listener3]
+      });
+    });
+  });
 });
 
 
