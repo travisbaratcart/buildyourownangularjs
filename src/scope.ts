@@ -16,7 +16,9 @@ export interface IEvent {
   name: string,
   targetScope: Scope,
   currentScope: Scope,
-  stopPropagation: () => void
+  stopPropagation: () => void,
+  preventDefault: () => void,
+  defaultPrevented: boolean
 }
 
 const initialWatchValue = (): any => null;
@@ -438,7 +440,9 @@ export class Scope {
       name: eventName,
       targetScope: this,
       currentScope: null, // assigned when firing on individual scope,
-      stopPropagation: () => null
+      stopPropagation: () => null,
+      preventDefault: () => event.defaultPrevented = true,
+      defaultPrevented: false
     };
 
     return event;
