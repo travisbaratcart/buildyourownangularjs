@@ -1542,6 +1542,18 @@ describe('Scope', () => {
 
         expect(event1).toBe(event2);
       });
+
+      it(`passes additional arguments to listeners on ${method}`, () => {
+        const listener = jasmine.createSpy('listener');
+
+        scope.$on('someEvent', listener);
+
+        (<any>scope)[method]('someEvent', 'and', ['additional', 'arguments'], '...');
+
+        expect(listener.calls.mostRecent().args[1]).toEqual('and');
+        expect(listener.calls.mostRecent().args[2]).toEqual(['additional', 'arguments']);
+        expect(listener.calls.mostRecent().args[3]).toEqual('...');
+      });
     });
   });
 });

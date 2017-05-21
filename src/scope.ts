@@ -38,7 +38,7 @@ export class Scope {
   private $parent: Scope;
   public $$children: Scope[] = [];
 
-  public $$listeners: { [eventName: string]: ((event: IEvent) => any)[] } = {}
+  public $$listeners: { [eventName: string]: ((event: IEvent, ...args: any[]) => any)[] } = {}
 
   constructor($parent?: Scope, $root?: Scope) {
     this.$root = $root || this;
@@ -364,7 +364,7 @@ export class Scope {
     return this.$watch(internalWatchFunction, internalListenerFunction);
   }
 
-  public $on(eventName: string, listener: () => any): void {
+  public $on(eventName: string, listener: (event?: IEvent, ...args: any[]) => any): void {
 
     if (!this.$$listeners[eventName]) {
       this.$$listeners[eventName] = [];
@@ -373,20 +373,20 @@ export class Scope {
     this.$$listeners[eventName].push(listener);
   }
 
-  public $emit(eventName: string): void {
-    this.$$fireEventOnScope(eventName);
+  public $emit(eventName: string, ...args: any[]): void {
+    this.$$fireEventOnScope(eventName, ...args);
   }
 
-  public $broadcast(eventName: string): void {
-    this.$$fireEventOnScope(eventName);
+  public $broadcast(eventName: string, ...args: any[]): void {
+    this.$$fireEventOnScope(eventName, ...args);
   }
 
-  private $$fireEventOnScope(eventName: string): void {
+  private $$fireEventOnScope(eventName: string, ...args: any[]): void {
     const event: IEvent = { name: eventName };
 
     const eventListeners = this.$$listeners[eventName] || [];
 
-    eventListeners.forEach(listener => listener(event));
+    eventListeners.forEach(listener => listener(event, ...args));
   }
 
   private removeScopeFromParentChildren(): void {
