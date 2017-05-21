@@ -296,19 +296,31 @@ export class Scope {
             oldValue = {};
           }
 
+          let keyAdded = false;
           _.forOwn(newValue, (newValueField, key) => {
             if(!this.$$areEqual(oldValue[key], newValueField, false) {
               changeCount++;
+
+              if (!oldValue.hasOwnProperty(key)) {
+                keyAdded = true;
+              }
+
               oldValue[key] = newValueField;
             }
           });
 
-          _.forOwn(oldValue, (oldValueField, key) => {
-            if (!newValue.hasOwnProperty(key)) {
-              changeCount++;
-              delete oldValue[key];
-            }
-          });
+          // Performance optimization: Only check deleted properties if lengths different
+          // or if some property is added and the lengths are the same - implying another
+          // must have been deleted.
+          if ((Object.keys(oldValue).length !== Object.keys(newValue).length)
+            || keyAdded) {
+            _.forOwn(oldValue, (oldValueField, key) => {
+              if (!newValue.hasOwnProperty(key)) {
+                changeCount++;
+                delete oldValue[key];
+              }
+            });
+          }
         }
       } else {
         // Trivial Case
