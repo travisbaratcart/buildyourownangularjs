@@ -399,7 +399,14 @@ export class Scope {
   }
 
   public $broadcast(eventName: string, ...args: any[]): IEvent {
-    return this.$$fireEventOnScope(eventName, this.$$getEvent(eventName), ...args);
+    let event = this.$$getEvent(eventName);
+
+    this.$$everyScope((scope) => {
+      scope.$$fireEventOnScope(eventName, event, ...args);
+      return true;
+    });
+
+    return event;
   }
 
   private $$fireEventOnScope(eventName: string, event: IEvent, ...args: any[]): IEvent {
