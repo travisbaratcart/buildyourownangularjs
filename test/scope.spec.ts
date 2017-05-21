@@ -1719,5 +1719,25 @@ describe('Scope', () => {
       expect(currentScopeInScopeListener).toBe(scope);
       expect(currentScopeInChildListener).toBe(child);
     });
+
+    it('sets the current scope to null after propagation on $emit', () => {
+      let event: IEvent;
+
+      scope.$on('someEvent', (evt) => event = evt);
+
+      scope.$emit('someEvent');
+
+      expect(event.currentScope).toBe(null);
+    });
+
+    it('sets the current scope to null after propagation on $broadcast', () => {
+      let event: IEvent;
+
+      scope.$on('someEvent', (evt) => event = evt);
+
+      scope.$broadcast('someEvent');
+
+      expect(event.currentScope).toBe(null);
+    });
   });
 });

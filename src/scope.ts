@@ -400,6 +400,8 @@ export class Scope {
       scope = scope.$parent;
     } while (scope)
 
+    event.currentScope = null;
+
     return event;
   }
 
@@ -412,6 +414,8 @@ export class Scope {
       scope.$$fireEventOnScope(eventName, event, ...args);
       return true;
     });
+
+    event.currentScope = null;
 
     return event;
   }
