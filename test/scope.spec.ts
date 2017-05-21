@@ -1117,6 +1117,29 @@ describe('Scope', () => {
       parent.$digest();
       expect((<any>child).counter).toBe(2);
     });
+
+    it('fires a $destroy event when destroyed', () => {
+      const scope = new Scope();
+      const listener = jasmine.createSpy('listener');
+      scope.$on('$destroy', listener);
+
+      scope.$destroy();
+
+      expect(listener).toHaveBeenCalled();
+    });
+
+    it('fires $destroy on children destroyed', () => {
+      const scope = new Scope();
+      const child = scope.$new();
+
+      const listener = jasmine.createSpy('listener');
+
+      child.$on('$destroy', listener);
+
+      scope.$destroy();
+
+      expect(listener).toHaveBeenCalled();
+    });
   });
 
   describe('$watchCollection', () => {

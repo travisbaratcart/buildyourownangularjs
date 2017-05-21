@@ -267,6 +267,8 @@ export class Scope {
   }
 
   public $destroy(): void {
+    this.$broadcast('$destroy');
+
     this.removeScopeFromParentChildren();
     this.$$watchers = null;
   }
