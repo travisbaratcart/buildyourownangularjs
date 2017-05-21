@@ -1309,6 +1309,64 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(2);
     });
+
+    it('notices when the value becomes an object', () => {
+      (<any>scope).counter = 0;
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).obj,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).obj = { a: 1 };
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest()
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices when an attribute is added to an object', () => {
+      (<any>scope).counter = 0;
+      (<any>scope).obj = { a: 1 };
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).obj,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest()      ;
+      expect((<any>scope).counter).toBe(1);
+
+      (<any>scope).obj.b = 2;
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
+
+    it('notices when an attribute is changed in an object', () => {
+      (<any>scope).counter = 0;
+      (<any>scope).obj = { a: 1 };
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).obj,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+        scope.$digest();
+        expect((<any>scope).counter).toBe(1);
+
+        (<any>scope).obj.a = 2;
+
+        scope.$digest();
+        expect((<any>scope).counter).toBe(2);
+
+        scope.$digest();
+        expect((<any>scope).counter).toBe(2);
+    });
   });
 });
 

@@ -291,6 +291,17 @@ export class Scope {
           })
         } else {
           // Object case
+          if (!_.isObject(oldValue) || _.isArrayLike(oldValue)) {
+            changeCount++;
+            oldValue = {};
+          }
+
+          _.forOwn(newValue, (newValue, key) => {
+            if(!this.$$areEqual(oldValue[key], newValue, false) {
+              changeCount++;
+              oldValue[key] = newValue;
+            }
+          });
         }
       } else {
         // Trivial Case
