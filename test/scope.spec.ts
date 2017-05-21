@@ -1,5 +1,8 @@
 import * as _ from 'lodash';
-import { Scope } from '../src/scope';
+import {
+  Scope,
+  IEvent
+} from '../src/scope';
 
 describe('Scope', () => {
   it('can be constructed and used as an object', () => {
@@ -1647,6 +1650,74 @@ describe('Scope', () => {
       const childEvent = childListener.calls.mostRecent().args[0];
 
       expect(scopeEvent).toBe(childEvent);
+    });
+
+    it('attaches targetScpoe on $emit', () => {
+      const scopeListener = jasmine.createSpy('scopeListener');
+      const parentListener = jasmine.createSpy('parentListener');
+
+      scope.$on('someEvent', scopeListener);
+      parent.$on('someEvent', parentListener);
+
+      scope.$emit('someEvent');
+
+      expect(scopeListener.calls.mostRecent().args[0].targetScope).toBe(scope);
+      expect(parentListener.calls.mostRecent().args[0].targetScope).toBe(scope);
+    });
+
+    it('attaches targetScpoe on $broadcast', () => {
+      const scopeListener = jasmine.createSpy('scopeListener');
+      const childListener = jasmine.createSpy('childListener');
+
+      scope.$on('someEvent', scopeListener);
+      child.$on('someEvent', childListener);
+
+      scope.$broadcast('someEvent');
+
+      expect(scopeListener.calls.mostRecent().args[0].targetScope).toBe(scope);
+      expect(childListener.calls.mostRecent().args[0].targetScope).toBe(scope);
+    });
+
+    it('attaches currentScope on $emit', () => {
+      let currentScopeInScopeListener: Scope;
+      let currentScopeInParentListener: Scope;
+
+      const scopeListener = (event: IEvent) => {
+        currentScopeInScopeListener = event.currentScope;
+      };
+
+      const parentListener = (event: IEvent) => {
+        currentScopeInParentListener = event.currentScope;
+      };
+
+      scope.$on('someEvent', scopeListener);
+      parent.$on('someEvent', parentListener);
+
+      scope.$emit('someEvent');
+
+      expect(currentScopeInScopeListener).toBe(scope);
+      expect(currentScopeInParentListener).toBe(parent);
+    });
+
+    it('attaches currentScope on $broadcast', () => {
+      let currentScopeInScopeListener: Scope;
+      let currentScopeInChildListener: Scope;
+
+      const scopeListener = (event: IEvent) => {
+        currentScopeInScopeListener = event.currentScope;
+      };
+
+      const childListener = (event: IEvent) => {
+        currentScopeInChildListener = event.currentScope;
+      };
+
+      scope.$on('someEvent', scopeListener);
+      child.$on('someEvent', childListener);
+
+      scope.$broadcast('someEvent');
+
+      expect(currentScopeInScopeListener).toBe(scope);
+      expect(currentScopeInChildListener).toBe(child);
     });
   });
 });
