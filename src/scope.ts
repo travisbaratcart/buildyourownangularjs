@@ -264,78 +264,95 @@ export class Scope {
     watchFunction: (scope: Scope) => any,
     listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): () => void {
 
+    // Performance optimization: Only worry about maintaining deep copies of old value
+    // if actually needed for listener.
+    const listenerNeedsOldValue = listenerFunction.length > 1;
+
     let newValue: any;
-    let oldValue: any;
+
+    let oldValueInternal: any; // modified internally during comparison - unreliable for listener
+    let oldValueActual: any // actual clone of old value - only tracked if required
 
     let changeCount = 0;
+
+    let isFirstRun = true;
 
     const internalWatchFunction = (scope: Scope) => {
       newValue = watchFunction(scope);
       if (_.isObject(newValue)) {
         if (_.isArrayLikeObject(newValue)) {
-          if (!_.isArray(oldValue)) {
+          if (!_.isArray(oldValueInternal)) {
             changeCount++;
-            oldValue = [];
+            oldValueInternal = [];
           }
 
-          if (newValue.length !== oldValue.length) {
+          if (newValue.length !== oldValueInternal.length) {
             changeCount++;
-            oldValue.length = newValue.length;
+            oldValueInternal.length = newValue.length;
           }
 
           _.forEach(newValue, (newItem, i) => {
-            if (!this.$$areEqual(newItem, oldValue[i], false)) {
+            if (!this.$$areEqual(newItem, oldValueInternal[i], false)) {
               changeCount++;
-              oldValue[i] = newItem;
+              oldValueInternal[i] = newItem;
             }
           })
         } else {
           // Object case
-          if (!_.isObject(oldValue) || _.isArrayLike(oldValue)) {
+          if (!_.isObject(oldValueInternal) || _.isArrayLike(oldValueInternal)) {
             changeCount++;
-            oldValue = {};
+            oldValueInternal = {};
           }
 
           let keyAdded = false;
           _.forOwn(newValue, (newValueField, key) => {
-            if(!this.$$areEqual(oldValue[key], newValueField, false) {
+            if(!this.$$areEqual(oldValueInternal[key], newValueField, false) {
               changeCount++;
 
-              if (!oldValue.hasOwnProperty(key)) {
+              if (!oldValueInternal.hasOwnProperty(key)) {
                 keyAdded = true;
               }
 
-              oldValue[key] = newValueField;
+              oldValueInternal[key] = newValueField;
             }
           });
 
           // Performance optimization: Only check deleted properties if lengths different
           // or if some property is added and the lengths are the same - implying another
           // must have been deleted.
-          if ((Object.keys(oldValue).length !== Object.keys(newValue).length)
+          if ((Object.keys(oldValueInternal).length !== Object.keys(newValue).length)
             || keyAdded) {
-            _.forOwn(oldValue, (oldValueField, key) => {
+            _.forOwn(oldValueInternal, (oldValueField, key) => {
               if (!newValue.hasOwnProperty(key)) {
                 changeCount++;
-                delete oldValue[key];
+                delete oldValueInternal[key];
               }
             });
           }
         }
       } else {
         // Trivial Case
-        if (!this.$$areEqual(newValue,  oldValue, false)) {
+        if (!this.$$areEqual(newValue,  oldValueInternal, false)) {
           changeCount++;
         }
 
-        oldValue = newValue;
+        oldValueInternal = newValue;
       }
 
       return changeCount;
     };
 
     const internalListenerFunction = () => {
-      listenerFunction(newValue, oldValue, this);
+      if (isFirstRun) {
+        listenerFunction(newValue, newValue, this);
+        isFirstRun = false
+      } else {
+        listenerFunction(newValue, oldValueActual, this);
+      }
+
+      if (listenerNeedsOldValue) {
+        oldValueActual = _.clone(newValue);
+      }
     };
 
     return this.$watch(internalWatchFunction, internalListenerFunction);
