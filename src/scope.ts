@@ -373,20 +373,22 @@ export class Scope {
     this.$$listeners[eventName].push(listener);
   }
 
-  public $emit(eventName: string, ...args: any[]): void {
-    this.$$fireEventOnScope(eventName, ...args);
+  public $emit(eventName: string, ...args: any[]): IEvent {
+    return this.$$fireEventOnScope(eventName, ...args);
   }
 
-  public $broadcast(eventName: string, ...args: any[]): void {
-    this.$$fireEventOnScope(eventName, ...args);
+  public $broadcast(eventName: string, ...args: any[]): IEvent {
+    return this.$$fireEventOnScope(eventName, ...args);
   }
 
-  private $$fireEventOnScope(eventName: string, ...args: any[]): void {
+  private $$fireEventOnScope(eventName: string, ...args: any[]): IEvent {
     const event: IEvent = { name: eventName };
 
     const eventListeners = this.$$listeners[eventName] || [];
 
     eventListeners.forEach(listener => listener(event, ...args));
+
+    return event;
   }
 
   private removeScopeFromParentChildren(): void {
