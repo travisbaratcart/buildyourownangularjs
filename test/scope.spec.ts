@@ -1367,6 +1367,37 @@ describe('Scope', () => {
         scope.$digest();
         expect((<any>scope).counter).toBe(2);
     });
+
+    it('does not fail on NaN attributes in objects', () => {
+      (<any>scope).counter = 0;
+      (<any>scope).obj = { a: NaN };
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).obj,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+    });
+
+    it('notices when an attribute is removed from an objectd', () => {
+      (<any>scope).counter = 0;
+      (<any>scope).obj = { a: 1 };
+
+      scope.$watchCollection(
+        (scope) => (<any>scope).obj,
+        (newValue, oldValue, scope) => (<any>scope).counter++);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(1);
+
+      delete (<any>scope).obj.a;
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+
+      scope.$digest();
+      expect((<any>scope).counter).toBe(2);
+    });
   });
 });
 

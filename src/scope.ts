@@ -296,10 +296,17 @@ export class Scope {
             oldValue = {};
           }
 
-          _.forOwn(newValue, (newValue, key) => {
-            if(!this.$$areEqual(oldValue[key], newValue, false) {
+          _.forOwn(newValue, (newValueField, key) => {
+            if(!this.$$areEqual(oldValue[key], newValueField, false) {
               changeCount++;
-              oldValue[key] = newValue;
+              oldValue[key] = newValueField;
+            }
+          });
+
+          _.forOwn(oldValue, (oldValueField, key) => {
+            if (!newValue.hasOwnProperty(key)) {
+              changeCount++;
+              delete oldValue[key];
             }
           });
         }
