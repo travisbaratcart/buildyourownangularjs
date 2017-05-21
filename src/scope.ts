@@ -12,6 +12,10 @@ interface IAsyncQueueItem {
   scope: Scope;
 }
 
+interface IEvent {
+  name: string
+}
+
 const initialWatchValue = (): any => null;
 
 export class Scope {
@@ -34,7 +38,7 @@ export class Scope {
   private $parent: Scope;
   public $$children: Scope[] = [];
 
-  public $$listeners: { [event: string]: (() => any)[] } = {}
+  public $$listeners: { [eventName: string]: ((event: IEvent) => any)[] } = {}
 
   constructor($parent?: Scope, $root?: Scope) {
     this.$root = $root || this;
@@ -308,7 +312,7 @@ export class Scope {
 
           let keyAdded = false;
           _.forOwn(newValue, (newValueField, key) => {
-            if(!this.$$areEqual(oldValueInternal[key], newValueField, false) {
+            if (!this.$$areEqual(oldValueInternal[key], newValueField, false)) {
               changeCount++;
 
               if (!oldValueInternal.hasOwnProperty(key)) {
@@ -367,6 +371,22 @@ export class Scope {
     }
 
     this.$$listeners[eventName].push(listener);
+  }
+
+  public $emit(eventName: string): void {
+    this.$$fireEventOnScope(eventName);
+  }
+
+  public $broadcast(eventName: string): void {
+    this.$$fireEventOnScope(eventName);
+  }
+
+  private $$fireEventOnScope(eventName: string): void {
+    const event: IEvent = { name: eventName };
+
+    const eventListeners = this.$$listeners[eventName] || [];
+
+    eventListeners.forEach(listener => listener(event));
   }
 
   private removeScopeFromParentChildren(): void {
