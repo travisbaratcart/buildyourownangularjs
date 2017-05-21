@@ -364,13 +364,25 @@ export class Scope {
     return this.$watch(internalWatchFunction, internalListenerFunction);
   }
 
-  public $on(eventName: string, listener: (event?: IEvent, ...args: any[]) => any): void {
+  public $on(
+    eventName: string,
+    listener: (event?: IEvent, ...args: any[]) => any): () => void {
 
     if (!this.$$listeners[eventName]) {
       this.$$listeners[eventName] = [];
     }
 
-    this.$$listeners[eventName].push(listener);
+    const eventListeners = this.$$listeners[eventName];
+
+    eventListeners.push(listener);
+
+    return () => {
+      const indexOfEventListener = eventListeners.indexOf(listener);
+
+      if (indexOfEventListener > -1) {
+        eventListeners.splice(indexOfEventListener, 1);
+      }
+    }
   }
 
   public $emit(eventName: string, ...args: any[]): IEvent {
