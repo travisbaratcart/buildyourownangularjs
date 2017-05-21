@@ -386,19 +386,33 @@ export class Scope {
   }
 
   public $emit(eventName: string, ...args: any[]): IEvent {
-    return this.$$fireEventOnScope(eventName, ...args);
+    let scope: Scope = this;
+
+    let event = this.$$getEvent(eventName);
+
+    do {
+      scope.$$fireEventOnScope(eventName, event, ...args);
+      scope = scope.$parent;
+    } while (scope)
+
+    return event;
   }
 
   public $broadcast(eventName: string, ...args: any[]): IEvent {
-    return this.$$fireEventOnScope(eventName, ...args);
+    return this.$$fireEventOnScope(eventName, this.$$getEvent(eventName), ...args);
   }
 
-  private $$fireEventOnScope(eventName: string, ...args: any[]): IEvent {
-    const event: IEvent = { name: eventName };
+  private $$fireEventOnScope(eventName: string, event: IEvent, ...args: any[]): IEvent {
 
     const eventListeners = this.$$listeners[eventName] || [];
 
     _.forEachRight(eventListeners, (listener) => listener(event, ...args));
+
+    return event;
+  }
+
+  private $$getEvent(eventName: string): IEvent {
+    const event: IEvent = { name: eventName };
 
     return event;
   }
