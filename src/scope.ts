@@ -271,6 +271,7 @@ export class Scope {
 
     this.removeScopeFromParentChildren();
     this.$$watchers = null;
+    this.$$listeners = {};
   }
 
   public $watchCollection(

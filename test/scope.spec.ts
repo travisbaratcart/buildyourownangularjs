@@ -1093,10 +1093,17 @@ describe('Scope', () => {
   });
 
   describe('$destroy', () => {
-    it('is no longer digested when $destroy has been called', () => {
-      const parent = new Scope();
-      const child = parent.$new();
+    let parent: Scope;
+    let scope: Scope;
+    let child: Scope;
 
+    beforeEach(() => {
+      parent = new Scope();
+      scope = parent.$new();
+      child = scope.$new();
+    });
+
+    it('is no longer digested when $destroy has been called', () => {
       (<any>child).aValue = [1, 2, 3];
       (<any>child).counter = 0;
 
@@ -1119,7 +1126,6 @@ describe('Scope', () => {
     });
 
     it('fires a $destroy event when destroyed', () => {
-      const scope = new Scope();
       const listener = jasmine.createSpy('listener');
       scope.$on('$destroy', listener);
 
@@ -1129,9 +1135,6 @@ describe('Scope', () => {
     });
 
     it('fires $destroy on children destroyed', () => {
-      const scope = new Scope();
-      const child = scope.$new();
-
       const listener = jasmine.createSpy('listener');
 
       child.$on('$destroy', listener);
@@ -1139,6 +1142,17 @@ describe('Scope', () => {
       scope.$destroy();
 
       expect(listener).toHaveBeenCalled();
+    });
+
+    it('no longer calls event listeners after destroyed', () => {
+      const listener = jasmine.createSpy('listener');
+      scope.$on('someEvent', listener);
+
+      scope.$destroy();
+
+      scope.$emit('someEvent');
+
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 
