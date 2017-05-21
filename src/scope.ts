@@ -15,7 +15,8 @@ interface IAsyncQueueItem {
 export interface IEvent {
   name: string,
   targetScope: Scope,
-  currentScope: Scope
+  currentScope: Scope,
+  stopPropagation: () => void
 }
 
 const initialWatchValue = (): any => null;
@@ -392,13 +393,16 @@ export class Scope {
 
     let event = this.$$getEvent(eventName);
 
+    let stopPropagation = false;
+    event.stopPropagation = () => stopPropagation = true;
+
     do {
       event.currentScope = scope;
 
       scope.$$fireEventOnScope(eventName, event, ...args);
 
       scope = scope.$parent;
-    } while (scope)
+    } while (scope && !stopPropagation)
 
     event.currentScope = null;
 
@@ -433,7 +437,8 @@ export class Scope {
     const event: IEvent = {
       name: eventName,
       targetScope: this,
-      currentScope: null // assigned when firing on individual scope
+      currentScope: null, // assigned when firing on individual scope,
+      stopPropagation: () => null
     };
 
     return event;
