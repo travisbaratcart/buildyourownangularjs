@@ -57,4 +57,8 @@ describe('parse', () => {
     const result = parse('"abc"');
     expect(result()).toBe('abc');
   });
+
+  it('will not parse a string with mismatching quotes', () => {
+    expect(() => parse(`"abc'`)).toThrow();
+  });
 });

@@ -74,14 +74,16 @@ class Lexer {
   }
 
   private readString(): void {
-    this.currentCharIndex++ // move past opening quote
+    let openingQuote = this.text[this.currentCharIndex];
 
     let result = '';
+
+    this.currentCharIndex++ // move past opening quote
 
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
 
-      if (currentChar === '\'' || currentChar === '"') {
+      if (currentChar === openingQuote) {
         this.currentCharIndex++;
         this.addToken(result, result);
         return;
