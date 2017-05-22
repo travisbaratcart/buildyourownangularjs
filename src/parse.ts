@@ -26,12 +26,12 @@ class Lexer {
 
     for (this.currentCharIndex = 0; this.currentCharIndex < this.text.length; this.currentCharIndex++) {
       let currentChar = this.text[this.currentCharIndex];
+      let nextChar = this.peekNextChar();
 
-      let isBeginningOfNumber = this.isCharNumber(currentChar)
-        || (this.text[this.currentCharIndex] === '.' &&  this.isCharNumber(this.peekNextChar()))
-
-      if (isBeginningOfNumber) {
+      if (this.isBeginningOfNumber(currentChar, nextChar)) {
         this.readNumber();
+      } else if (this.isBeginningOfString(currentChar)) {
+        this.readString();
       } else {
         throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
       }
@@ -73,10 +73,39 @@ class Lexer {
     this.addToken(numberText, Number(numberText));
   }
 
-  private addToken(text: string, value: any) {
+  private readString(): void {
+    this.currentCharIndex++ // move past opening quote
+
+    let result = '';
+
+    while (this.currentCharIndex < this.text.length) {
+      let currentChar = this.text[this.currentCharIndex];
+
+      if (currentChar === '\'' || currentChar === '"') {
+        this.currentCharIndex++;
+        this.addToken(result, result);
+        return;
+      } else {
+        result += currentChar;
+        this.currentCharIndex++;
+      }
+    }
+
+    throw 'Unmatched quote';
+  }
+
+  private addToken(text: string, value: any): void {
     let newToken: IToken = { text, value };
 
     this.tokens.push(newToken);
+  }
+
+  private isBeginningOfNumber(char: string, nextChar: string): boolean {
+    return this.isCharNumber(char) || (char ===  '.' &&  this.isCharNumber(nextChar));
+  }
+
+  private isBeginningOfString(char: string): boolean {
+    return char === '\'' || char === '"';
   }
 
   private isCharNumber(char: string): boolean {
@@ -148,9 +177,17 @@ class ASTCompiler {
         this.state.body.push('return ', this.recurse(ast.body), ';');
         break;
       case ASTComponents.Literal:
-        return ast.value;
+        return this.escapeIfNecessary(ast.value);
       default:
         throw 'Invalid syntax component.'
+    }
+  }
+
+  private escapeIfNecessary(value: any): any {
+    if (typeof value === 'string') {
+      return `'${value}'`;
+    } else {
+      return value;
     }
   }
 }

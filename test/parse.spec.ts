@@ -47,4 +47,14 @@ describe('parse', () => {
     expect(() => parse('42e-')).toThrow();
     expect(() => parse('42e-a')).toThrow();
   });
+
+  it('can parse a string in single quotes', () => {
+    const result = parse("'abc'");
+    expect(result()).toBe('abc');
+  });
+
+  it('can parse a string in double quotos', () => {
+    const result = parse('"abc"');
+    expect(result()).toBe('abc');
+  });
 });
