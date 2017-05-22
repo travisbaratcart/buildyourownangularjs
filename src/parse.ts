@@ -40,7 +40,7 @@ class Lexer {
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
 
-      if (this.isCurrentCharNumber()) {
+      if (this.isCurrentCharNumber() || currentChar === '.') {
         numberText += currentChar;
       } else {
         break;
