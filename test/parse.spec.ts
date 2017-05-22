@@ -17,4 +17,34 @@ describe('parse', () => {
 
     expect(result()).toBe(.42);
   });
+
+  it('can parse a number in scientific notation', () => {
+    const result = parse('42e3');
+    expect(result()).toBe(42000);
+  });
+
+  it('can parse scientific notation with a float coefficient', () => {
+    const result = parse('.42e2');
+    expect(result()).toBe(42);
+  });
+
+  it('can parse scientific notation with negative exponents', () => {
+    const result = parse('4200e-2');
+    expect(result()).toBe(42);
+  });
+
+  it('can parse scientific notation with + sign before exponent', () => {
+    const result = parse('.42e+2');
+    expect(result()).toBe(42);
+  });
+
+  it('can parse upper case scientific notation', () => {
+    const result = parse('.42E2');
+    expect(result()).toBe(42);
+  });
+
+  it('will not parse invalid scientific notation', () => {
+    expect(() => parse('42e-')).toThrow();
+    expect(() => parse('42e-a')).toThrow();
+  });
 });

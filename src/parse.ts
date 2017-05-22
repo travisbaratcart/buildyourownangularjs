@@ -43,12 +43,28 @@ class Lexer {
   private readNumber(): void {
     let numberText = '';
     while (this.currentCharIndex < this.text.length) {
-      let currentChar = this.text[this.currentCharIndex];
+      let currentChar = this.text[this.currentCharIndex].toLowerCase();
 
       if (this.isCharNumber(currentChar) || currentChar === '.') {
         numberText += currentChar;
       } else {
-        break;
+        // Exponent handling eg 4e12, 4E12,
+        const nextChar = this.peekNextChar();
+        const lastChar = numberText.charAt(numberText.length - 1);
+
+        if (currentChar === 'e' && this.isExponentOperator(nextChar)) {
+          numberText += currentChar
+        } else if (this.isExponentOperator(currentChar)
+          && lastChar === 'e'
+          && nextChar
+          && this.isCharNumber(nextChar)) {
+          numberText += currentChar;
+        } else if (this.isExponentOperator(currentChar) && lastChar === 'e'
+          && (!nextChar || !this.isCharNumber(nextChar))) {
+          throw 'Invalid exponent';
+        } else {
+          break;
+        }
       }
 
       this.currentCharIndex++;
@@ -68,9 +84,13 @@ class Lexer {
   }
 
   private peekNextChar(): string {
-    return this.currentCharIndex < this.currentCharIndex - 1
+    return this.currentCharIndex < this.text.length - 1
       ? this.text.charAt(this.currentCharIndex + 1)
       : null;
+  }
+
+  private isExponentOperator(char: string) {
+    return char === '-' || char === '+' || this.isCharNumber(char);
   }
 }
 
