@@ -11,4 +11,10 @@ describe('parse', () => {
     const result = parse('4.2');
     expect(result()).toBe(4.2);
   });
+
+  it('can parse a floating point number without an integer part', () => {
+    const result = parse('.42');
+
+    expect(result()).toBe(.42);
+  });
 });

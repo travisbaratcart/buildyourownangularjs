@@ -25,7 +25,12 @@ class Lexer {
     this.text = text;
 
     for (this.currentCharIndex = 0; this.currentCharIndex < this.text.length; this.currentCharIndex++) {
-      if (this.isCurrentCharNumber()) {
+      let currentChar = this.text[this.currentCharIndex];
+
+      let isBeginningOfNumber = this.isCharNumber(currentChar)
+        || (this.text[this.currentCharIndex] === '.' &&  this.isCharNumber(this.peekNextChar()))
+
+      if (isBeginningOfNumber) {
         this.readNumber();
       } else {
         throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
@@ -40,7 +45,7 @@ class Lexer {
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
 
-      if (this.isCurrentCharNumber() || currentChar === '.') {
+      if (this.isCharNumber(currentChar) || currentChar === '.') {
         numberText += currentChar;
       } else {
         break;
@@ -58,9 +63,14 @@ class Lexer {
     this.tokens.push(newToken);
   }
 
-  private isCurrentCharNumber(): boolean {
-    let currentChar = this.text[this.currentCharIndex]
-    return '0' <= currentChar && currentChar <= '9';
+  private isCharNumber(char: string): boolean {
+    return '0' <= char && char <= '9';
+  }
+
+  private peekNextChar(): string {
+    return this.currentCharIndex < this.currentCharIndex - 1
+      ? this.text.charAt(this.currentCharIndex + 1)
+      : null;
   }
 }
 
