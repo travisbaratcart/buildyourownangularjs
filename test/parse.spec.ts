@@ -95,4 +95,9 @@ describe('parse', () => {
     const result = parse('false');
     expect(result()).toBe(false);
   });
+
+  it('ignores whitespace', () => {
+    const result = parse(' \n42 ');
+    expect(result()).toBe(42);
+  });
 });

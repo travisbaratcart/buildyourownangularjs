@@ -34,6 +34,8 @@ class Lexer {
         this.readString();
       } else if (this.isBeginningOfIdentifier(currentChar)) {
         this.readIdentifier();
+      } else if (this.isCharWhitespace(currentChar)) {
+        this.currentCharIndex++;
       } else {
         throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
       }
@@ -134,7 +136,7 @@ class Lexer {
     while (this.currentCharIndex < this.text.length) {
       const currentChar = this.text.charAt(this.currentCharIndex);
 
-      if (this.isBeginningOfIdentifier(currentChar) || this.isBeginningOfNumber(currentChar, this.peekNextChar())) {
+      if (this.isBeginningOfIdentifier(currentChar) || this.isCharNumber(currentChar)) {
         result += currentChar;
       } else {
         break;
@@ -168,6 +170,11 @@ class Lexer {
 
   private isCharNumber(char: string): boolean {
     return '0' <= char && char <= '9';
+  }
+
+  private isCharWhitespace(char: string): boolean {
+    return char === ' ' || char === '\r' || char === '\t'
+      || char === '\n' || char === '\v' || char === '\u00A0';
   }
 
   private peekNextChar(): string {
