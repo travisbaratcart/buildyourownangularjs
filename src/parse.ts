@@ -74,6 +74,16 @@ class Lexer {
   }
 
   private readString(): void {
+    const ESCAPES: {[char: string]: string} = {
+      'n': '\n',
+      'f': '\f',
+      'r': '\r',
+      't': '\t',
+      'v': '\v',
+      '\'': '\'',
+      '"': '\"'
+    };
+
     let openingQuote = this.text[this.currentCharIndex];
 
     let result = '';
@@ -82,8 +92,17 @@ class Lexer {
 
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
+      if (currentChar === '\\') {
+        const escapeChar = ESCAPES[this.peekNextChar()]
 
-      if (currentChar === openingQuote) {
+        if (escapeChar) {
+          result += escapeChar;
+        } else {
+          result += this.peekNextChar();
+        }
+
+        this.currentCharIndex += 2;
+      } else if (currentChar === openingQuote) {
         this.currentCharIndex++;
         this.addToken(result, result);
         return;
@@ -155,6 +174,7 @@ class AST {
 
 class ASTCompiler {
   private state: any;
+  private stringEscapeRegex = /[^a-zA-Z0-9]/g
 
   constructor(
     private astBuilder: AST) {
@@ -187,10 +207,14 @@ class ASTCompiler {
 
   private escapeIfNecessary(value: any): any {
     if (typeof value === 'string') {
-      return `'${value}'`;
+      return `'${value.replace(this.stringEscapeRegex, this.stringEscapeFunc)}'`;
     } else {
       return value;
     }
+  }
+
+  private stringEscapeFunc(char: string): string {
+    return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
   }
 }
 

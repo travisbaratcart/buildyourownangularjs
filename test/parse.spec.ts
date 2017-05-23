@@ -61,4 +61,14 @@ describe('parse', () => {
   it('will not parse a string with mismatching quotes', () => {
     expect(() => parse(`"abc'`)).toThrow();
   });
+
+  it('can parse a string with single quotes inside', () => {
+    const result = parse("'a\\\'b'");
+    expect(result()).toBe('a\'b');
+  });
+
+  it('can parse a string with double quotes inside', () => {
+    const result = parse('"a\\\"b"');
+    expect(result()).toBe('a\"b');
+  });
 });
