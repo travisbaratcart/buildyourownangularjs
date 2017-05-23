@@ -71,4 +71,9 @@ describe('parse', () => {
     const result = parse('"a\\\"b"');
     expect(result()).toBe('a\"b');
   });
+
+  it('will parse a string with unicode escapes', () => {
+    const result = parse('"\\u00A0"');
+    expect(result()).toBe('\u00A0');
+  });
 });

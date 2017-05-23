@@ -93,15 +93,21 @@ class Lexer {
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
       if (currentChar === '\\') {
-        const escapeChar = ESCAPES[this.peekNextChar()]
+        const nextChar = this.peekNextChar();
 
-        if (escapeChar) {
+        const escapeChar = ESCAPES[nextChar];
+
+        if (nextChar === 'u') {
+          const hex = this.text.substring(this.currentCharIndex + 2, this.currentCharIndex + 6);
+          this.currentCharIndex += 6;
+          result += String.fromCharCode(parseInt(hex, 16));
+        } else if (escapeChar) {
           result += escapeChar;
+          this.currentCharIndex += 2;
         } else {
           result += this.peekNextChar();
+          this.currentCharIndex += 2;
         }
-
-        this.currentCharIndex += 2;
       } else if (currentChar === openingQuote) {
         this.currentCharIndex++;
         this.addToken(result, result);
