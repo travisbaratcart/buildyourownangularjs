@@ -99,6 +99,11 @@ class Lexer {
 
         if (nextChar === 'u') {
           const hex = this.text.substring(this.currentCharIndex + 2, this.currentCharIndex + 6);
+
+          if (!hex.match(/[\da-f]{4}/i)) {
+            throw 'Invalid unicode escape';
+          }
+
           this.currentCharIndex += 6;
           result += String.fromCharCode(parseInt(hex, 16));
         } else if (escapeChar) {

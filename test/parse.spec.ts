@@ -76,4 +76,8 @@ describe('parse', () => {
     const result = parse('"\\u00A0"');
     expect(result()).toBe('\u00A0');
   });
+
+  it('will not parse a string with invalid unicode escapes', () => {
+    expect(() => parse('"\\u00T0"')).toThrow();
+  });
 });
