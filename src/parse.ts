@@ -32,6 +32,8 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
+      } else if (this.isBeginningOfIdentifier(currentChar)) {
+        this.readIdentifier();
       } else {
         throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
       }
@@ -126,6 +128,24 @@ class Lexer {
     throw 'Unmatched quote';
   }
 
+  private readIdentifier(): void {
+    let result = '';
+
+    while (this.currentCharIndex < this.text.length) {
+      const currentChar = this.text.charAt(this.currentCharIndex);
+
+      if (this.isBeginningOfIdentifier(currentChar) || this.isBeginningOfNumber(currentChar, this.peekNextChar())) {
+        result += currentChar;
+      } else {
+        break;
+      }
+
+      this.currentCharIndex++;
+    }
+
+    this.addToken(result, eval(result));
+  }
+
   private addToken(text: string, value: any): void {
     let newToken: IToken = { text, value };
 
@@ -138,6 +158,12 @@ class Lexer {
 
   private isBeginningOfString(char: string): boolean {
     return char === '\'' || char === '"';
+  }
+
+  private isBeginningOfIdentifier(char: string): boolean {
+    return ('a' <= char && char <= 'z')
+      || ('A' <= char && char <= 'Z')
+      || char === '_' || char === '$';
   }
 
   private isCharNumber(char: string): boolean {
@@ -219,6 +245,8 @@ class ASTCompiler {
   private escapeIfNecessary(value: any): any {
     if (typeof value === 'string') {
       return `'${value.replace(this.stringEscapeRegex, this.stringEscapeFunc)}'`;
+    } else if (value === null) {
+      return 'null';
     } else {
       return value;
     }

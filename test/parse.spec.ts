@@ -80,4 +80,19 @@ describe('parse', () => {
   it('will not parse a string with invalid unicode escapes', () => {
     expect(() => parse('"\\u00T0"')).toThrow();
   });
+
+  it('will parse null', () => {
+    const result = parse('null');
+    expect(result()).toBe(null);
+  });
+
+  it('will parse true', () => {
+    const result = parse('true');
+    expect(result()).toBe(true);
+  });
+
+  it('will parse false', () => {
+    const result = parse('false');
+    expect(result()).toBe(false);
+  });
 });
