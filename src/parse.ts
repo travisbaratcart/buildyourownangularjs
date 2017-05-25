@@ -214,7 +214,7 @@ class AST {
     };
   }
 
-  private primary() {
+  private primary(): any {
     if (this.expect('[')) {
       return this.arrayDeclaration();
     } else {
@@ -229,13 +229,19 @@ class AST {
     };
   }
 
-  private arrayDeclaration() {
+  private arrayDeclaration(): any {
     const elements = [];
 
-    const nextToken = this.peekNextToken();
+    const startingToken = this.peekNextToken();
 
-    if (nextToken && nextToken.text !== ']') {
+    if (startingToken && startingToken.text !== ']') {
       do {
+        let nextToken = this.peekNextToken();
+
+        if (nextToken && nextToken.text === ']') {
+          break;
+        }
+
         elements.push(this.primary());
       } while (this.expect(','))
     }
@@ -302,7 +308,7 @@ class ASTCompiler {
       case ASTComponents.Literal:
         return this.escapeIfNecessary(ast.value);
       case ASTComponents.ArrayExpression:
-        const elements = ast.elements.map(element => {
+        const elements = ast.elements.map((element: any) => {
           return this.recurse(element);
         });
         return `[${elements.join(',')}]`;

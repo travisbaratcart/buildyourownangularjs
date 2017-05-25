@@ -110,4 +110,9 @@ describe('parse', () => {
     const result = parse('[1, "two", [3], true]');
     expect(result()).toEqual([1, 'two', [3], true]);
   });
+
+  it('will parse an array with trailing commas', () => {
+    const result = parse('[1, 2, 3, ]');
+    expect(result()).toEqual([1, 2, 3]);
+  });
 });
