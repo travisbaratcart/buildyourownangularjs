@@ -115,4 +115,9 @@ describe('parse', () => {
     const result = parse('[1, 2, 3, ]');
     expect(result()).toEqual([1, 2, 3]);
   });
+
+  it('will parse an empty object', () => {
+    const result = parse('{}');
+    expect(result()).toEqual({});
+  });
 });

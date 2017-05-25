@@ -7,7 +7,8 @@ enum ASTComponents {
   NotSpecified,
   Program,
   Literal,
-  ArrayExpression
+  ArrayExpression,
+  ObjectExpression
 };
 
 export function parse(expression: string): Function {
@@ -35,7 +36,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (currentChar === '[' || currentChar === ']' || currentChar === ',') {
+      } else if (this.is(currentChar, '[],{}:')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isBeginningOfIdentifier(currentChar)) {
@@ -183,6 +184,10 @@ class Lexer {
       || char === '\n' || char === '\v' || char === '\u00A0';
   }
 
+  private is(char: string, chars: string): boolean {
+    return chars.indexOf(char) > -1;
+  }
+
   private peekNextChar(): string {
     return this.currentCharIndex < this.text.length - 1
       ? this.text.charAt(this.currentCharIndex + 1)
@@ -217,6 +222,8 @@ class AST {
   private primary(): any {
     if (this.expect('[')) {
       return this.arrayDeclaration();
+    } else if (this.expect('{')) {
+      return this.object();
     } else {
       return this.constant();
     }
@@ -252,6 +259,12 @@ class AST {
       type: ASTComponents.ArrayExpression,
       elements: elements
     };
+  }
+
+  private object(): any {
+    this.consume('}');
+
+    return { type: ASTComponents.ObjectExpression };
   }
 
   private expect(char?: string): IToken {
@@ -312,6 +325,8 @@ class ASTCompiler {
           return this.recurse(element);
         });
         return `[${elements.join(',')}]`;
+      case ASTComponents.ObjectExpression:
+        return '{}';
       default:
         throw 'Invalid syntax component.'
     }
