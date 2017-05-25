@@ -105,4 +105,9 @@ describe('parse', () => {
     const result = parse('[]');
     expect(result()).toEqual([]);
   });
+
+  it('will parse a non-empty array', () => {
+    const result = parse('[1, "two", [3], true]');
+    expect(result()).toEqual([1, 'two', [3], true]);
+  });
 });

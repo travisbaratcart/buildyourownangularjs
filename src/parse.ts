@@ -25,7 +25,9 @@ class Lexer {
   public lex(text: string): IToken[] {
     this.text = text;
 
-    for (this.currentCharIndex = 0; this.currentCharIndex < this.text.length; this.currentCharIndex++) {
+    this.currentCharIndex = 0;
+
+    while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
       let nextChar = this.peekNextChar();
 
@@ -33,12 +35,13 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (currentChar === '[' || currentChar === ']') {
+      } else if (currentChar === '[' || currentChar === ']' || currentChar === ',') {
         this.addToken(currentChar);
+        this.currentCharIndex++;
       } else if (this.isBeginningOfIdentifier(currentChar)) {
         this.readIdentifier();
       } else if (this.isCharWhitespace(currentChar)) {
-        this.currentCharIndex++;
+        this.currentCharIndex++
       } else {
         throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
       }
@@ -222,33 +225,50 @@ class AST {
   private constant() {
     return {
       type: ASTComponents.Literal,
-      value: this.tokens[0].value
+      value: this.consume().value
     };
   }
 
   private arrayDeclaration() {
+    const elements = [];
+
+    const nextToken = this.peekNextToken();
+
+    if (nextToken && nextToken.text !== ']') {
+      do {
+        elements.push(this.primary());
+      } while (this.expect(','))
+    }
+
     this.consume(']');
 
     return {
-      type: ASTComponents.ArrayExpression
+      type: ASTComponents.ArrayExpression,
+      elements: elements
     };
   }
 
-  private expect(char: string): boolean {
-    if (this.tokens.length > 0) {
-      if (this.tokens[0].text === char || char === '') {
-        this.tokens.shift();
+  private expect(char?: string): IToken {
+    const nextToken = this.peekNextToken();
 
-        return true;
-      }
+    if (nextToken && (nextToken.text === char || !char)) {
+      return this.tokens.shift();
     }
-
-    return false;
   }
 
-  private consume(char: string) {
-    if (!this.expect(']')) {
+  private consume(char?: string): IToken {
+    const token = this.expect(char);
+
+    if (!token) {
       throw `Unexpected. Expecting: ${char}`;
+    }
+
+    return token;
+  }
+
+  private peekNextToken() {
+    if (this.tokens.length > 0) {
+      return this.tokens[0];
     }
   }
 }
@@ -282,7 +302,10 @@ class ASTCompiler {
       case ASTComponents.Literal:
         return this.escapeIfNecessary(ast.value);
       case ASTComponents.ArrayExpression:
-        return '[]';
+        const elements = ast.elements.map(element => {
+          return this.recurse(element);
+        });
+        return `[${elements.join(',')}]`;
       default:
         throw 'Invalid syntax component.'
     }
