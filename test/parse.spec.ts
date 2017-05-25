@@ -100,4 +100,9 @@ describe('parse', () => {
     const result = parse(' \n42 ');
     expect(result()).toBe(42);
   });
+
+  it('will parse an empty array', () => {
+    const result = parse('[]');
+    expect(result()).toEqual([]);
+  });
 });

@@ -1,12 +1,13 @@
 interface IToken {
   text: string;
-  value: any;
+  value?: any;
 }
 
 enum ASTComponents {
   NotSpecified,
   Program,
-  Literal
+  Literal,
+  ArrayExpression
 };
 
 export function parse(expression: string): Function {
@@ -32,6 +33,8 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
+      } else if (currentChar === '[' || currentChar === ']') {
+        this.addToken(currentChar);
       } else if (this.isBeginningOfIdentifier(currentChar)) {
         this.readIdentifier();
       } else if (this.isCharWhitespace(currentChar)) {
@@ -148,7 +151,7 @@ class Lexer {
     this.addToken(result, eval(result));
   }
 
-  private addToken(text: string, value: any): void {
+  private addToken(text: string, value?: any): void {
     let newToken: IToken = { text, value };
 
     this.tokens.push(newToken);
@@ -204,8 +207,16 @@ class AST {
   private program() {
     return {
       type: ASTComponents.Program,
-      body: this.constant()
+      body: this.primary()
     };
+  }
+
+  private primary() {
+    if (this.expect('[')) {
+      return this.arrayDeclaration();
+    } else {
+      return this.constant();
+    }
   }
 
   private constant() {
@@ -213,6 +224,32 @@ class AST {
       type: ASTComponents.Literal,
       value: this.tokens[0].value
     };
+  }
+
+  private arrayDeclaration() {
+    this.consume(']');
+
+    return {
+      type: ASTComponents.ArrayExpression
+    };
+  }
+
+  private expect(char: string): boolean {
+    if (this.tokens.length > 0) {
+      if (this.tokens[0].text === char || char === '') {
+        this.tokens.shift();
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private consume(char: string) {
+    if (!this.expect(']')) {
+      throw `Unexpected. Expecting: ${char}`;
+    }
   }
 }
 
@@ -244,6 +281,8 @@ class ASTCompiler {
         break;
       case ASTComponents.Literal:
         return this.escapeIfNecessary(ast.value);
+      case ASTComponents.ArrayExpression:
+        return '[]';
       default:
         throw 'Invalid syntax component.'
     }
