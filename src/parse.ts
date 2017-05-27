@@ -339,6 +339,8 @@ class ASTCompiler {
   private state: any;
   private stringEscapeRegex = /[^a-zA-Z0-9]/g
 
+  private nextId = 0;
+
   constructor(
     private astBuilder: AST) {
 
@@ -348,12 +350,19 @@ class ASTCompiler {
     let ast = this.astBuilder.ast(text);
 
     this.state = {
-      body: []
+      body: [],
+      vars: []
     };
 
     this.recurse(ast);
 
-    return new Function('scope', this.state.body.join(''));
+    const varsDeclaration = this.state.vars.length
+      ? `var ${this.state.vars.join(',')};`
+      : '';
+
+    const functionBody = varsDeclaration + this.state.body.join('');
+
+    return new Function('scope', functionBody);
   }
 
   private recurse(ast: any): any {
@@ -403,19 +412,27 @@ class ASTCompiler {
   }
 
   private lookupOnScope(scope: string, identifier: string): string {
-    this.state.body.push('var v0;');
+    const scopeAttributeId = this.getNextScopeAttributeId();
 
-    this.if_('scope', `v0 = (${scope}).${identifier};`)
+    this.if_('scope', `${scopeAttributeId} = (${scope}).${identifier};`)
 
-    return 'v0';
+    return scopeAttributeId;
   }
 
   private isReservedIdentifier(identifier: string) {
     return ['true', 'false', 'null'].indexOf(identifier) > -1;
   }
 
-  if_(test: string, consequence: string): void {
+  private if_(test: string, consequence: string): void {
     this.state.body.push(`if(${test}) { ${consequence} } `);
+  }
+
+  private getNextScopeAttributeId(): string {
+    const nextId = `v${this.nextId++}`;
+
+    this.state.vars.push(nextId);
+
+    return nextId;
   }
 }
 
