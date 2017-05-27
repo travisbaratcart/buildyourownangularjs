@@ -1,6 +1,7 @@
 interface IToken {
   text: string;
   value?: any;
+  isIdentifier: boolean
 }
 
 enum ASTComponents {
@@ -9,7 +10,8 @@ enum ASTComponents {
   Literal,
   ArrayExpression,
   ObjectExpression,
-  ObjectProperty
+  ObjectProperty,
+  Identifier
 };
 
 export function parse(expression: string): Function {
@@ -40,7 +42,7 @@ class Lexer {
       } else if (this.is(currentChar, '[],{}:')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
-      } else if (this.isBeginningOfIdentifier(currentChar)) {
+      } else if (this.isIdentifierComponent(currentChar)) {
         this.readIdentifier();
       } else if (this.isCharWhitespace(currentChar)) {
         this.currentCharIndex++
@@ -82,7 +84,7 @@ class Lexer {
       this.currentCharIndex++;
     }
 
-    this.addToken(numberText, Number(numberText));
+    this.addToken(numberText, Number(numberText), true);
   }
 
   private readString(): void {
@@ -144,7 +146,7 @@ class Lexer {
     while (this.currentCharIndex < this.text.length) {
       const currentChar = this.text.charAt(this.currentCharIndex);
 
-      if (this.isBeginningOfIdentifier(currentChar) || this.isCharNumber(currentChar)) {
+      if (this.isIdentifierComponent(currentChar) || this.isCharNumber(currentChar)) {
         result += currentChar;
       } else {
         break;
@@ -153,11 +155,11 @@ class Lexer {
       this.currentCharIndex++;
     }
 
-    this.addToken(result, eval(result));
+    this.addToken(result, null, true);
   }
 
-  private addToken(text: string, value?: any): void {
-    let newToken: IToken = { text, value };
+  private addToken(text: string, value?: any, isIdentifier = false): void {
+    let newToken: IToken = { text, value, isIdentifier };
 
     this.tokens.push(newToken);
   }
@@ -170,7 +172,7 @@ class Lexer {
     return char === '\'' || char === '"';
   }
 
-  private isBeginningOfIdentifier(char: string): boolean {
+  private isIdentifierComponent(char: string): boolean {
     return ('a' <= char && char <= 'z')
       || ('A' <= char && char <= 'Z')
       || char === '_' || char === '$';
@@ -231,9 +233,13 @@ class AST {
   }
 
   private constant() {
+    const nextToken = this.peekNextToken();
+
     return {
       type: ASTComponents.Literal,
-      value: this.consume().value
+      value: nextToken.isIdentifier
+        ? eval(this.consume().text)
+        : this.consume().value
     };
   }
 
@@ -265,13 +271,17 @@ class AST {
   private object(): any {
     const properties: any[] = [];
 
-    const nextToken = this.peekNextToken();
+    const firstToken = this.peekNextToken();
 
-    if (nextToken.text !== '}') {
+    if (firstToken.text !== '}') {
       do {
+        const nextToken = this.peekNextToken();
+
         const property: any = {
           type: ASTComponents.ObjectProperty,
-          key: this.constant()
+          key: nextToken.isIdentifier
+            ? this.identifier()
+            : this.constant()
         };
 
         this.consume(':');
@@ -286,6 +296,13 @@ class AST {
     return {
       type: ASTComponents.ObjectExpression,
       properties: properties
+    };
+  }
+
+  private identifier(): any {
+    return {
+      type: ASTComponents.Identifier,
+      name: this.consume().text
     };
   }
 
@@ -349,7 +366,10 @@ class ASTCompiler {
         return `[${elements.join(',')}]`;
       case ASTComponents.ObjectExpression:
         const properties = ast.properties.map((property: any) => {
-          const key = this.escapeIfNecessary(property.key.value);
+          const key = property.key.type === ASTComponents.Identifier
+            ? property.key.name
+            : this.escapeIfNecessary(property.key.value);
+
           const value = this.recurse(property.value);
 
           return `${key}: ${value}`;
