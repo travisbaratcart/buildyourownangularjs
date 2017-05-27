@@ -137,4 +137,9 @@ describe('parse', () => {
     expect(result({ aKey: 42 })).toBe(42);
     expect(result({})).toBeUndefined();
   });
+
+  it('returns undefined when looking up attributes from undefined', () => {
+    const result = parse('aKey');
+    expect(result()).toBeUndefined();
+  });
 });

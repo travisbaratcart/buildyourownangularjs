@@ -382,7 +382,7 @@ class ASTCompiler {
       case ASTComponents.Identifier:
         return this.isReservedIdentifier(ast.name)
           ? ast.name
-          : this.nonComputedMember('scope', ast.name);
+          : this.lookupOnScope('scope', ast.name);
       default:
         throw 'Invalid syntax component.'
     }
@@ -402,12 +402,20 @@ class ASTCompiler {
     return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
   }
 
-  private nonComputedMember(left: string, right: string) {
-    return `(${left}).${right}`;
+  private lookupOnScope(scope: string, identifier: string): string {
+    this.state.body.push('var v0;');
+
+    this.if_('scope', `v0 = (${scope}).${identifier};`)
+
+    return 'v0';
   }
 
   private isReservedIdentifier(identifier: string) {
     return ['true', 'false', 'null'].indexOf(identifier) > -1;
+  }
+
+  if_(test: string, consequence: string): void {
+    this.state.body.push(`if(${test}) { ${consequence} } `);
   }
 }
 
