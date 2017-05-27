@@ -142,4 +142,12 @@ describe('parse', () => {
     const result = parse('aKey');
     expect(result()).toBeUndefined();
   });
+
+  it('will parse this', () => {
+    const result = parse('this');
+    const scope = {};
+
+    expect(result(scope)).toBe(scope);
+    expect(result()).toBeUndefined();
+  });
 });

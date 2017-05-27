@@ -11,7 +11,8 @@ enum ASTComponents {
   ArrayExpression,
   ObjectExpression,
   ObjectProperty,
-  Identifier
+  Identifier,
+  ThisExpression
 };
 
 export function parse(expression: string): Function {
@@ -389,9 +390,7 @@ class ASTCompiler {
         });
         return `{ ${properties.join(',')} }`;
       case ASTComponents.Identifier:
-        return this.isReservedIdentifier(ast.name)
-          ? ast.name
-          : this.lookupOnScope('scope', ast.name);
+        return this.getIdentifier(ast.name);
       default:
         throw 'Invalid syntax component.'
     }
@@ -409,6 +408,16 @@ class ASTCompiler {
 
   private stringEscapeFunc(char: string): string {
     return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
+  }
+
+  private getIdentifier(rawIdentifier: string): string {
+    if (rawIdentifier === 'this') {
+      return 'scope';
+    } else if (this.isReservedIdentifier(rawIdentifier)) {
+      return rawIdentifier;
+    } else {
+      return this.lookupOnScope('scope', rawIdentifier);
+    }
   }
 
   private lookupOnScope(scope: string, identifier: string): string {
