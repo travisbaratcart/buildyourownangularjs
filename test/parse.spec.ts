@@ -130,4 +130,11 @@ describe('parse', () => {
     const result = parse('{ a: 1, b: [2, 3], c: { d: 4} }');
     expect(result()).toEqual({ a: 1, b: [2, 3], c: { d: 4} });
   });
+
+  it('looks up an attribute from the scope', () => {
+    const result = parse('aKey');
+
+    expect(result({ aKey: 42 })).toBe(42);
+    expect(result({})).toBeUndefined();
+  });
 });

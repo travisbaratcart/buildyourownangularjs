@@ -84,7 +84,7 @@ class Lexer {
       this.currentCharIndex++;
     }
 
-    this.addToken(numberText, Number(numberText), true);
+    this.addToken(numberText, Number(numberText), false);
   }
 
   private readString(): void {
@@ -223,10 +223,14 @@ class AST {
   }
 
   private primary(): any {
+    const nextToken = this.peekNextToken();
+
     if (this.expect('[')) {
       return this.arrayDeclaration();
     } else if (this.expect('{')) {
       return this.object();
+    } else if (nextToken.isIdentifier) {
+      return this.identifier();
     } else {
       return this.constant();
     }
@@ -349,7 +353,7 @@ class ASTCompiler {
 
     this.recurse(ast);
 
-    return new Function(this.state.body.join(''));
+    return new Function('scope', this.state.body.join(''));
   }
 
   private recurse(ast: any): any {
@@ -375,6 +379,10 @@ class ASTCompiler {
           return `${key}: ${value}`;
         });
         return `{ ${properties.join(',')} }`;
+      case ASTComponents.Identifier:
+        return this.isReservedIdentifier(ast.name)
+          ? ast.name
+          : this.nonComputedMember('scope', ast.name);
       default:
         throw 'Invalid syntax component.'
     }
@@ -392,6 +400,14 @@ class ASTCompiler {
 
   private stringEscapeFunc(char: string): string {
     return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
+  }
+
+  private nonComputedMember(left: string, right: string) {
+    return `(${left}).${right}`;
+  }
+
+  private isReservedIdentifier(identifier: string) {
+    return ['true', 'false', 'null'].indexOf(identifier) > -1;
   }
 }
 
