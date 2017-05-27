@@ -120,4 +120,9 @@ describe('parse', () => {
     const result = parse('{}');
     expect(result()).toEqual({});
   });
+
+  it('will parse a nonempty object', () => {
+    const result = parse('{ "a key": 1, \'another-key\': 2 }');
+    expect(result()).toEqual({ 'a key': 1, 'another-key': 2 });
+  });
 });

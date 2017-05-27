@@ -8,7 +8,8 @@ enum ASTComponents {
   Program,
   Literal,
   ArrayExpression,
-  ObjectExpression
+  ObjectExpression,
+  ObjectProperty
 };
 
 export function parse(expression: string): Function {
@@ -262,9 +263,30 @@ class AST {
   }
 
   private object(): any {
-    this.consume('}');
+    const properties: any[] = [];
 
-    return { type: ASTComponents.ObjectExpression };
+    const nextToken = this.peekNextToken();
+
+    if (nextToken.text !== '}') {
+      do {
+        const property: any = {
+          type: ASTComponents.ObjectProperty,
+          key: this.constant()
+        };
+
+        this.consume(':');
+
+        property.value = this.primary();
+
+        properties.push(property);
+      } while(this.expect(','))
+    }
+
+    this.consume('}');
+    return {
+      type: ASTComponents.ObjectExpression,
+      properties: properties
+    };
   }
 
   private expect(char?: string): IToken {
@@ -326,7 +348,13 @@ class ASTCompiler {
         });
         return `[${elements.join(',')}]`;
       case ASTComponents.ObjectExpression:
-        return '{}';
+        const properties = ast.properties.map((property: any) => {
+          const key = this.escapeIfNecessary(property.key.value);
+          const value = this.recurse(property.value);
+
+          return `${key}: ${value}`;
+        });
+        return `{ ${properties.join(',')} }`;
       default:
         throw 'Invalid syntax component.'
     }
