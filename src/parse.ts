@@ -376,7 +376,7 @@ class ASTCompiler {
 
     const functionBody = varsDeclaration + this.state.body.join('');
 
-    return new Function('scope', functionBody);
+    return new Function('scope', 'locals', functionBody);
   }
 
   private recurse(ast: any): any {
@@ -434,7 +434,12 @@ class ASTCompiler {
     } else if (this.isReservedIdentifier(rawIdentifier)) {
       return rawIdentifier;
     } else {
-      return this.lookupOnObject('scope', rawIdentifier);
+      const nextId = this.getNextDistinctVariableName();
+
+      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupOnObject('locals', rawIdentifier)));
+      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupOnObject('scope', rawIdentifier)));
+
+      return nextId;
     }
   }
 
@@ -456,6 +461,14 @@ class ASTCompiler {
 
   private assign(id: string, value: string): string {
     return `${id} = ${value};`;
+  }
+
+  private not(obj: string) {
+    return `!(${obj})`;
+  }
+
+  private getHasOwnProperty(obj: string, property: string): string {
+    return `${obj} && (${this.escapeIfNecessary(property)} in ${obj})`;
   }
 
   private getNextDistinctVariableName(): string {

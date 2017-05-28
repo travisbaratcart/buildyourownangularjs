@@ -175,4 +175,25 @@ describe('parse', () => {
     expect(result({})).toBeUndefined()
     expect(result()).toBeUndefined()
   });
+
+  it('uses locals instead of scope when there is a matching key', () => {
+    const result = parse('aKey');
+    const scope = { aKey: 42 };
+    const locals = { aKey: 43 };
+    expect(result(scope, locals)).toBe(43);
+  });
+
+  it('does not use locals instead of scope when there is no matching key', () => {
+    const result = parse('aKey');
+    const scope = { aKey: 42 };
+    const locals = { otherKey: 43 };
+    expect(result(scope, locals)).toBe(42);
+  });
+
+  it('uses locals instead of scope when the first part matches', () => {
+    const result = parse('aKey.anotherKey');
+    const scope = { aKey: { anotherKey: 42} };
+    const locals = { aKey: {} };
+    expect(result(scope, locals)).toBeUndefined();
+  });
 });
