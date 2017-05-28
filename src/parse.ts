@@ -13,7 +13,8 @@ enum ASTComponents {
   ObjectProperty,
   Identifier,
   ThisExpression,
-  MemberExpression
+  MemberExpression,
+  CallExpression
 };
 
 export function parse(expression: string): Function {
@@ -41,7 +42,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:.')) {
+      } else if (this.is(currentChar, '[],{}:.()')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -237,22 +238,29 @@ class AST {
       primary = this.constant();
     }
 
-    let nextPropertyBeginning: IToken;
-    while (nextPropertyBeginning = this.expect('.', '[')) {
-      if (nextPropertyBeginning.text === '[') {
+    let nextToken: IToken;
+    while (nextToken = this.expect('.', '[', '(')) {
+      if (nextToken.text === '[') {
         primary = {
           type: ASTComponents.MemberExpression,
           object: primary,
           property: this.primary(),
           isComputed: true
         }
-      } else {
+      } else if (nextToken.text === '.') {
         primary = {
           type: ASTComponents.MemberExpression,
           object: primary,
           property: this.identifier(),
           isComputed: false
         }
+      } else if (nextToken.text === '(') {
+        primary = {
+          type: ASTComponents.CallExpression,
+          callee: primary
+        };
+
+        this.consume(')');
       }
     }
 
@@ -419,6 +427,9 @@ class ASTCompiler {
         return this.getIdentifier(ast.name);
       case ASTComponents.MemberExpression:
         return this.getMemberExpression(ast);
+      case ASTComponents.CallExpression:
+        const callee = this.recurse(ast.callee);
+        return `${callee} && ${callee}()`;
       default:
         throw 'Invalid syntax component.'
     }

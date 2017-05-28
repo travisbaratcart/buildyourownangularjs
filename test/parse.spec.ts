@@ -216,4 +216,9 @@ describe('parse', () => {
     const result = parse('lock[keys["aKey"]]');
     expect(result({ keys: { aKey: 'theKey' }, lock: { theKey: 42 } })).toBe(42);
   });
+
+  it('parses a function call', () => {
+    const result = parse('aFunction()');
+    expect(result({ aFunction: () => 42 })).toBe(42);
+  });
 });
