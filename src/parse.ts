@@ -225,25 +225,34 @@ class AST {
   }
 
   private primary(): any {
-    const nextToken = this.peekNextToken();
-
     let primary: any;
 
     if (this.expect('[')) {
       primary = this.arrayDeclaration();
     } else if (this.expect('{')) {
       primary = this.object();
-    } else if (nextToken.isIdentifier) {
+    } else if (this.peekNextToken().isIdentifier) {
       primary = this.identifier();
     } else {
       primary = this.constant();
     }
 
-    while (this.expect('.')) {
-      primary = {
-        type: ASTComponents.MemberExpression,
-        object: primary,
-        property: this.identifier()
+    let nextPropertyBeginning: IToken;
+    while (nextPropertyBeginning = this.expect('.', '[')) {
+      if (nextPropertyBeginning.text === '[') {
+        primary = {
+          type: ASTComponents.MemberExpression,
+          object: primary,
+          property: this.primary(),
+          isComputed: true
+        }
+      } else {
+        primary = {
+          type: ASTComponents.MemberExpression,
+          object: primary,
+          property: this.identifier(),
+          isComputed: false
+        }
       }
     }
 
@@ -251,11 +260,9 @@ class AST {
   }
 
   private constant() {
-    const nextToken = this.peekNextToken();
-
     return {
       type: ASTComponents.Literal,
-      value: nextToken.isIdentifier
+      value: this.peekNextToken().isIdentifier
         ? eval(this.consume().text)
         : this.consume().value
     };
@@ -264,13 +271,9 @@ class AST {
   private arrayDeclaration(): any {
     const elements = [];
 
-    const startingToken = this.peekNextToken();
-
-    if (startingToken && startingToken.text !== ']') {
+    if (this.peekNextToken() && this.peekNextToken().text !== ']') {
       do {
-        let nextToken = this.peekNextToken();
-
-        if (nextToken && nextToken.text === ']') {
+        if (this.peekNextToken(']')) {
           break;
         }
 
@@ -289,15 +292,11 @@ class AST {
   private object(): any {
     const properties: any[] = [];
 
-    const firstToken = this.peekNextToken();
-
-    if (firstToken.text !== '}') {
+    if (this.peekNextToken().text !== '}') {
       do {
-        const nextToken = this.peekNextToken();
-
         const property: any = {
           type: ASTComponents.ObjectProperty,
-          key: nextToken.isIdentifier
+          key: this.peekNextToken().isIdentifier
             ? this.identifier()
             : this.constant()
         };
@@ -324,16 +323,22 @@ class AST {
     };
   }
 
-  private expect(char?: string): IToken {
-    const nextToken = this.peekNextToken();
+  private expect1(char?: string): IToken {
+    if (!char || this.peekNextToken(char)) {
+      return this.tokens.shift();
+    }
+  }
 
-    if (nextToken && (nextToken.text === char || !char)) {
+  private expect(...chars: string[]): IToken {
+    if (!chars || chars.length === 0 || this.peekNextToken(...chars)) {
       return this.tokens.shift();
     }
   }
 
   private consume(char?: string): IToken {
-    const token = this.expect(char);
+    const token = char
+      ? this.expect(char)
+      : this.expect();
 
     if (!token) {
       throw `Unexpected. Expecting: ${char}`;
@@ -342,9 +347,17 @@ class AST {
     return token;
   }
 
-  private peekNextToken() {
+  private peekNextToken(...limitChars: string[]) {
     if (this.tokens.length > 0) {
-      return this.tokens[0];
+      const nextToken = this.tokens[0];
+
+      if (limitChars && limitChars.length > 0) {
+        return limitChars.filter(arg => arg === nextToken.text).length > 0
+        ? nextToken
+        : null;
+      } else {
+        return this.tokens[0];
+      }
     }
   }
 }
@@ -405,10 +418,7 @@ class ASTCompiler {
       case ASTComponents.Identifier:
         return this.getIdentifier(ast.name);
       case ASTComponents.MemberExpression:
-        const nextVariableName = this.getNextDistinctVariableName();
-        const left = this.recurse(ast.object);
-        this.if_(left, this.assign(nextVariableName, this.lookupOnObject(left, ast.property.name)));
-        return nextVariableName;
+        return this.getMemberExpression(ast);
       default:
         throw 'Invalid syntax component.'
     }
@@ -436,19 +446,38 @@ class ASTCompiler {
     } else {
       const nextId = this.getNextDistinctVariableName();
 
-      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupOnObject('locals', rawIdentifier)));
-      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupOnObject('scope', rawIdentifier)));
+      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupPropertyOnObject('locals', rawIdentifier)));
+      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupPropertyOnObject('scope', rawIdentifier)));
 
       return nextId;
     }
   }
 
-  private lookupOnObject(scope: string, identifier: string): string {
+  private getMemberExpression(ast: any): string {
+    const nextVariableName = this.getNextDistinctVariableName();
+    const left = this.recurse(ast.object);
+
+    if (ast.isComputed) {
+      const right = this.recurse(ast.property);
+
+      this.if_(left, this.assign(nextVariableName, this.lookupComputedPropertyOnObject(left, right)));
+    } else {
+      this.if_(left, this.assign(nextVariableName, this.lookupPropertyOnObject(left, ast.property.name)));
+    }
+
+    return nextVariableName;
+  }
+
+  private lookupPropertyOnObject(obj: string, property: string): string {
     const scopeAttributeId = this.getNextDistinctVariableName();
 
-    this.if_(scope, this.assign(scopeAttributeId, `${scope}.${identifier}`));
+    this.if_(obj, this.assign(scopeAttributeId, `${obj}.${property}`));
 
     return scopeAttributeId;
+  }
+
+  private lookupComputedPropertyOnObject(obj: string, property: string): string {
+    return `(${obj})[${property}]`;
   }
 
   private isReservedIdentifier(identifier: string) {
