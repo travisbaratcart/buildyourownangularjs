@@ -248,4 +248,33 @@ describe('parse', () => {
       aFunction: (a1: number, a2: number, a3: number) => a1 + a2 + a3
     })).toBe(42);
   });
+
+  it('calls methods accessed as computed properties', () => {
+    const scope = {
+      anObject: {
+        aMember: 42,
+        aFunction: function() {
+          console.log('this: ', this);
+          return this.aMember;
+        }
+      }
+    };
+
+    const result = parse('anObject["aFunction"]()');
+    expect(result(scope)).toBe(42);
+  });
+
+  it('calls methods accessed as non-computed properties', () => {
+    const scope = {
+      anObject: {
+        aMember: 42,
+        aFunction: function() {
+          return this.aMember;
+        }
+      }
+    };
+
+    const result = parse('anObject.aFunction()');
+    expect(result(scope)).toBe(42);
+  });
 });
