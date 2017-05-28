@@ -239,7 +239,7 @@ class AST {
       primary = this.constant();
     }
 
-    if (this.expect('.')) {
+    while (this.expect('.')) {
       primary = {
         type: ASTComponents.MemberExpression,
         object: primary,

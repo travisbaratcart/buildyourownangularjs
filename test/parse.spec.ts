@@ -164,4 +164,15 @@ describe('parse', () => {
     const result = parse('{ aKey: 42 }.aKey');
     expect(result()).toBe(42);
   });
+
+  it('looks up a 4-part identifier path from the scope', () => {
+    const result = parse('aKey.secondKey.thirdKey.fourthKey');
+
+    expect(result({ aKey: { secondKey: { thirdKey: { fourthKey: 42 } } } })).toBe(42);
+    expect(result({ aKey: { secondKey: { thirdKey: {} } } })).toBeUndefined()
+    expect(result({ aKey: { secondKey: {} } })).toBeUndefined()
+    expect(result({ aKey: {} })).toBeUndefined()
+    expect(result({})).toBeUndefined()
+    expect(result()).toBeUndefined()
+  });
 });
