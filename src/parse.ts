@@ -257,7 +257,8 @@ class AST {
       } else if (nextToken.text === '(') {
         primary = {
           type: ASTComponents.CallExpression,
-          callee: primary
+          callee: primary,
+          arguments: this.arguments()
         };
 
         this.consume(')');
@@ -329,6 +330,18 @@ class AST {
       type: ASTComponents.Identifier,
       name: this.consume().text
     };
+  }
+
+  private arguments(): any[] {
+    const args: any[] = [];
+
+    if (!this.peekNextToken(')')) {
+      do {
+        args.push(this.primary());
+      } while (this.expect(','));
+    }
+
+    return args;
   }
 
   private expect1(char?: string): IToken {
@@ -429,7 +442,10 @@ class ASTCompiler {
         return this.getMemberExpression(ast);
       case ASTComponents.CallExpression:
         const callee = this.recurse(ast.callee);
-        return `${callee} && ${callee}()`;
+
+        const args = ast.arguments.map((arg: any) => this.recurse(arg));
+
+        return `${callee} && ${callee}(${args.join(',')})`;
       default:
         throw 'Invalid syntax component.'
     }

@@ -221,4 +221,31 @@ describe('parse', () => {
     const result = parse('aFunction()');
     expect(result({ aFunction: () => 42 })).toBe(42);
   });
+
+  it('parses a function call with a single number argument', () => {
+    const result = parse('aFunction(42)');
+    expect(result({ aFunction: (n: number) => n})).toBe(42);
+  });
+
+  it('parses a function call with a single identifier argument', () => {
+    const result = parse('aFunction(n)');
+    expect(result({ n: 42, aFunction: (arg: any) => arg})).toBe(42);
+  });
+
+  it('parses a function call with a single function call argument', () => {
+    const result = parse('aFunction(argFunction())');
+    expect(result({
+      argFunction: () => 42,
+      aFunction: (arg: any) => arg
+    })).toBe(42);
+  });
+
+  it('parses a function call with multiple arguments', () => {
+    const result = parse('aFunction(37, n, argFunction()))');
+    expect(result({
+      n: 3,
+      argFunction: () => 2,
+      aFunction: (a1: number, a2: number, a3: number) => a1 + a2 + a3
+    })).toBe(42);
+  });
 });
