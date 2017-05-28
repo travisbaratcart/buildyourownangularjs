@@ -150,4 +150,18 @@ describe('parse', () => {
     expect(result(scope)).toBe(scope);
     expect(result()).toBeUndefined();
   });
+
+  it('looks up a 2-part identifier path from the scope', () => {
+    const result = parse('aKey.anotherKey');
+
+    expect(result({ aKey: { anotherKey: 42 } })).toBe(42);
+    expect(result({ aKey: {} })).toBeUndefined();
+    expect(result({})).toBeUndefined();
+    expect(result()).toBeUndefined();
+  });
+
+  it('looks up a member from an object', () => {
+    const result = parse('{ aKey: 42 }.aKey');
+    expect(result()).toBe(42);
+  });
 });

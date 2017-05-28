@@ -12,7 +12,8 @@ enum ASTComponents {
   ObjectExpression,
   ObjectProperty,
   Identifier,
-  ThisExpression
+  ThisExpression,
+  MemberExpression
 };
 
 export function parse(expression: string): Function {
@@ -40,7 +41,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:')) {
+      } else if (this.is(currentChar, '[],{}:.')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -226,15 +227,27 @@ class AST {
   private primary(): any {
     const nextToken = this.peekNextToken();
 
+    let primary: any;
+
     if (this.expect('[')) {
-      return this.arrayDeclaration();
+      primary = this.arrayDeclaration();
     } else if (this.expect('{')) {
-      return this.object();
+      primary = this.object();
     } else if (nextToken.isIdentifier) {
-      return this.identifier();
+      primary = this.identifier();
     } else {
-      return this.constant();
+      primary = this.constant();
     }
+
+    if (this.expect('.')) {
+      primary = {
+        type: ASTComponents.MemberExpression,
+        object: primary,
+        property: this.identifier()
+      }
+    }
+
+    return primary;
   }
 
   private constant() {
@@ -391,6 +404,11 @@ class ASTCompiler {
         return `{ ${properties.join(',')} }`;
       case ASTComponents.Identifier:
         return this.getIdentifier(ast.name);
+      case ASTComponents.MemberExpression:
+        const nextVariableName = this.getNextDistinctVariableName();
+        const left = this.recurse(ast.object);
+        this.if_(left, this.assign(nextVariableName, this.lookupOnObject(left, ast.property.name)));
+        return nextVariableName;
       default:
         throw 'Invalid syntax component.'
     }
@@ -416,14 +434,14 @@ class ASTCompiler {
     } else if (this.isReservedIdentifier(rawIdentifier)) {
       return rawIdentifier;
     } else {
-      return this.lookupOnScope('scope', rawIdentifier);
+      return this.lookupOnObject('scope', rawIdentifier);
     }
   }
 
-  private lookupOnScope(scope: string, identifier: string): string {
-    const scopeAttributeId = this.getNextScopeAttributeId();
+  private lookupOnObject(scope: string, identifier: string): string {
+    const scopeAttributeId = this.getNextDistinctVariableName();
 
-    this.if_('scope', `${scopeAttributeId} = (${scope}).${identifier};`)
+    this.if_(scope, this.assign(scopeAttributeId, `${scope}.${identifier}`));
 
     return scopeAttributeId;
   }
@@ -436,7 +454,11 @@ class ASTCompiler {
     this.state.body.push(`if(${test}) { ${consequence} } `);
   }
 
-  private getNextScopeAttributeId(): string {
+  private assign(id: string, value: string): string {
+    return `${id} = ${value};`;
+  }
+
+  private getNextDistinctVariableName(): string {
     const nextId = `v${this.nextId++}`;
 
     this.state.vars.push(nextId);
