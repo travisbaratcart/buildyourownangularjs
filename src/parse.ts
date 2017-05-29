@@ -67,7 +67,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:.()?')) {
+      } else if (this.is(currentChar, '[],{}:.()?;')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -266,9 +266,16 @@ class AST {
   }
 
   private program() {
+    const body: any[] = [];
+    do {
+      if (this.tokens.length) {
+        body.push(this.assignment());
+      }
+    } while (this.expect(';'));
+
     return {
       type: ASTComponents.Program,
-      body: this.assignment()
+      body
     };
   }
 
@@ -635,7 +642,13 @@ class ASTCompiler {
   private recurse(ast: any, context?: any, safeTraverse?: boolean): any {
     switch (ast.type) {
       case ASTComponents.Program:
-        this.state.body.push('return ', this.recurse(ast.body), ';');
+        const lastStatement = ast.body.pop();
+
+        ast.body.forEach((statement: any) => {
+          this.state.body.push(this.recurse(statement) + ';');
+        });
+
+        this.state.body.push('return ', this.recurse(lastStatement), ';');
         break;
       case ASTComponents.Literal:
         return this.escapeIfNecessary(ast.value);

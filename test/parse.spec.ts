@@ -654,4 +654,17 @@ describe('parse', () => {
     expect(parse('false && (true || true)')()).toBe(false);
     expect(parse('-((a % 2) === 0 ? 1 : 2)')({ a: 42 })).toBe(-1);
   });
+
+  it('parses several statements', () => {
+    const result = parse('a = 1; b = 2; c = 3');
+    const scope = {};
+
+    result(scope);
+
+    expect(scope).toEqual({ a: 1, b: 2, c: 3 });
+  });
+
+  it('returns the value of the last statement', () => {
+    expect(parse('a = 1; b = 2; a + b')({})).toBe(3);
+  });
 });
