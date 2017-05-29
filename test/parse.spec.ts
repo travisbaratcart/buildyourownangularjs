@@ -475,4 +475,9 @@ describe('parse', () => {
 
     expect(() => result({ fun: function() {}, obj: {} })).toThrow();
   });
+
+  it('parses a nuary +', () => {
+    expect(parse('+42')()).toBe(42);
+    expect(parse('+a')({ a: 42 })).toBe(42);
+  });
 });

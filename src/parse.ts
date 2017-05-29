@@ -15,7 +15,8 @@ enum ASTComponents {
   ThisExpression,
   MemberExpression,
   CallExpression,
-  AssignmentExpression
+  AssignmentExpression,
+  UnaryExpression
 };
 
 export function parse(expression: string): Function {
@@ -30,14 +31,18 @@ class Lexer {
   private currentCharIndex: number;
   private tokens: IToken[] = [];
 
+  private OPERATORS: {[operator: string]: boolean} = {
+    '+': true
+  };
+
   public lex(text: string): IToken[] {
     this.text = text;
 
     this.currentCharIndex = 0;
 
     while (this.currentCharIndex < this.text.length) {
-      let currentChar = this.text[this.currentCharIndex];
-      let nextChar = this.peekNextChar();
+      const currentChar = this.text[this.currentCharIndex];
+      const nextChar = this.peekNextChar();
 
       if (this.isBeginningOfNumber(currentChar, nextChar)) {
         this.readNumber();
@@ -51,7 +56,14 @@ class Lexer {
       } else if (this.isCharWhitespace(currentChar)) {
         this.currentCharIndex++
       } else {
-        throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
+        const operator = this.OPERATORS[currentChar];
+
+        if (operator) {
+          this.addToken(currentChar);
+          this.currentCharIndex++
+        } else {
+          throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
+        }
       }
     }
 
@@ -272,10 +284,10 @@ class AST {
   }
 
   private assignment(): any {
-    const left = this.primary();
+    const left = this.unary();
 
     if (this.expect('=')) {
-      const right = this.primary();
+      const right = this.unary();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -360,6 +372,18 @@ class AST {
     }
 
     return args;
+  }
+
+  private unary(): any {
+    if (this.expect('+')) {
+      return {
+        type: ASTComponents.UnaryExpression,
+        operator: '+',
+        argument: this.primary()
+      };
+    } else {
+      return this.primary();
+    }
   }
 
   private expect1(char?: string): IToken {
@@ -503,7 +527,8 @@ class ASTCompiler {
         return this.assign(
           leftSide,
           `validateObjectSafety(${this.recurse(ast.right)})`);
-
+      case ASTComponents.UnaryExpression:
+        return `${ast.operator}(${this.recurse(ast.argument)})`;
       default:
         throw 'Invalid syntax component.'
     }
