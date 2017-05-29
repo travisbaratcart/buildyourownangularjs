@@ -518,4 +518,17 @@ describe('parse', () => {
   it('parses several multiplicatives', () => {
     expect(parse('36 * 2 % 5')()).toBe(2);
   });
+
+  it('parses an addition', () => {
+    expect(parse('20 + 22')()).toBe(42);
+  });
+
+  it('parses a subtraction', () => {
+    expect(parse('62 - 20')()).toBe(42);
+  });
+
+  it('parses multiplicatives on a higher precedence than additives', () => {
+    expect(parse('2 + 8 * 5')()).toBe(42);
+    expect(parse('7 + 4 * 6 + 11')()).toBe(42);
+  });
 });

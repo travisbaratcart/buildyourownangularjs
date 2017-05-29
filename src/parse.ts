@@ -294,10 +294,12 @@ class AST {
   }
 
   private assignment(): any {
-    const left = this.multiplicative(); // falls back to unary, falls back to primary
+    // Order of operations built in:
+    // Falls back to multiplicative, falls back to unary, falls back to primary
+    const left = this.additive();
 
     if (this.expect('=')) {
-      const right = this.multiplicative();
+      const right = this.additive();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -409,6 +411,23 @@ class AST {
         operator: expectedToken.text,
         left: result,
         right: this.unary()
+      };
+    }
+
+    return result;
+  }
+
+  private additive(): any {
+    let result = this.multiplicative();
+
+    let expectedToken: IToken;
+
+    while (expectedToken = this.expect('-', '+')) {
+      result = {
+        type: ASTComponents.BinaryExpression,
+        operator: expectedToken.text,
+        left: result,
+        right: this.multiplicative()
       };
     }
 
