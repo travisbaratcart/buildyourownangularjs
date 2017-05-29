@@ -17,4 +17,21 @@ describe('filter', () => {
     filterService.register('my', myFilterFactory);
     expect(filterService.filter('my')).toBe(myFilter);
   });
+
+  it('allows registering multiple filters with an objectd', () => {
+    const myFilter = function() {};
+    const myOtherFilter = function() {};
+
+    filterService.register({
+      my: function() {
+        return myFilter;
+      },
+      myOther: function() {
+        return myOtherFilter;
+      }
+    });
+
+    expect(filterService.filter('my')).toBe(myFilter)
+    expect(filterService.filter('myOther')).toBe(myOtherFilter)
+  });
 });
