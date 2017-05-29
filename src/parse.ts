@@ -275,7 +275,10 @@ class AST {
   private primary(): any {
     let primary: any;
 
-    if (this.expect('[')) {
+    if (this.expect('(')) {
+      primary = this.assignment();
+      this.consume(')');
+    } else if (this.expect('[')) {
       primary = this.arrayDeclaration();
     } else if (this.expect('{')) {
       primary = this.object();
