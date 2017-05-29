@@ -403,5 +403,15 @@ describe('parse', () => {
     }).toThrow();
   });
 
+  it('does not allow accessing window as a computed property', () => {
+    const result = parse('anObject["wnd"]');
 
+    expect(() => result({ anObject: {wnd: window } })).toThrow();
+  });
+
+  it('does not allow accessing window as a non-computed property', () => {
+    const result = parse('anObject.wnd');
+
+    expect(() => result({ anObject: {wnd: window } })).toThrow();
+  });
 });

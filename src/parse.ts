@@ -433,7 +433,13 @@ class ASTCompiler {
       + functionBody
       + '}; return fn;'
 
-    return new Function('validateAttributeSafety', functionString)(this.validateAttributeSafety);
+    return new Function(
+      'validateAttributeSafety',
+      'validateObjectSafety',
+      functionString)(
+        this.validateAttributeSafety,
+        this.validateObjectSafety
+      );
   }
 
   private recurse(ast: any, context?: any, safeTraverse?: boolean): any {
@@ -558,7 +564,11 @@ class ASTCompiler {
           this.assign(this.lookupComputedPropertyOnObject(left, right), '{}'));
       }
 
-      this.if_(left, this.assign(nextVariableName, this.lookupComputedPropertyOnObject(left, right)));
+      this.if_(
+        left,
+        this.assign(
+          nextVariableName,
+          `validateObjectSafety(${this.lookupComputedPropertyOnObject(left, right)})`));
 
       if (context) {
         context.name = right;
@@ -573,7 +583,11 @@ class ASTCompiler {
           this.assign(this.lookupPropertyOnObject(left, ast.property.name), '{}'));
       }
 
-      this.if_(left, this.assign(nextVariableName, this.lookupPropertyOnObjectSafe(left, ast.property.name)));
+      this.if_(
+        left,
+        this.assign(
+          nextVariableName,
+          `validateObjectSafety(${this.lookupPropertyOnObject(left, ast.property.name)})`));
 
       if (context) {
         context.name = ast.property.name;
@@ -628,7 +642,7 @@ class ASTCompiler {
     return nextId;
   }
 
-  private validateAttributeSafety(attr: string) {
+  private validateAttributeSafety(attr: string): string {
     const disallowedAttributes = [
       'constructor',
       '__proto__',
@@ -641,6 +655,18 @@ class ASTCompiler {
     if (disallowedAttributes.indexOf(attr) > -1) {
       throw 'Attempted to access a disallowed field in Angular expression.';
     }
+
+    return attr;
+  }
+
+  private validateObjectSafety(obj: any): any {
+    if (obj) {
+      if (obj.document && obj.location && obj.alert && obj.setInterval) {
+        throw 'Referencing window in Angular expressions is disallowed';
+      }
+    }
+
+    return obj;
   }
 
   private addAttributeSafetyValidation(expr: string): void {
