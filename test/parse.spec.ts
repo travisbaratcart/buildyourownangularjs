@@ -422,4 +422,10 @@ describe('parse', () => {
       result({ aFunction: function() {}, wnd: window });
     }).toThrow();
   });
+
+  it('does not allow calling methods on window', () => {
+    const result = parse('wnd.scrollTo(0)');
+
+    expect(() => result({ wnd: window })).toThrow();
+  });
 });

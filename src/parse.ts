@@ -478,6 +478,8 @@ class ASTCompiler {
         });
 
         if (callContext.name) {
+          this.addObjectSafetyValidation(callContext.context);
+
           if (callContext.isComputed) {
             callee = this.lookupComputedPropertyOnObject(callContext.context, callContext.name);
           } else {
@@ -673,6 +675,10 @@ class ASTCompiler {
 
   private addAttributeSafetyValidation(expr: string): void {
     this.state.body.push(`validateAttributeSafety(${expr});`);
+  }
+
+  private addObjectSafetyValidation(expr: string): void {
+    this.state.body.push(`validateObjectSafety(${expr});`);
   }
 }
 
