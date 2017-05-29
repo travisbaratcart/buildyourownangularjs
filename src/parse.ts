@@ -17,7 +17,8 @@ enum ASTComponents {
   CallExpression,
   AssignmentExpression,
   UnaryExpression,
-  BinaryExpression
+  BinaryExpression,
+  LogicalExpression
 };
 
 export function parse(expression: string): Function {
@@ -47,7 +48,9 @@ class Lexer {
     '<': true,
     '>': true,
     '<=': true,
-    '>=': true
+    '>=': true,
+    '&&': true,
+    '||': true
   };
 
   public lex(text: string): IToken[] {
@@ -314,12 +317,10 @@ class AST {
   }
 
   private assignment(): any {
-    // Order of operations built in:
-    // Falls back to multiplicative, falls back to unary, falls back to primary
-    const left = this.equality();
+    const left = this.logicalOR();
 
     if (this.expect('=')) {
-      const right = this.equality();
+      const right = this.logicalOR();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -481,7 +482,41 @@ class AST {
         type: ASTComponents.BinaryExpression,
         operator: expectedToken.text,
         left: result,
-        right: this.additive();
+        right: this.additive()
+      };
+    }
+
+    return result;
+  }
+
+  private logicalOR(): any {
+    let result = this.logicalAND();
+
+    let expectedToken: IToken;
+
+    while (expectedToken = this.expect('||')) {
+      result = {
+        type: ASTComponents.LogicalExpression,
+        operator: expectedToken.text,
+        left: result,
+        right: this.logicalAND()
+      };
+    }
+
+    return result;
+  }
+
+  private logicalAND(): any {
+    let result = this.equality();
+
+    let expectedToken: IToken;
+
+    while (expectedToken = this.expect('&&')) {
+      result = {
+        type: ASTComponents.LogicalExpression,
+        operator: expectedToken.text,
+        left: result,
+        right: this.equality()
       };
     }
 
@@ -638,7 +673,14 @@ class ASTCompiler {
         return isAdditiveOperation
           ? this.getAdditiveOperation(ast)
           : this.getMultiplicativeOperation(ast);
+      case ASTComponents.LogicalExpression:
+        let nextId = this.getNextDistinctVariableName()  ;
+        this.state.body.push(this.assign(nextId, this.recurse(ast.left)));
 
+        this.if_(ast.operator === '&&' ? nextId : this.not(nextId),
+          this.assign(nextId, this.recurse(ast.right)));
+
+        return nextId;
       default:
         throw 'Invalid syntax component.'
     }
