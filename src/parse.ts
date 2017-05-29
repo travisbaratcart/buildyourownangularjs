@@ -399,18 +399,20 @@ class AST {
   }
 
   private multiplicative(): any {
-    let left = this.unary();
+    let result = this.unary();
 
-    let expectedToken = this.expect('*', '/', '%');
+    let expectedToken: IToken;
 
-    return expectedToken
-      ? {
+    while (expectedToken = this.expect('*', '/', '%')) {
+      result = {
         type: ASTComponents.BinaryExpression,
         operator: expectedToken.text,
-        left: left,
+        left: result,
         right: this.unary()
-      }
-      : left;
+      };
+    }
+
+    return result;
   }
 
   private expect1(char?: string): IToken {

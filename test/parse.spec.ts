@@ -514,4 +514,8 @@ describe('parse', () => {
   it('parses a modulo', () => {
     expect(parse('85 % 43')()).toBe(42);
   });
+
+  it('parses several multiplicatives', () => {
+    expect(parse('36 * 2 % 5')()).toBe(2);
+  });
 });
