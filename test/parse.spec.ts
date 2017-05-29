@@ -451,4 +451,10 @@ describe('parse', () => {
     const result = parse('el.setAttribute("evil", "true")');
     expect(() => result({ el: document.documentElement })).toThrow();
   });
+
+  it('does not allow calling aliased function constructor', () => {
+    const result = parse('fnConstructor("return window;")');
+
+    expect(() => result({ fnConstructor: (function() {}).constructor })).toThrow();
+  });
 });

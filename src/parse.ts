@@ -674,6 +674,8 @@ class ASTCompiler {
       } else if (obj.children
         && (obj.nodeName || (obj.prop || obj.attr && obj.find))) {
         throw 'Referencing DOM nodes in Angular expressions is diallowed.';
+      } else if (obj === obj.constructor) {
+        throw 'Referencing Function in Angular expressions is disallowed.';
       }
     }
 
