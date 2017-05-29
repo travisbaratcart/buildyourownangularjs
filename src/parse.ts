@@ -496,7 +496,9 @@ class ASTCompiler {
           ? this.lookupComputedPropertyOnObject(leftContext.context, leftContext.name)
           : this.lookupPropertyOnObject(leftContext.context, leftContext.name);
 
-        return this.assign(leftSide, this.recurse(ast.right));
+        return this.assign(
+          leftSide,
+          `validateObjectSafety(${this.recurse(ast.right)})`);
 
       default:
         throw 'Invalid syntax component.'

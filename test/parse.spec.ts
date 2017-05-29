@@ -435,4 +435,9 @@ describe('parse', () => {
       return result({ getWnd: () => window });
     }).toThrow();
   });
+
+  it('does not allow assigning window', () => {
+    const result = parse('wnd = anObject');
+    expect(() => result({ anObject: window })).toThrow();
+  });
 });
