@@ -300,4 +300,50 @@ describe('parse', () => {
     const result = parse('aFunction()');
     expect(result(scope, locals)).toBe(locals);
   });
+
+  it('parses a simple attribute assignment', () => {
+    const result = parse('anAttribute = 42');
+    const scope: any = {};
+
+    result(scope);
+
+    expect(scope.anAttribute).toBe(42);
+  });
+
+  it('can assign any primary expression', () => {
+    const result = parse('anAttribute = aFunction()');
+    const scope: any = { aFunction: () => 42 };
+
+    result(scope);
+
+    expect(scope.anAttribute).toBe(42);
+  });
+
+  it('can assign a computed object property', () => {
+    const result = parse('anObject["anAttribute"] = 42');
+
+    const scope: any = { anObject: {} };
+
+    result(scope);
+
+    expect(scope.anObject.anAttribute).toBe(42);
+  });
+
+  it('can assign a non-computed property', () => {
+    const result = parse('anObject.anAttribute = 42');
+    const scope: any = { anObject: {} };
+
+    result(scope);
+
+    expect(scope.anObject.anAttribute).toBe(42);
+  });
+
+  it('can assign a nested object property', () => {
+    const result = parse('anArray[0].anAttribute = 42');
+    const scope = { anArray: [<any>{}] };
+
+    result(scope);
+
+    expect(scope.anArray[0].anAttribute).toBe(42);
+  });
 });

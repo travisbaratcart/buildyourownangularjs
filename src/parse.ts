@@ -14,7 +14,8 @@ enum ASTComponents {
   Identifier,
   ThisExpression,
   MemberExpression,
-  CallExpression
+  CallExpression,
+  AssignmentExpression
 };
 
 export function parse(expression: string): Function {
@@ -42,7 +43,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:.()')) {
+      } else if (this.is(currentChar, '[],{}:.()=')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -221,7 +222,7 @@ class AST {
   private program() {
     return {
       type: ASTComponents.Program,
-      body: this.primary()
+      body: this.assignment()
     };
   }
 
@@ -270,6 +271,21 @@ class AST {
     return primary;
   }
 
+  private assignment(): any {
+    const left = this.primary();
+
+    if (this.expect('=')) {
+      const right = this.primary();
+      return {
+        type: ASTComponents.AssignmentExpression,
+        left: left,
+        right: right
+      };
+    }
+
+    return left;
+  }
+
   private constant() {
     return {
       type: ASTComponents.Literal,
@@ -288,7 +304,7 @@ class AST {
           break;
         }
 
-        elements.push(this.primary());
+        elements.push(this.assignment());
       } while (this.expect(','))
     }
 
@@ -314,7 +330,7 @@ class AST {
 
         this.consume(':');
 
-        property.value = this.primary();
+        property.value = this.assignment()
 
         properties.push(property);
       } while(this.expect(','))
@@ -457,6 +473,16 @@ class ASTCompiler {
         }
 
         return `${callee} && ${callee}(${args.join(',')})`;
+      case ASTComponents.AssignmentExpression:
+        const leftContext: any = {};
+        this.recurse(ast.left, leftContext);
+
+        const leftSide = leftContext.isComputed
+          ? this.lookupComputedPropertyOnObject(leftContext.context, leftContext.name)
+          : this.lookupPropertyOnObject(leftContext.context, leftContext.name);
+
+        return this.assign(leftSide, this.recurse(ast.right));
+
       default:
         throw 'Invalid syntax component.'
     }
