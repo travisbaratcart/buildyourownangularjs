@@ -428,7 +428,12 @@ class ASTCompiler {
 
     const functionBody = varsDeclaration + this.state.body.join('');
 
-    return new Function('scope', 'locals', functionBody);
+    const functionString = 'var fn = function(scope, locals){'
+      + varsDeclaration
+      + functionBody
+      + '}; return fn;'
+
+    return new Function('validateAttributeSafety', functionString)(this.validateAttributeSafety);
   }
 
   private recurse(ast: any, context?: any, safeTraverse?: boolean): any {
@@ -503,6 +508,8 @@ class ASTCompiler {
   }
 
   private getIdentifier(rawIdentifier: string, context?: any, safeTraverse?: boolean): string {
+    this.validateAttributeSafety(rawIdentifier);
+
     if (rawIdentifier === 'this') {
       return 'scope';
     } else if (this.isReservedIdentifier(rawIdentifier)) {
@@ -543,6 +550,8 @@ class ASTCompiler {
     if (ast.isComputed) {
       const right = this.recurse(ast.property);
 
+      this.addAttributeSafetyValidation(right);
+
       if (safeTraverse) {
         this.if_(
           this.not(this.lookupComputedPropertyOnObject(left, right)),
@@ -556,6 +565,8 @@ class ASTCompiler {
         context.isComputed = true;
       }
     } else {
+      this.validateAttributeSafety(ast.property.name);
+
       if (safeTraverse) {
         this.if_(
           this.not(this.lookupPropertyOnObject(left, ast.property.name)),
@@ -615,6 +626,25 @@ class ASTCompiler {
     this.state.vars.push(nextId);
 
     return nextId;
+  }
+
+  private validateAttributeSafety(attr: string) {
+    const disallowedAttributes = [
+      'constructor',
+      '__proto__',
+      '__defineGetter__',
+      '__defineSetter__',
+      '__lookupGetter__',
+      '__lookupSetter__',
+    ];
+
+    if (disallowedAttributes.indexOf(attr) > -1) {
+      throw 'Attempted to access a disallowed field in Angular expression.';
+    }
+  }
+
+  private addAttributeSafetyValidation(expr: string): void {
+    this.state.body.push(`validateAttributeSafety(${expr});`);
   }
 }
 
