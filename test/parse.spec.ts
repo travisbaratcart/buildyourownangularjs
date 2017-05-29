@@ -440,4 +440,10 @@ describe('parse', () => {
     const result = parse('wnd = anObject');
     expect(() => result({ anObject: window })).toThrow();
   });
+
+  it('does not allow referencing window', () => {
+    const result = parse('wnd');
+
+    expect(() => result({ wnd: window })).toThrow();
+  });
 });

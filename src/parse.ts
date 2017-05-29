@@ -547,6 +547,8 @@ class ASTCompiler {
         context.isComputed = false;
       }
 
+      this.addObjectSafetyValidation(nextId);
+
       return nextId;
     }
   }
