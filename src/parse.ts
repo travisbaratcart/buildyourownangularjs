@@ -18,7 +18,8 @@ enum ASTComponents {
   AssignmentExpression,
   UnaryExpression,
   BinaryExpression,
-  LogicalExpression
+  LogicalExpression,
+  ConditionalExpression
 };
 
 export function parse(expression: string): Function {
@@ -66,7 +67,7 @@ class Lexer {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:.()')) {
+      } else if (this.is(currentChar, '[],{}:.()?')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -317,10 +318,10 @@ class AST {
   }
 
   private assignment(): any {
-    const left = this.logicalOR();
+    const left = this.ternary();
 
     if (this.expect('=')) {
-      const right = this.logicalOR();
+      const right = this.ternary();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -523,6 +524,27 @@ class AST {
     return result;
   }
 
+  private ternary(): any {
+    let test = this.logicalOR();
+
+    if (this.expect('?')) {
+      const consequent = this.assignment();
+
+      if (this.consume(':')) {
+        const alternate = this.assignment();
+
+        return {
+          type: ASTComponents.ConditionalExpression,
+          test,
+          consequent,
+          alternate
+        }
+      }
+    }
+
+    return test;
+  }
+
   private expect1(char?: string): IToken {
     if (!char || this.peekNextToken(char)) {
       return this.tokens.shift();
@@ -681,6 +703,8 @@ class ASTCompiler {
           this.assign(nextId, this.recurse(ast.right)));
 
         return nextId;
+      case ASTComponents.ConditionalExpression:
+        return this.getConditionalExpression(ast);
       default:
         throw 'Invalid syntax component.'
     }
@@ -795,6 +819,20 @@ class ASTCompiler {
     return `(${this.addIfDefined(this.recurse(ast.left), 0)})`
       + ast.operator
       + `(${this.addIfDefined(this.recurse(ast.right), 0)})`;
+  }
+
+  private getConditionalExpression(ast: any): string {
+    const testId = this.getNextDistinctVariableName();
+
+    this.state.body.push(this.assign(testId, this.recurse(ast.test)));
+
+    const resultId = this.getNextDistinctVariableName();
+
+    this.if_(testId, this.assign(resultId, this.recurse(ast.consequent)));
+
+    this.if_(this.not(testId), this.assign(resultId, this.recurse(ast.alternate)));
+
+    return resultId;
   }
 
   private lookupPropertyOnObjectSafe(obj: string, property: string): string {
