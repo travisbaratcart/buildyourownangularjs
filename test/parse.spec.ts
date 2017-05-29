@@ -414,4 +414,12 @@ describe('parse', () => {
 
     expect(() => result({ anObject: {wnd: window } })).toThrow();
   });
+
+  it('does not allow passing window as a function argument', () => {
+    const result = parse('aFunction(wnd)');
+
+    expect(() => {
+      result({ aFunction: function() {}, wnd: window });
+    }).toThrow();
+  });
 });

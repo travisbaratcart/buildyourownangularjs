@@ -473,7 +473,9 @@ class ASTCompiler {
         const callContext: any = {};
         let callee = this.recurse(ast.callee, callContext);
 
-        const args = ast.arguments.map((arg: any) => this.recurse(arg));
+        const args = ast.arguments.map((arg: any) => {
+          return `validateObjectSafety(${this.recurse(arg)})`;
+        });
 
         if (callContext.name) {
           if (callContext.isComputed) {
