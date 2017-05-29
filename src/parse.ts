@@ -487,7 +487,7 @@ class ASTCompiler {
           }
         }
 
-        return `${callee} && ${callee}(${args.join(',')})`;
+        return `${callee} && validateObjectSafety(${callee}(${args.join(',')}))`;
       case ASTComponents.AssignmentExpression:
         const leftContext: any = {};
         this.recurse(ast.left, leftContext, true);

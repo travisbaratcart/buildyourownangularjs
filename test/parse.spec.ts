@@ -428,4 +428,11 @@ describe('parse', () => {
 
     expect(() => result({ wnd: window })).toThrow();
   });
+
+  it('does not allow functions to return window', () => {
+    const result = parse('getWnd()');
+    expect(() => {
+      return result({ getWnd: () => window });
+    }).toThrow();
+  });
 });
