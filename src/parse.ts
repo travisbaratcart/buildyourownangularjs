@@ -461,10 +461,12 @@ class ASTCompiler {
       'validateAttributeSafety',
       'validateObjectSafety',
       'validateFunctionSafety',
+      'ifDefined',
       functionString)(
         this.validateAttributeSafety,
         this.validateObjectSafety,
-        this.validateFunctionSafety
+        this.validateFunctionSafety,
+        this.ifDefined
       );
   }
 
@@ -528,7 +530,7 @@ class ASTCompiler {
           leftSide,
           `validateObjectSafety(${this.recurse(ast.right)})`);
       case ASTComponents.UnaryExpression:
-        return `${ast.operator}(${this.recurse(ast.argument)})`;
+        return `${ast.operator}(${this.addIfDefined(this.recurse(ast.argument), 0)})`;
       default:
         throw 'Invalid syntax component.'
     }
@@ -729,6 +731,10 @@ class ASTCompiler {
     return obj;
   }
 
+  private ifDefined(value: any, defaultValue: any): any {
+    return typeof value === 'undefined' ? defaultValue : value;
+  }
+
   private addAttributeSafetyValidation(expr: string): void {
     this.state.body.push(`validateAttributeSafety(${expr});`);
   }
@@ -739,6 +745,10 @@ class ASTCompiler {
 
   private addFunctionSafetyValidation(expr: string): void {
     this.state.body.push(`validateFunctionSafety(${expr});`);
+  }
+
+  private addIfDefined(value: any, defaultValue: any): string {
+    return `ifDefined(${value}, ${this.escapeIfNecessary(defaultValue)})`;
   }
 }
 
