@@ -498,4 +498,8 @@ describe('parse', () => {
     expect(parse('--a')({ a: -42 })).toBe(-42);
     expect(parse('-a')({})).toBe(0);
   });
+
+  it('parses a ! in a string', () => {
+    expect(parse('"!"')()).toBe('!');
+  });
 });

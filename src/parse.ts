@@ -118,12 +118,16 @@ class Lexer {
 
     let openingQuote = this.text[this.currentCharIndex];
 
-    let result = '';
+    let string = '';
+
+    let rawString = openingQuote;
 
     this.currentCharIndex++ // move past opening quote
 
     while (this.currentCharIndex < this.text.length) {
       let currentChar = this.text[this.currentCharIndex];
+      rawString += currentChar;
+
       if (currentChar === '\\') {
         const nextChar = this.peekNextChar();
 
@@ -137,20 +141,20 @@ class Lexer {
           }
 
           this.currentCharIndex += 6;
-          result += String.fromCharCode(parseInt(hex, 16));
+          string += String.fromCharCode(parseInt(hex, 16));
         } else if (escapeChar) {
-          result += escapeChar;
+          string += escapeChar;
           this.currentCharIndex += 2;
         } else {
-          result += this.peekNextChar();
+          string += this.peekNextChar();
           this.currentCharIndex += 2;
         }
       } else if (currentChar === openingQuote) {
         this.currentCharIndex++;
-        this.addToken(result, result);
+        this.addToken(rawString, string);
         return;
       } else {
-        result += currentChar;
+        string += currentChar;
         this.currentCharIndex++;
       }
     }
