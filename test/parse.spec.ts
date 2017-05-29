@@ -457,4 +457,10 @@ describe('parse', () => {
 
     expect(() => result({ fnConstructor: (function() {}).constructor })).toThrow();
   });
+
+  it('does not allow calling functions on Object', () => {
+    const result = parse('obj.create({})');
+
+    expect(() => result({ obj: Object})).toThrow();
+  });
 });

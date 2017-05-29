@@ -676,6 +676,8 @@ class ASTCompiler {
         throw 'Referencing DOM nodes in Angular expressions is diallowed.';
       } else if (obj === obj.constructor) {
         throw 'Referencing Function in Angular expressions is disallowed.';
+      } else if (obj.getOwnPropertyNames || obj.getOwnPropertyDescriptor) {
+        throw 'Referencing Object in Angular expressions is disallowed';
       }
     }
 
