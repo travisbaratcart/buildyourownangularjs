@@ -670,7 +670,10 @@ class ASTCompiler {
   private validateObjectSafety(obj: any): any {
     if (obj) {
       if (obj.document && obj.location && obj.alert && obj.setInterval) {
-        throw 'Referencing window in Angular expressions is disallowed';
+        throw 'Referencing window in Angular expressions is disallowed.';
+      } else if (obj.children
+        && (obj.nodeName || (obj.prop || obj.attr && obj.find))) {
+        throw 'Referencing DOM nodes in Angular expressions is diallowed.';
       }
     }
 

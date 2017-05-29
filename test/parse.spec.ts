@@ -446,4 +446,9 @@ describe('parse', () => {
 
     expect(() => result({ wnd: window })).toThrow();
   });
+
+  it('does not allow calling functions on DOM elements', () => {
+    const result = parse('el.setAttribute("evil", "true")');
+    expect(() => result({ el: document.documentElement })).toThrow();
+  });
 });
