@@ -463,4 +463,16 @@ describe('parse', () => {
 
     expect(() => result({ obj: Object})).toThrow();
   });
+
+  it('does not allow calling call', () => {
+    const result = parse('fun.call(obj)');
+
+    expect(() => result({ fun: function() {}, obj: {} })).toThrow();
+  });
+
+  it('does not allow calling apply', () => {
+    const result = parse('fun.apply(obj)');
+
+    expect(() => result({ fun: function() {}, obj: {} })).toThrow();
+  });
 });

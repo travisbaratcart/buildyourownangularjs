@@ -436,9 +436,11 @@ class ASTCompiler {
     return new Function(
       'validateAttributeSafety',
       'validateObjectSafety',
+      'validateFunctionSafety',
       functionString)(
         this.validateAttributeSafety,
-        this.validateObjectSafety
+        this.validateObjectSafety,
+        this.validateFunctionSafety
       );
   }
 
@@ -486,6 +488,8 @@ class ASTCompiler {
             callee = this.lookupPropertyOnObject(callContext.context, callContext.name);
           }
         }
+
+        this.addFunctionSafetyValidation(callee);
 
         return `${callee} && validateObjectSafety(${callee}(${args.join(',')}))`;
       case ASTComponents.AssignmentExpression:
@@ -684,12 +688,32 @@ class ASTCompiler {
     return obj;
   }
 
+  private validateFunctionSafety(obj: any) {
+    const CALL = Function.prototype.call;
+    const APPLY = Function.prototype.apply;
+    const BIND = Function.prototype.bind;
+
+    if (obj) {
+      if (obj.constructor === obj) {
+        throw 'Referencing Function in Angular expressions is disallowed.';
+      } else if (obj === CALL || obj === APPLY || obj === BIND) {
+        throw 'Referencing call, apply, and bind is disallowed in Angular expressions.';
+      }
+    }
+
+    return obj;
+  }
+
   private addAttributeSafetyValidation(expr: string): void {
     this.state.body.push(`validateAttributeSafety(${expr});`);
   }
 
   private addObjectSafetyValidation(expr: string): void {
     this.state.body.push(`validateObjectSafety(${expr});`);
+  }
+
+  private addFunctionSafetyValidation(expr: string): void {
+    this.state.body.push(`validateFunctionSafety(${expr});`);
   }
 }
 
