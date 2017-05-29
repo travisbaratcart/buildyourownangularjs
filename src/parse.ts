@@ -580,7 +580,11 @@ class ASTCompiler {
       case ASTComponents.UnaryExpression:
         return `${ast.operator}(${this.addIfDefined(this.recurse(ast.argument), 0)})`;
       case ASTComponents.BinaryExpression:
-        return `(${this.recurse(ast.left)}) ${ast.operator} (${this.recurse(ast.right)})`;
+        const isAdditiveOperation = ast.operator === '+' || ast.operator === '-';
+        return isAdditiveOperation
+          ? this.getAdditiveOperation(ast)
+          : this.getMultiplicativeOperation(ast);
+
       default:
         throw 'Invalid syntax component.'
     }
@@ -685,6 +689,16 @@ class ASTCompiler {
     }
 
     return nextVariableName;
+  }
+
+  private getMultiplicativeOperation(ast: any): string {
+    return `(${this.recurse(ast.left)}) ${ast.operator} (${this.recurse(ast.right)})`;
+  }
+
+  private getAdditiveOperation(ast: any): string {
+    return `(${this.addIfDefined(this.recurse(ast.left), 0)})`
+      + ast.operator
+      + `(${this.addIfDefined(this.recurse(ast.right), 0)})`;
   }
 
   private lookupPropertyOnObjectSafe(obj: string, property: string): string {

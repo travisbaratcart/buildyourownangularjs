@@ -531,4 +531,14 @@ describe('parse', () => {
     expect(parse('2 + 8 * 5')()).toBe(42);
     expect(parse('7 + 4 * 6 + 11')()).toBe(42);
   });
+
+  it('substitutes undefined with zero in addition', () => {
+    expect(parse('a + 42')()).toBe(42);
+    expect(parse('42 + a')()).toBe(42);
+  });
+
+  it('substitutes undefined with zero in subtraction', () => {
+    expect(parse('a - 42')()).toBe(-42);
+    expect(parse('42 - a')()).toBe(42);
+  });
 });
