@@ -33,7 +33,8 @@ class Lexer {
 
   private OPERATORS: {[operator: string]: boolean} = {
     '+': true,
-    '!': true
+    '!': true,
+    '-': true
   };
 
   public lex(text: string): IToken[] {
@@ -376,7 +377,7 @@ class AST {
   }
 
   private unary(): any {
-    const token = this.expect('+', '!');
+    const token = this.expect('+', '!', '-');
 
     if (token) {
       return {
