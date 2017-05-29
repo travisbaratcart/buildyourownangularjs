@@ -15,7 +15,7 @@ describe('parse', () => {
   it('can parse a floating point number without an integer part', () => {
     const result = parse('.42');
 
-    expect(result()).toBe(.42);
+    expect(result()).toBe(0.42);
   });
 
   it('can parse a number in scientific notation', () => {
@@ -540,5 +540,43 @@ describe('parse', () => {
   it('substitutes undefined with zero in subtraction', () => {
     expect(parse('a - 42')()).toBe(-42);
     expect(parse('42 - a')()).toBe(42);
+  });
+
+  it('parses relational operators', () => {
+    expect(parse('1 < 2')()).toBe(true);
+    expect(parse('1 > 2')()).toBe(false);
+
+    expect(parse('1 <= 2')()).toBe(true);
+    expect(parse('2 <= 2')()).toBe(true);
+    expect(parse('3 <= 2')()).toBe(false);
+
+    expect(parse('1 >= 2')()).toBe(false);
+    expect(parse('2 >= 2')()).toBe(true);
+    expect(parse('3 >= 2')()).toBe(true);
+  });
+
+  it('parses equality operators', () => {
+    expect(parse('42 == 42')()).toBe(true);
+    expect(parse('42 == "42"')()).toBe(true);
+    expect(parse('43 == 42')()).toBe(false);
+
+    expect(parse('42 != 42')()).toBe(false)
+    expect(parse('42 != 43')()).toBe(true);
+
+    expect(parse('42 === 42')()).toBe(true);
+    expect(parse('42 === "42"')()).toBe(false);
+    expect(parse('{} === {}')()).toBe(false);
+
+    expect(parse('42 !== 42')()).toBe(false);
+    expect(parse('42 !== "42"')()).toBe(true);
+    expect(parse('{} !== {}')()).toBe(true);
+  });
+
+  it('parses relationals on a higher precedence than equality', () => {
+    expect(parse('2 == "2" > 2 === "2"')()).toBe(false);
+  });
+
+  it('parses additives on a higher precedence than relationals', () => {
+    expect(parse('2 + 3 < 6 - 2')()).toBe(false);
   });
 });

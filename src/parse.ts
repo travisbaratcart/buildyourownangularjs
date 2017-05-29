@@ -38,7 +38,16 @@ class Lexer {
     '-': true,
     '*': true,
     '/': true,
-    '%': true
+    '%': true,
+    '=': true,
+    '==': true,
+    '!=': true,
+    '===': true,
+    '!==': true,
+    '<': true,
+    '>': true,
+    '<=': true,
+    '>=': true
   };
 
   public lex(text: string): IToken[] {
@@ -48,13 +57,13 @@ class Lexer {
 
     while (this.currentCharIndex < this.text.length) {
       const currentChar = this.text[this.currentCharIndex];
-      const nextChar = this.peekNextChar();
+      const nextChar = this.peekChar();
 
       if (this.isBeginningOfNumber(currentChar, nextChar)) {
         this.readNumber();
       } else if (this.isBeginningOfString(currentChar)) {
         this.readString();
-      } else if (this.is(currentChar, '[],{}:.()=')) {
+      } else if (this.is(currentChar, '[],{}:.()')) {
         this.addToken(currentChar);
         this.currentCharIndex++;
       } else if (this.isIdentifierComponent(currentChar)) {
@@ -62,11 +71,22 @@ class Lexer {
       } else if (this.isCharWhitespace(currentChar)) {
         this.currentCharIndex++
       } else {
-        const operator = this.OPERATORS[currentChar];
+        const currentTwoChars = currentChar + this.peekChar();
+        const currentThreeChars = currentTwoChars + this.peekChar(2);
 
-        if (operator) {
+        const isOneCharOperator = this.OPERATORS[currentChar];
+        const isTwoCharOperator = this.OPERATORS[currentTwoChars];
+        const isThreeCharOperator = this.OPERATORS[currentThreeChars];
+
+        if (isThreeCharOperator) {
+          this.addToken(currentThreeChars);
+          this.currentCharIndex += 3;
+        } else if (isTwoCharOperator) {
+          this.addToken(currentTwoChars);
+          this.currentCharIndex += 2;
+        } else if (isOneCharOperator) {
           this.addToken(currentChar);
-          this.currentCharIndex++
+          this.currentCharIndex += 1;
         } else {
           throw `Unexpected next character: ${this.text[this.currentCharIndex]}`;
         }
@@ -85,7 +105,7 @@ class Lexer {
         numberText += currentChar;
       } else {
         // Exponent handling eg 4e12, 4E12,
-        const nextChar = this.peekNextChar();
+        const nextChar = this.peekChar();
         const lastChar = numberText.charAt(numberText.length - 1);
 
         if (currentChar === 'e' && this.isExponentOperator(nextChar)) {
@@ -133,7 +153,7 @@ class Lexer {
       rawString += currentChar;
 
       if (currentChar === '\\') {
-        const nextChar = this.peekNextChar();
+        const nextChar = this.peekChar();
 
         const escapeChar = ESCAPES[nextChar];
 
@@ -150,7 +170,7 @@ class Lexer {
           string += escapeChar;
           this.currentCharIndex += 2;
         } else {
-          string += this.peekNextChar();
+          string += this.peekChar();
           this.currentCharIndex += 2;
         }
       } else if (currentChar === openingQuote) {
@@ -217,9 +237,9 @@ class Lexer {
     return chars.indexOf(char) > -1;
   }
 
-  private peekNextChar(): string {
-    return this.currentCharIndex < this.text.length - 1
-      ? this.text.charAt(this.currentCharIndex + 1)
+  private peekChar(skipChars = 1): string {
+    return this.currentCharIndex < this.text.length - skipChars
+      ? this.text.charAt(this.currentCharIndex + skipChars)
       : null;
   }
 
@@ -296,10 +316,10 @@ class AST {
   private assignment(): any {
     // Order of operations built in:
     // Falls back to multiplicative, falls back to unary, falls back to primary
-    const left = this.additive();
+    const left = this.equality();
 
     if (this.expect('=')) {
-      const right = this.additive();
+      const right = this.equality();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -428,6 +448,40 @@ class AST {
         operator: expectedToken.text,
         left: result,
         right: this.multiplicative()
+      };
+    }
+
+    return result;
+  }
+
+  private equality(): any {
+    let result = this.relational();
+
+    let expectedToken: IToken;
+
+    while (expectedToken = this.expect('==', '!=', '===', '!==')) {
+      result = {
+        type: ASTComponents.BinaryExpression,
+        operator: expectedToken.text,
+        left: result,
+        right: this.relational()
+      };
+    }
+
+    return result;
+  }
+
+  private relational(): any {
+    let result = this.additive();
+
+    let expectedToken: IToken;
+
+    while (expectedToken = this.expect('<', '>', '<=', '>=')) {
+      result = {
+        type: ASTComponents.BinaryExpression,
+        operator: expectedToken.text,
+        left: result,
+        right: this.additive();
       };
     }
 
