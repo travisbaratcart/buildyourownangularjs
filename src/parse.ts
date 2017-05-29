@@ -431,7 +431,7 @@ class ASTCompiler {
     return new Function('scope', 'locals', functionBody);
   }
 
-  private recurse(ast: any, context?: any): any {
+  private recurse(ast: any, context?: any, safeTraverse?: boolean): any {
     switch (ast.type) {
       case ASTComponents.Program:
         this.state.body.push('return ', this.recurse(ast.body), ';');
@@ -455,9 +455,9 @@ class ASTCompiler {
         });
         return `{ ${properties.join(',')} }`;
       case ASTComponents.Identifier:
-        return this.getIdentifier(ast.name, context);
+        return this.getIdentifier(ast.name, context, safeTraverse);
       case ASTComponents.MemberExpression:
-        return this.getMemberExpression(ast, context);
+        return this.getMemberExpression(ast, context, safeTraverse);
       case ASTComponents.CallExpression:
         const callContext: any = {};
         let callee = this.recurse(ast.callee, callContext);
@@ -475,7 +475,7 @@ class ASTCompiler {
         return `${callee} && ${callee}(${args.join(',')})`;
       case ASTComponents.AssignmentExpression:
         const leftContext: any = {};
-        this.recurse(ast.left, leftContext);
+        this.recurse(ast.left, leftContext, true);
 
         const leftSide = leftContext.isComputed
           ? this.lookupComputedPropertyOnObject(leftContext.context, leftContext.name)
@@ -502,7 +502,7 @@ class ASTCompiler {
     return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
   }
 
-  private getIdentifier(rawIdentifier: string, context?: any): string {
+  private getIdentifier(rawIdentifier: string, context?: any, safeTraverse?: boolean): string {
     if (rawIdentifier === 'this') {
       return 'scope';
     } else if (this.isReservedIdentifier(rawIdentifier)) {
@@ -511,6 +511,15 @@ class ASTCompiler {
       const nextId = this.getNextDistinctVariableName();
 
       this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupPropertyOnObject('locals', rawIdentifier)));
+
+      if (safeTraverse) {
+        this.if_(
+          this.not(this.getHasOwnProperty('locals', rawIdentifier))
+          + '&& scope && '
+          + this.not(this.getHasOwnProperty('scope', rawIdentifier)),
+          this.assign(this.lookupPropertyOnObject('scope', rawIdentifier), '{}'));
+      }
+
       this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupPropertyOnObject('scope', rawIdentifier)));
 
       if (context) {
@@ -523,9 +532,9 @@ class ASTCompiler {
     }
   }
 
-  private getMemberExpression(ast: any, context?: any): string {
+  private getMemberExpression(ast: any, context?: any, safeTraverse?: boolean): string {
     const nextVariableName = this.getNextDistinctVariableName();
-    const left = this.recurse(ast.object);
+    const left = this.recurse(ast.object, context, safeTraverse);
 
     if (context) {
       context.context = left;
@@ -534,6 +543,12 @@ class ASTCompiler {
     if (ast.isComputed) {
       const right = this.recurse(ast.property);
 
+      if (safeTraverse) {
+        this.if_(
+          this.not(this.lookupComputedPropertyOnObject(left, right)),
+          this.assign(this.lookupComputedPropertyOnObject(left, right), '{}'));
+      }
+
       this.if_(left, this.assign(nextVariableName, this.lookupComputedPropertyOnObject(left, right)));
 
       if (context) {
@@ -541,6 +556,12 @@ class ASTCompiler {
         context.isComputed = true;
       }
     } else {
+      if (safeTraverse) {
+        this.if_(
+          this.not(this.lookupPropertyOnObject(left, ast.property.name)),
+          this.assign(this.lookupPropertyOnObject(left, ast.property.name), '{}'));
+      }
+
       this.if_(left, this.assign(nextVariableName, this.lookupPropertyOnObjectSafe(left, ast.property.name)));
 
       if (context) {

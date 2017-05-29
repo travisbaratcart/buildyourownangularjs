@@ -346,4 +346,12 @@ describe('parse', () => {
 
     expect(scope.anArray[0].anAttribute).toBe(42);
   });
+
+  it('creates the objects in the assignment path that do not exist', () => {
+    const result = parse('some["nested"].property.path = 42');
+    const scope: any = {};
+
+    result(scope);
+    expect(scope.some.nested.property.path).toBe(42);
+  });
 });
