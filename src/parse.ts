@@ -16,7 +16,8 @@ enum ASTComponents {
   MemberExpression,
   CallExpression,
   AssignmentExpression,
-  UnaryExpression
+  UnaryExpression,
+  BinaryExpression
 };
 
 export function parse(expression: string): Function {
@@ -34,7 +35,10 @@ class Lexer {
   private OPERATORS: {[operator: string]: boolean} = {
     '+': true,
     '!': true,
-    '-': true
+    '-': true,
+    '*': true,
+    '/': true,
+    '%': true
   };
 
   public lex(text: string): IToken[] {
@@ -290,10 +294,10 @@ class AST {
   }
 
   private assignment(): any {
-    const left = this.unary();
+    const left = this.multiplicative(); // falls back to unary, falls back to primary
 
     if (this.expect('=')) {
-      const right = this.unary();
+      const right = this.multiplicative();
       return {
         type: ASTComponents.AssignmentExpression,
         left: left,
@@ -392,6 +396,21 @@ class AST {
     } else {
       return this.primary();
     }
+  }
+
+  private multiplicative(): any {
+    let left = this.unary();
+
+    let expectedToken = this.expect('*', '/', '%');
+
+    return expectedToken
+      ? {
+        type: ASTComponents.BinaryExpression,
+        operator: expectedToken.text,
+        left: left,
+        right: this.unary()
+      }
+      : left;
   }
 
   private expect1(char?: string): IToken {
@@ -539,6 +558,8 @@ class ASTCompiler {
           `validateObjectSafety(${this.recurse(ast.right)})`);
       case ASTComponents.UnaryExpression:
         return `${ast.operator}(${this.addIfDefined(this.recurse(ast.argument), 0)})`;
+      case ASTComponents.BinaryExpression:
+        return `(${this.recurse(ast.left)}) ${ast.operator} (${this.recurse(ast.right)})`;
       default:
         throw 'Invalid syntax component.'
     }

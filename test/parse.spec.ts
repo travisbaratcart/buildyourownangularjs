@@ -502,4 +502,16 @@ describe('parse', () => {
   it('parses a ! in a string', () => {
     expect(parse('"!"')()).toBe('!');
   });
+
+  it('parses a multiplication', () => {
+    expect(parse('21 * 2')()).toBe(42);
+  });
+
+  it('parses a division', () => {
+    expect(parse('84 / 2')()).toBe(42);
+  });
+
+  it('parses a modulo', () => {
+    expect(parse('85 % 43')()).toBe(42);
+  });
 });
