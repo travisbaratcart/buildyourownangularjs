@@ -439,7 +439,7 @@ class ASTCompiler {
         });
         return `{ ${properties.join(',')} }`;
       case ASTComponents.Identifier:
-        return this.getIdentifier(ast.name);
+        return this.getIdentifier(ast.name, context);
       case ASTComponents.MemberExpression:
         return this.getMemberExpression(ast, context);
       case ASTComponents.CallExpression:
@@ -476,7 +476,7 @@ class ASTCompiler {
     return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
   }
 
-  private getIdentifier(rawIdentifier: string): string {
+  private getIdentifier(rawIdentifier: string, context?: any): string {
     if (rawIdentifier === 'this') {
       return 'scope';
     } else if (this.isReservedIdentifier(rawIdentifier)) {
@@ -484,8 +484,14 @@ class ASTCompiler {
     } else {
       const nextId = this.getNextDistinctVariableName();
 
-      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupPropertyOnObjectSafe('locals', rawIdentifier)));
-      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupPropertyOnObjectSafe('scope', rawIdentifier)));
+      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupPropertyOnObject('locals', rawIdentifier)));
+      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupPropertyOnObject('scope', rawIdentifier)));
+
+      if (context) {
+        context.context = `${this.getHasOwnProperty('locals', rawIdentifier)} ? locals : scope`;
+        context.name = rawIdentifier;
+        context.isComputed = false;
+      }
 
       return nextId;
     }

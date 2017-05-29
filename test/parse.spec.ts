@@ -277,4 +277,27 @@ describe('parse', () => {
     const result = parse('anObject.aFunction()');
     expect(result(scope)).toBe(42);
   });
+
+  it('binds bare functions to the scope', () => {
+    const scope = {
+      aFunction: function() {
+        return this;
+      }
+    };
+
+    const result = parse('aFunction()');
+    expect(result(scope)).toBe(scope);
+  });
+
+  it('binds bar functions on locals to the locals', () => {
+    const scope = {};
+    const locals = {
+      aFunction: function() {
+        return this;
+      }
+    };
+
+    const result = parse('aFunction()');
+    expect(result(scope, locals)).toBe(locals);
+  });
 });
