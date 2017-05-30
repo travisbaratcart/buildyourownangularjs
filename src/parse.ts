@@ -698,34 +698,7 @@ class ASTCompiler {
       case ASTComponents.MemberExpression:
         return this.getMemberExpression(ast, context, safeTraverse);
       case ASTComponents.CallExpression:
-        if (ast.filter) {
-          const callee = this.filter(ast.callee.name);
-
-          const args = ast.arguments.map((arg: any) => this.recurse(arg));
-
-          return `${callee}(${args})`;
-        }
-
-        const callContext: any = {};
-        let callee = this.recurse(ast.callee, callContext);
-
-        const args = ast.arguments.map((arg: any) => {
-          return `validateObjectSafety(${this.recurse(arg)})`;
-        });
-
-        if (callContext.name) {
-          this.addObjectSafetyValidation(callContext.context);
-
-          if (callContext.isComputed) {
-            callee = this.lookupComputedPropertyOnObject(callContext.context, callContext.name);
-          } else {
-            callee = this.lookupPropertyOnObject(callContext.context, callContext.name);
-          }
-        }
-
-        this.addFunctionSafetyValidation(callee);
-
-        return `${callee} && validateObjectSafety(${callee}(${args.join(',')}))`;
+        return this.getCallExpression(ast);
       case ASTComponents.AssignmentExpression:
         const leftContext: any = {};
         this.recurse(ast.left, leftContext, true);
@@ -882,6 +855,37 @@ class ASTCompiler {
     this.if_(this.not(testId), this.assign(resultId, this.recurse(ast.alternate)));
 
     return resultId;
+  }
+
+  private getCallExpression(ast: any): string {
+    if (ast.filter) {
+      const callee = this.filter(ast.callee.name);
+
+      const args = ast.arguments.map((arg: any) => this.recurse(arg));
+
+      return `${callee}(${args})`;
+    }
+
+    const callContext: any = {};
+    let callee = this.recurse(ast.callee, callContext);
+
+    const args = ast.arguments.map((arg: any) => {
+      return `validateObjectSafety(${this.recurse(arg)})`;
+    });
+
+    if (callContext.name) {
+      this.addObjectSafetyValidation(callContext.context);
+
+      if (callContext.isComputed) {
+        callee = this.lookupComputedPropertyOnObject(callContext.context, callContext.name);
+      } else {
+        callee = this.lookupPropertyOnObject(callContext.context, callContext.name);
+      }
+    }
+
+    this.addFunctionSafetyValidation(callee);
+
+    return `${callee} && validateObjectSafety(${callee}(${args.join(',')}))`;
   }
 
   private lookupPropertyOnObjectSafe(obj: string, property: string): string {
