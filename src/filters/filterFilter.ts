@@ -20,6 +20,22 @@ export class FilterFilter {
   }
 
   private createTest = (str: string) => {
-    return (element: any) => element.toLowerCase().indexOf(str.toLowerCase()) > -1;
+    return (element: any) => this.deepCompare(element, str, this.contains);
+  }
+
+  private deepCompare = (
+    actual: any,
+    expected: string,
+    comparator: (element: any, str: string) => boolean) => {
+
+    if (_.isObject(actual)) {
+      return _.some(actual, value => this.deepCompare(value, expected, comparator));
+    } else {
+      return comparator(actual, expected);
+    }
+  };
+
+  private contains = (element: any, str: string) => {
+    return element.toLowerCase().indexOf(str.toLowerCase()) > -1
   }
 }

@@ -40,4 +40,17 @@ describe('filter filter', () => {
 
     expect(result({ arr: ['quick', 'BROWN', 'fox']})).toEqual(['BROWN', 'fox']);
   });
+
+  it('filters an array of objects where any value matches', () => {
+    const result = parse('arr | filter:"o"');
+
+    expect(result({ arr: [
+      { firstName: 'John', lastName: 'Brown'},
+      { firstName: 'Jane', lastName: 'Fox'},
+      { firstName: 'Mary', lastName: 'Quick'}
+    ]})).toEqual([
+      { firstName: 'John', lastName: 'Brown'},
+      { firstName: 'Jane', lastName: 'Fox'}
+    ]);
+  });
 });
