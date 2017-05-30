@@ -562,7 +562,7 @@ class AST {
   private filter(): any {
     let result = this.assignment();
 
-    if (this.expect('|')) {
+    while (this.expect('|')) {
       result = {
         type: ASTComponents.CallExpression,
         callee: this.identifier(),

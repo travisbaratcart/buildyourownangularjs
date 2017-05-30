@@ -46,4 +46,22 @@ describe('filter', () => {
     const result = (parse('aString | upcase'));
     expect(result({ aString: 'Hello' })).toBe('HELLO');
   });
+
+  it('can parse filter chain expressions', () => {
+    filterService.register('upcase', function() {
+      return function(str: string) {
+        return str.toUpperCase();
+      }
+    })
+
+    filterService.register('exclamate', function() {
+      return function(str: string) {
+        return str + '!';
+      }
+    })
+
+    const result = parse('"hello" | upcase | exclamate');
+
+    expect(result()).toBe('HELLO!');
+  });
 });
