@@ -1,4 +1,5 @@
 'use strinct';
+import * as _ from 'lodash';
 import { FilterService } from '../src/filter';
 import { parse } from '../src/parse';
 

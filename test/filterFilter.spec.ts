@@ -1,4 +1,5 @@
 'use strict';
+import * as _ from 'lodash';
 import { FilterService} from '../src/filter';
 import { parse } from '../src/parse';
 
@@ -21,5 +22,10 @@ describe('filter filter', () => {
     };
 
     expect(result(scope)).toEqual([1, 3]);
+  });
+
+  it('can filter an array of strings with a string', () => {
+    const result = parse('arr | filter:"a"');
+    expect(result({ arr: ['a', 'b', 'a']})).toEqual(['a', 'a']);
   });
 });

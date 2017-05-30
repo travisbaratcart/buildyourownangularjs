@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
-import { filterFilter } from './filters/filterFilter';
+import { FilterFilter } from './filters/filterFilter';
 
 export class FilterService {
-  private filters: { [filterName: string]: (obj: any) => any } = {};
+  private filters: { [filterName: string]: (...args: any[]) => any } = {};
 
   private constructor() {
-    this.register('filter', filterFilter);
+    this.register('filter', (new FilterFilter()).getFilter);
   }
 
   private static filterService: FilterService;
@@ -18,7 +18,7 @@ export class FilterService {
     return FilterService.filterService;
   }
 
-  public register(filterNameOrObject: string | { [filterName: string]: () => (obj: any) => any }, factory?: () => (obj: any) => any): ((obj: any) => any)[] {
+  public register(filterNameOrObject: string | { [filterName: string]: () => (...args: any[]) => any }, factory?: () => (...args: any[]) => any): ((...args: any[]) => any)[] {
     if (_.isObject(filterNameOrObject)) {
       const filterObject = <{ [filterName: string]: () => (obj: any) => any }>filterNameOrObject;
 
