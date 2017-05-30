@@ -123,4 +123,9 @@ describe('filter filter', () => {
     const result = parse('arr | filter:"undefined"');
     expect(result({ arr: [undefined, 'undefined']})).toEqual(['undefined']);
   });
+
+  it('allows negating string filter', () => {
+    const result = parse('arr | filter:"!o"');
+    expect(result({ arr: ['quick', 'brown', 'fox'] })).toEqual(['quick']);
+  });
 });
