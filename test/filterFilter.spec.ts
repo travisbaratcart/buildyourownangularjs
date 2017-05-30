@@ -28,4 +28,10 @@ describe('filter filter', () => {
     const result = parse('arr | filter:"a"');
     expect(result({ arr: ['a', 'b', 'a']})).toEqual(['a', 'a']);
   });
+
+  it('filters an array of strings with substring matching', () => {
+    const result = parse('arr | filter:"o"');
+
+    expect(result({ arr: ['quick', 'brown', 'fox'] })).toEqual(['brown', 'fox']);
+  });
 });

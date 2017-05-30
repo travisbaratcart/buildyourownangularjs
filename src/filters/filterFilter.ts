@@ -20,6 +20,6 @@ export class FilterFilter {
   }
 
   private createTest = (str: string) => {
-    return (element: any) => element === str;
+    return (element: any) => element.indexOf(str) > -1;
   }
 }
