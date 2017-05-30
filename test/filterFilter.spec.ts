@@ -53,4 +53,28 @@ describe('filter filter', () => {
       { firstName: 'Jane', lastName: 'Fox'}
     ]);
   });
+
+  it('filters an array of objects where a nested value matches', () => {
+    const result = parse('arr | filter:"o"');
+
+    expect(result({ arr: [
+      { name: { first: 'John', last: 'Brown' } },
+      { name: { first: 'Jane', last: 'Fox' } },
+      { name: { first: 'Mary', last: 'Quick' } }
+    ]})).toEqual([
+      { name: { first: 'John', last: 'Brown' } },
+      { name: { first: 'Jane', last: 'Fox' } }
+    ]);
+  });
+
+  it('filters an rray of arrays where a nested value matches', () => {
+    const result = parse('arr | filter:"o"');
+
+    expect(result({ arr: [
+      [{ name: 'John' }, { name: 'Mary' }],
+      [{ name: 'Jane' }]
+    ]})).toEqual([
+      [{ name: 'John' }, { name: 'Mary' }]
+    ]);
+  });
 });
