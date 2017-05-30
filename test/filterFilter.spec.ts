@@ -128,4 +128,59 @@ describe('filter filter', () => {
     const result = parse('arr | filter:"!o"');
     expect(result({ arr: ['quick', 'brown', 'fox'] })).toEqual(['quick']);
   });
+
+  it('filters with an object', () => {
+    const result = parse('arr | filter:{name: "o"}');
+    expect(result({ arr: [
+      { name: 'Joe', role: 'admin' },
+      { name: 'Jane', role: 'moderator' }
+    ]})).toEqual([
+      { name: 'Joe', role: 'admin' }
+    ]);
+  });
+
+  it('must match all criteria in an object', () => {
+    const result = parse('arr | filter:{name: "o", role: "m"}');
+
+    expect(result({ arr: [
+      { name: 'Joe', role: 'admin' },
+      { name: 'Jane', role: 'moderator' }
+    ]})).toEqual([
+      { name: 'Joe', role: 'admin' }
+    ]);
+  });
+
+  it('matches everything when filtered with an empty object', () => {
+    const result = parse('arr | filter: {}');
+
+    expect(result({ arr: [
+      { name: 'Joe', role: 'admin' },
+      { name: 'Jane', role: 'moderator' }
+    ]})).toEqual([
+      { name: 'Joe', role: 'admin' },
+      { name: 'Jane', role: 'moderator' }
+    ]);
+  });
+
+  it('filters with a nested object', () => {
+    const result = parse('arr | filter:{name: {first: "o"}}');
+
+    expect(result({ arr: [
+      { name: { first: 'Joe' }, role: 'admin' },
+      { name: { first: 'Jane' }, role: 'moderator' }
+    ]})).toEqual([
+      { name: { first: 'Joe' }, role: 'admin' }
+    ]);
+  });
+
+  it('allows negation when filtering with an object', () => {
+    const result = parse('arr | filter:{name: {first: "!o"}}');
+
+    expect(result({ arr: [
+      { name: { first: 'Joe' }, role: 'admin' },
+      { name: { first: 'Jane' }, role: 'moderator' }
+    ]})).toEqual([
+      { name: { first: 'Jane' }, role: 'moderator' }
+    ]);
+  });
 });

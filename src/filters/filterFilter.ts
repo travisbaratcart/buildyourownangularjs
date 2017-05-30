@@ -13,7 +13,8 @@ export class FilterFilter {
         _.isString(filter)
         || _.isNumber(filter)
         || _.isBoolean(filter)
-        || _.isNull(filter)) {
+        || _.isNull(filter)
+        || _.isObject(filter)) {
         test = this.createTest(filter);
       } else {
         return arr;
@@ -38,7 +39,13 @@ export class FilterFilter {
     if (_.isString(expected) && _.startsWith(expected, '!')) {
       return !this.deepCompare(actual, expected.substring(1), comparator)
     } else if (_.isObject(actual)) {
-      return _.some(actual, value => this.deepCompare(value, expected, comparator));
+      if(_.isObject(expected)) {
+        return _.every(expected, (expectedVal, expectedKey) => {
+          return this.deepCompare(actual[expectedKey], expectedVal, comparator);
+        });
+      } else {
+        return _.some(actual, value => this.deepCompare(value, expected, comparator));
+      }
     } else {
       return comparator(actual, expected);
     }
