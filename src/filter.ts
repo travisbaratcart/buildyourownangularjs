@@ -1,11 +1,21 @@
 import * as _ from 'lodash';
 
 export class FilterService {
-  private filters: { [filterName: string]: () => any } = {};
+  private filters: { [filterName: string]: (obj: any) => any } = {};
 
-  public register(filterNameOrObject: string | { [filterName: string]: () => () => any }, factory?: () => () => any): (() => any)[] {
+  private static filterService: FilterService;
+
+  public static getInstance(): FilterService {
+    if (!FilterService.filterService) {
+      FilterService.filterService = new FilterService();
+    }
+
+    return FilterService.filterService;
+  }
+
+  public register(filterNameOrObject: string | { [filterName: string]: () => (obj: any) => any }, factory?: () => (obj: any) => any): ((obj: any) => any)[] {
     if (_.isObject(filterNameOrObject)) {
-      const filterObject = <{ [filterName: string]: () => () => any }>filterNameOrObject;
+      const filterObject = <{ [filterName: string]: () => (obj: any) => any }>filterNameOrObject;
 
       return _.map(filterObject, (factory, filterName) => {
         return this.register(filterName, factory)[0];
@@ -18,7 +28,7 @@ export class FilterService {
     return [filter];
   }
 
-  public filter(filterName: string): () => any {
+  public filter(filterName: string): (obj: any) => any {
     return this.filters[filterName];
   }
 }

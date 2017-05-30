@@ -1,3 +1,6 @@
+import * as _ from 'lodash';
+import { FilterService } from './filter';
+
 interface IToken {
   text: string;
   value?: any;
@@ -51,7 +54,8 @@ class Lexer {
     '<=': true,
     '>=': true,
     '&&': true,
-    '||': true
+    '||': true,
+    '|': true
   };
 
   public lex(text: string): IToken[] {
@@ -269,7 +273,7 @@ class AST {
     const body: any[] = [];
     do {
       if (this.tokens.length) {
-        body.push(this.assignment());
+        body.push(this.filter());
       }
     } while (this.expect(';'));
 
@@ -283,7 +287,7 @@ class AST {
     let primary: any;
 
     if (this.expect('(')) {
-      primary = this.assignment();
+      primary = this.filter();
       this.consume(')');
     } else if (this.expect('[')) {
       primary = this.arrayDeclaration();
@@ -555,6 +559,21 @@ class AST {
     return test;
   }
 
+  private filter(): any {
+    let result = this.assignment();
+
+    if (this.expect('|')) {
+      result = {
+        type: ASTComponents.CallExpression,
+        callee: this.identifier(),
+        arguments: [result],
+        filter: true
+      };
+    }
+
+    return result;
+  }
+
   private expect1(char?: string): IToken {
     if (!char || this.peekNextToken(char)) {
       return this.tokens.shift();
@@ -610,10 +629,13 @@ class ASTCompiler {
 
     this.state = {
       body: [],
-      vars: []
+      vars: [],
+      filters: {}
     };
 
     this.recurse(ast);
+
+    const filterPrefix = this.filterPrefix();
 
     const varsDeclaration = this.state.vars.length
       ? `var ${this.state.vars.join(',')};`
@@ -621,7 +643,8 @@ class ASTCompiler {
 
     const functionBody = varsDeclaration + this.state.body.join('');
 
-    const functionString = 'var fn = function(scope, locals){'
+    const functionString = filterPrefix
+      + 'var fn = function(scope, locals){'
       + varsDeclaration
       + functionBody
       + '}; return fn;'
@@ -631,11 +654,13 @@ class ASTCompiler {
       'validateObjectSafety',
       'validateFunctionSafety',
       'ifDefined',
+      'filterService',
       functionString)(
         this.validateAttributeSafety,
         this.validateObjectSafety,
         this.validateFunctionSafety,
-        this.ifDefined
+        this.ifDefined,
+        FilterService.getInstance()
       );
   }
 
@@ -673,6 +698,14 @@ class ASTCompiler {
       case ASTComponents.MemberExpression:
         return this.getMemberExpression(ast, context, safeTraverse);
       case ASTComponents.CallExpression:
+        if (ast.filter) {
+          const callee = this.filter(ast.callee.name);
+
+          const args = ast.arguments.map((arg: any) => this.recurse(arg));
+
+          return `${callee}(${args})`;
+        }
+
         const callContext: any = {};
         let callee = this.recurse(ast.callee, callContext);
 
@@ -887,10 +920,12 @@ class ASTCompiler {
     return `${obj} && (${this.escapeIfNecessary(property)} in ${obj})`;
   }
 
-  private getNextDistinctVariableName(): string {
+  private getNextDistinctVariableName(skipDeclaration?: boolean): string {
     const nextId = `v${this.nextId++}`;
 
-    this.state.vars.push(nextId);
+    if (!skipDeclaration) {
+      this.state.vars.push(nextId);
+    }
 
     return nextId;
   }
@@ -910,6 +945,14 @@ class ASTCompiler {
     }
 
     return attr;
+  }
+
+  private filter(filterName: string): string {
+    if (!this.state.filters.hasOwnProperty(filterName)) {
+      this.state.filters[filterName] = this.getNextDistinctVariableName(true);
+    }
+
+    return this.state.filters[filterName];
   }
 
   private validateObjectSafety(obj: any): any {
@@ -963,6 +1006,18 @@ class ASTCompiler {
 
   private addIfDefined(value: any, defaultValue: any): string {
     return `ifDefined(${value}, ${this.escapeIfNecessary(defaultValue)})`;
+  }
+
+  private filterPrefix(): string {
+    if (_.isEmpty(this.state.filters)) {
+      return '';
+    } else {
+      const filterDeclarations = _.map(this.state.filters, (filterId, filterName) => {
+        return `${filterId} = filterService.filter(${this.escapeIfNecessary(filterName)})`;
+      });
+
+      return `var ${filterDeclarations.join(',')};`;
+    }
   }
 }
 
