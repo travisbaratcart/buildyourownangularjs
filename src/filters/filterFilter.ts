@@ -1,5 +1,5 @@
 export function filterFilter() {
-  return function() {
-
+  return function(arr: any[], test: () => boolean) {
+    return arr.filter(test);
   }
 }
