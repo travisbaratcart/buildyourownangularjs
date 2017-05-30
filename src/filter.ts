@@ -1,7 +1,12 @@
 import * as _ from 'lodash';
+import { filterFilter } from './filters/filterFilter';
 
 export class FilterService {
   private filters: { [filterName: string]: (obj: any) => any } = {};
+
+  private constructor() {
+    this.register('filter', filterFilter);
+  }
 
   private static filterService: FilterService;
 
