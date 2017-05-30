@@ -41,6 +41,10 @@ export class FilterFilter {
     } else if (_.isObject(actual)) {
       if(_.isObject(expected)) {
         return _.every(expected, (expectedVal, expectedKey) => {
+          if (expectedVal === undefined) {
+            return true;
+          }
+
           return this.deepCompare(actual[expectedKey], expectedVal, comparator);
         });
       } else {
