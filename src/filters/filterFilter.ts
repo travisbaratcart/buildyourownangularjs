@@ -42,6 +42,10 @@ export class FilterFilter {
   };
 
   private contains = (element: any, expected: string) => {
+    if (element === undefined) {
+      return false;
+    }
+
     if (element === null || expected === null) {
       return element === expected;
     }

@@ -118,4 +118,9 @@ describe('filter filter', () => {
     const result = parse('arr | filter:"null"');
     expect(result({ arr: [null, 'not null'] })).toEqual(['not null']);
   });
+
+  it('does not match undefined values', () => {
+    const result = parse('arr | filter:"undefined"');
+    expect(result({ arr: [undefined, 'undefined']})).toEqual(['undefined']);
+  });
 });
