@@ -563,12 +563,18 @@ class AST {
     let result = this.assignment();
 
     while (this.expect('|')) {
+      const args = [result];
+
       result = {
         type: ASTComponents.CallExpression,
         callee: this.identifier(),
-        arguments: [result],
+        arguments: args,
         filter: true
       };
+
+      while (this.expect(':')) {
+        args.push(this.assignment());
+      }
     }
 
     return result;

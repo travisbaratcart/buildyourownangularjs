@@ -64,4 +64,26 @@ describe('filter', () => {
 
     expect(result()).toBe('HELLO!');
   });
+
+  it('can pass an additional argument to filters', () => {
+    filterService.register('repeat', function() {
+      return function(str: string, times: number) {
+        return _.repeat(str, times);
+      }
+    })
+
+    const result = parse('"hello" | repeat:3');
+    expect(result()).toBe('hellohellohello');
+  });
+
+  it('can pass several additional arguments to filters', () => {
+    filterService.register('surround', function() {
+      return function(str: string, left: string, right: string) {
+        return left + str + right;
+      };
+    })
+
+    const result = parse('"hello" | surround:"*":"!"');
+    expect(result()).toBe('*hello!');
+  });
 });
