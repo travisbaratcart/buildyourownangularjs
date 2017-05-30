@@ -9,7 +9,11 @@ export class FilterFilter {
 
       if (_.isFunction(filter)) {
         test = filter;
-      } else if (_.isString(filter) || _.isNumber(filter) || _.isBoolean(filter)) {
+      } else if (
+        _.isString(filter)
+        || _.isNumber(filter)
+        || _.isBoolean(filter)
+        || _.isNull(filter)) {
         test = this.createTest(filter);
       } else {
         return arr;
@@ -38,6 +42,10 @@ export class FilterFilter {
   };
 
   private contains = (element: any, expected: string) => {
+    if (element === null || expected === null) {
+      return element === expected;
+    }
+
     let elementString = ('' + element).toLowerCase();
     let expectedString = ('' + expected).toLowerCase();
 

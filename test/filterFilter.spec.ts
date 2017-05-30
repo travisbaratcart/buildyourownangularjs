@@ -102,4 +102,20 @@ describe('filter filter', () => {
       { name: 'John', admin: true}
     ]);
   });
+
+  it('filters with a substring numeric value', () => {
+    const result = parse('arr | filter:42');
+    expect(result({ arr: ['contains 42', 10420] })).toEqual(['contains 42', 10420]);
+  });
+
+  it('filters matching null', () => {
+    const result = parse('arr | filter:null');
+
+    expect(result({ arr: [null, 'not null']})).toEqual([null]);
+  });
+
+  it('does not match null value with the string null', () => {
+    const result = parse('arr | filter:"null"');
+    expect(result({ arr: [null, 'not null'] })).toEqual(['not null']);
+  });
 });
