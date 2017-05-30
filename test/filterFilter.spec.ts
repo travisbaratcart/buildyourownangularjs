@@ -77,4 +77,29 @@ describe('filter filter', () => {
       [{ name: 'John' }, { name: 'Mary' }]
     ]);
   });
+
+  it('filters with a number', () => {
+    const result = parse('arr | filter:42');
+
+    expect(result({ arr: [
+      { name: 'Mary', age: 42},
+      { name: 'John', age: 43},
+      { name: 'Jane', age: 44}
+    ]})).toEqual([
+      { name: 'Mary', age: 42}
+    ]);
+  });
+
+  it('filters with a boolean', () => {
+    const result = parse('arr | filter:true');
+
+    expect(result({ arr: [
+      { name: 'Mary', admin: true},
+      { name: 'John', admin: true},
+      { name: 'Jane', admin: false}
+    ]})).toEqual([
+      { name: 'Mary', admin: true},
+      { name: 'John', admin: true}
+    ]);
+  });
 });

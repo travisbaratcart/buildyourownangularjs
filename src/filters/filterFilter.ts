@@ -9,7 +9,7 @@ export class FilterFilter {
 
       if (_.isFunction(filter)) {
         test = filter;
-      } else if (_.isString(filter)) {
+      } else if (_.isString(filter) || _.isNumber(filter) || _.isBoolean(filter)) {
         test = this.createTest(filter);
       } else {
         return arr;
@@ -19,15 +19,17 @@ export class FilterFilter {
     }
   }
 
-  private createTest = (str: string) => {
-    return (element: any) => this.deepCompare(element, str, this.contains);
+  private createTest = (expected: any) => {
+    return (element: any) => this.deepCompare(element, expected, this.contains);
   }
 
-  private deepCompare = (
+  private deepCompare: (
     actual: any,
-    expected: string,
-    comparator: (element: any, str: string) => boolean) => {
-
+    expected: any,
+    comparator: (element: any, expected: any) => boolean) => boolean = (
+    actual,
+    expected,
+    comparator) => {
     if (_.isObject(actual)) {
       return _.some(actual, value => this.deepCompare(value, expected, comparator));
     } else {
@@ -35,7 +37,10 @@ export class FilterFilter {
     }
   };
 
-  private contains = (element: any, str: string) => {
-    return element.toLowerCase().indexOf(str.toLowerCase()) > -1
+  private contains = (element: any, expected: string) => {
+    let elementString = ('' + element).toLowerCase();
+    let expectedString = ('' + expected).toLowerCase();
+
+    return elementString.indexOf(expectedString) > -1
   }
 }
