@@ -34,4 +34,10 @@ describe('filter filter', () => {
 
     expect(result({ arr: ['quick', 'brown', 'fox'] })).toEqual(['brown', 'fox']);
   });
+
+  it('filters an array of strings ignoring case', () => {
+    const result = parse('arr | filter:"o"');
+
+    expect(result({ arr: ['quick', 'BROWN', 'fox']})).toEqual(['BROWN', 'fox']);
+  });
 });
