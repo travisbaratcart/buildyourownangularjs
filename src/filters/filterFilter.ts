@@ -25,7 +25,15 @@ export class FilterFilter {
   }
 
   private createTest = (expected: any) => {
-    return (element: any) => this.deepCompare(element, expected, this.contains, true);
+    const shoudlMatchPrimitives = _.isObject(expected) && ('$' in expected);
+
+    return (element: any) => {
+      if (shoudlMatchPrimitives && !_.isObject(element)) {
+        return this.deepCompare(element, expected.$, this.contains, false);
+      }
+
+      return this.deepCompare(element, expected, this.contains, true);
+    }
   }
 
   private deepCompare: (

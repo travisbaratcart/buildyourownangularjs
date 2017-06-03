@@ -263,7 +263,12 @@ describe('filter filter', () => {
     ]})).toEqual([
       { name: { first: 'Joe', last: 'Fox' }, role: 'admin' },
       { name: { first: 'Mary', last: 'Brown' }, role: 'admin' }
-    ])
+    ]);
+  });
 
+  it('filters primitives with a wildcard property', () => {
+    const result = parse('arr | filter: { $: "o" }');
+
+    expect(result({ arr: ['Joe', 'Jane', 'Mary'] })).toEqual(['Joe']);
   });
 });
