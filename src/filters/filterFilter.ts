@@ -38,7 +38,15 @@ export class FilterFilter {
 
     if (_.isString(expected) && _.startsWith(expected, '!')) {
       return !this.deepCompare(actual, expected.substring(1), comparator)
-    } else if (_.isObject(actual)) {
+    }
+
+    if (_.isArray(actual)) {
+      return actual.some((element) => {
+        return this.deepCompare(element, expected, comparator);
+      });
+    }
+
+    if (_.isObject(actual)) {
       if(_.isObject(expected)) {
         return _.every(expected, (expectedVal, expectedKey) => {
           if (expectedVal === undefined) {
@@ -50,9 +58,9 @@ export class FilterFilter {
       } else {
         return _.some(actual, value => this.deepCompare(value, expected, comparator));
       }
-    } else {
-      return comparator(actual, expected);
     }
+
+    return comparator(actual, expected);
   };
 
   private contains = (element: any, expected: string) => {

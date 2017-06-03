@@ -195,4 +195,23 @@ describe('filter filter', () => {
       { name: 'Jane', role: 'moderator' }
     ]);
   });
+
+  it('filters with a nested object in an array', () => {
+    const result = parse('arr | filter:{users: {name: {first: "o" }}}');
+
+    expect(result({ arr: [
+      { users: [
+        { name: { first: 'Joe' }, role: 'admin'},
+        { name: { first: 'Jane' }, role: 'moderator'},
+      ]},
+      { users: [
+        { name: { first: 'Mary', role: 'admin'} },
+      ]}
+    ]})).toEqual([
+      { users: [
+        { name: { first: 'Joe' }, role: 'admin'},
+        { name: { first: 'Jane' }, role: 'moderator'},
+      ]}
+    ]);
+  })
 });
