@@ -283,4 +283,15 @@ describe('filter filter', () => {
       { name: { first: 'Joe' }, role: 'admin' }
     ]);
   });
+
+  it('allows using a custom comparator', () => {
+    const result = parse('arr | filter: { $: "o" }: myComparator');
+
+    expect(result({
+      arr: ['o', 'oo', 'ao', 'aa'],
+      myComparator: function(left: any, right: any) {
+        return left === right;
+      }
+    })).toEqual(['o']);
+  });
 });

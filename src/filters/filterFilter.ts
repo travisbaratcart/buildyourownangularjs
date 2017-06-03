@@ -4,7 +4,10 @@ import * as _ from 'lodash';
 export class FilterFilter {
   // public getFilter(): (arr: any[], filter: any) => any[] {
   public getFilter = () => {
-    return (arr: any[], filter: any): any[] => {
+    return (
+      arr: any[],
+      filter: any,
+      customComparator?: (actual: any, expected: any) => boolean): any[] => {
       let test: (element: any) => boolean;
 
       if (_.isFunction(filter)) {
@@ -15,7 +18,7 @@ export class FilterFilter {
         || _.isBoolean(filter)
         || _.isNull(filter)
         || _.isObject(filter)) {
-        test = this.createTest(filter);
+        test = this.createTest(filter, customComparator);
       } else {
         return arr;
       }
@@ -24,15 +27,20 @@ export class FilterFilter {
     }
   }
 
-  private createTest = (expected: any) => {
+  private createTest = (
+    expected: any,
+    customComparator?: (actual: any, expected: any) => boolean) => {
+
+    const testComparator = customComparator || this.contains;
+
     const shoudlMatchPrimitives = _.isObject(expected) && ('$' in expected);
 
     return (element: any) => {
       if (shoudlMatchPrimitives && !_.isObject(element)) {
-        return this.deepCompare(element, expected.$, this.contains, false, true);
+        return this.deepCompare(element, expected.$, testComparator, false, true);
       }
 
-      return this.deepCompare(element, expected, this.contains, true, false);
+      return this.deepCompare(element, expected, testComparator, true, false);
     }
   }
 
