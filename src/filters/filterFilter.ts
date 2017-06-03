@@ -29,10 +29,10 @@ export class FilterFilter {
 
     return (element: any) => {
       if (shoudlMatchPrimitives && !_.isObject(element)) {
-        return this.deepCompare(element, expected.$, this.contains, false);
+        return this.deepCompare(element, expected.$, this.contains, false, true);
       }
 
-      return this.deepCompare(element, expected, this.contains, true);
+      return this.deepCompare(element, expected, this.contains, true, false);
     }
   }
 
@@ -40,18 +40,21 @@ export class FilterFilter {
     actual: any,
     expected: any,
     comparator: (element: any, expected: any) => boolean,
-    shouldMatchAnyProperty: boolean) => boolean = (
+    shouldMatchAnyProperty: boolean,
+    isWildcardComparison: boolean) => boolean = (
     actual,
     expected,
     comparator,
-    shouldMatchAnyProperty) => {
+    shouldMatchAnyProperty,
+    isWildcardComparison) => {
 
     if (_.isString(expected) && _.startsWith(expected, '!')) {
       return !this.deepCompare(
         actual,
         expected.substring(1),
         comparator,
-        shouldMatchAnyProperty);
+        shouldMatchAnyProperty,
+        isWildcardComparison);
     }
 
     if (_.isArray(actual)) {
@@ -60,12 +63,13 @@ export class FilterFilter {
           element,
           expected,
           comparator,
-          shouldMatchAnyProperty);
+          shouldMatchAnyProperty,
+          isWildcardComparison);
       });
     }
 
     if (_.isObject(actual)) {
-      if(_.isObject(expected)) {
+      if(_.isObject(expected) && !isWildcardComparison) {
         return _.every(expected, (expectedVal: any, expectedKey: string) => {
           if (expectedVal === undefined) {
             return true;
@@ -79,6 +83,7 @@ export class FilterFilter {
             actualComparisonValue,
             expectedVal,
             comparator,
+            isWildcard,
             isWildcard);
         });
       } else {
@@ -87,7 +92,8 @@ export class FilterFilter {
             value,
             expected,
             comparator,
-            shouldMatchAnyProperty));
+            shouldMatchAnyProperty,
+            false));
         } else {
           return comparator(actual, expected);
         }

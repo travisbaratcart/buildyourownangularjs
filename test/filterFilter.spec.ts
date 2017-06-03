@@ -271,4 +271,16 @@ describe('filter filter', () => {
 
     expect(result({ arr: ['Joe', 'Jane', 'Mary'] })).toEqual(['Joe']);
   });
+
+  it('filters with a nested wildcard property', () => {
+    const result = parse('arr | filter: { $: { $: "o" } }')
+
+    expect(result({ arr: [
+      { name: { first: 'Joe' }, role: 'admin' },
+      { name: { first: 'Jane' }, role: 'moderator' },
+      { name: { first: 'Mary' }, role: 'admin' }
+    ]})).toEqual([
+      { name: { first: 'Joe' }, role: 'admin' }
+    ]);
+  });
 });
