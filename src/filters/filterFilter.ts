@@ -58,16 +58,20 @@ export class FilterFilter {
 
     if (_.isObject(actual)) {
       if(_.isObject(expected)) {
-        return _.every(expected, (expectedVal, expectedKey) => {
+        return _.every(expected, (expectedVal: any, expectedKey: string) => {
           if (expectedVal === undefined) {
             return true;
           }
 
+          const isWildcard = expectedKey === '$';
+
+          const actualComparisonValue = isWildcard ? actual : actual[expectedKey];
+
           return this.deepCompare(
-            actual[expectedKey],
+            actualComparisonValue,
             expectedVal,
             comparator,
-            false);
+            isWildcard);
         });
       } else {
         if (shouldMatchAnyProperty) {

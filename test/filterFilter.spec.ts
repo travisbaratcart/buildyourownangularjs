@@ -226,4 +226,44 @@ describe('filter filter', () => {
 
     expect(result({ arr: items })).toEqual([{ user: { name: 'Bob' } }]);
   });
+
+  it('fiilters with a wildcard property', () => {
+    const result = parse('arr | filter:{ $: "o" }');
+
+    expect(result({ arr: [
+      { name: 'Joe', role: 'admin'},
+      { name: 'Jane', role: 'moderator'},
+      { name: 'Mary', role: 'admin'}
+    ]})).toEqual([
+      { name: 'Joe', role: 'admin'},
+      { name: 'Jane', role: 'moderator'}
+    ]);
+  });
+
+  it('filters nested object with a wildcard property', () => {
+    const result = parse('arr | filter: { $: "o" }');
+
+    expect(result({ arr: [
+      { name: { first: 'Joe' }, role: 'admin' },
+      { name: { first: 'Jane' }, role: 'moderator' },
+      { name: { first: 'Mary' }, role: 'admin' }
+    ]})).toEqual([
+      { name: { first: 'Joe' }, role: 'admin' },
+      { name: { first: 'Jane' }, role: 'moderator' }
+    ]);
+  });
+
+  it('filters wildcard properties scoped to parent', () => {
+    const result = parse('arr | filter: { name: { $: "o" } }');
+
+    expect(result({ arr: [
+      { name: { first: 'Joe', last: 'Fox' }, role: 'admin' },
+      { name: { first: 'Jane', last: 'Quick' }, role: 'moderator' },
+      { name: { first: 'Mary', last: 'Brown' }, role: 'admin' }
+    ]})).toEqual([
+      { name: { first: 'Joe', last: 'Fox' }, role: 'admin' },
+      { name: { first: 'Mary', last: 'Brown' }, role: 'admin' }
+    ])
+
+  });
 });
