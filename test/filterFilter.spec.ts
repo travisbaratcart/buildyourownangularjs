@@ -214,4 +214,16 @@ describe('filter filter', () => {
       ]}
     ]);
   })
+
+  it('filters with nested objects on the same level only', () => {
+    const items = [
+      {user: 'Bob'},
+      { user: { name: 'Bob' } },
+      { user: { name: { first: 'Bob', last: 'Fox' } } }
+    ];
+
+    const result = parse('arr | filter:{ user: { name: "Bob" } }');
+
+    expect(result({ arr: items })).toEqual([{ user: { name: 'Bob' } }]);
+  });
 });

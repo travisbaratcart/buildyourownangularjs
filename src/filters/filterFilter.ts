@@ -25,24 +25,34 @@ export class FilterFilter {
   }
 
   private createTest = (expected: any) => {
-    return (element: any) => this.deepCompare(element, expected, this.contains);
+    return (element: any) => this.deepCompare(element, expected, this.contains, true);
   }
 
   private deepCompare: (
     actual: any,
     expected: any,
-    comparator: (element: any, expected: any) => boolean) => boolean = (
+    comparator: (element: any, expected: any) => boolean,
+    shouldMatchAnyProperty: boolean) => boolean = (
     actual,
     expected,
-    comparator) => {
+    comparator,
+    shouldMatchAnyProperty) => {
 
     if (_.isString(expected) && _.startsWith(expected, '!')) {
-      return !this.deepCompare(actual, expected.substring(1), comparator)
+      return !this.deepCompare(
+        actual,
+        expected.substring(1),
+        comparator,
+        shouldMatchAnyProperty);
     }
 
     if (_.isArray(actual)) {
       return actual.some((element) => {
-        return this.deepCompare(element, expected, comparator);
+        return this.deepCompare(
+          element,
+          expected,
+          comparator,
+          shouldMatchAnyProperty);
       });
     }
 
@@ -53,10 +63,22 @@ export class FilterFilter {
             return true;
           }
 
-          return this.deepCompare(actual[expectedKey], expectedVal, comparator);
+          return this.deepCompare(
+            actual[expectedKey],
+            expectedVal,
+            comparator,
+            false);
         });
       } else {
-        return _.some(actual, value => this.deepCompare(value, expected, comparator));
+        if (shouldMatchAnyProperty) {
+          return _.some(actual, value => this.deepCompare(
+            value,
+            expected,
+            comparator,
+            shouldMatchAnyProperty));
+        } else {
+          return comparator(actual, expected);
+        }
       }
     }
 
