@@ -1098,6 +1098,8 @@ class ASTCompiler {
       case ASTComponents.CallExpression:
         return ast.filter
           && ast.arguments.every((argument: any) => this.isConstant(argument));
+      case ASTComponents.AssignmentExpression:
+        return this.isConstant(ast.left) && this.isConstant(ast.right);
       default:
         return false;
     }
