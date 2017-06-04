@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { FilterService } from './filter';
+import { Scope } from '../src/scope';
 
 interface IToken {
   text: string;
@@ -28,7 +29,12 @@ enum ASTComponents {
 interface IParseResult {
   (context?: any, locals?: any): any,
   literal: boolean,
-  constant: boolean
+  constant: boolean,
+  $$watchDelegate(
+    scope: Scope,
+    listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
+    checkValueEquality: boolean,
+    watchFunction: (scope: Scope) => any): () => void
 };
 
 export function parse(expression?: string | ((context?: any, locals?: any) => any)): IParseResult {
@@ -37,7 +43,13 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
       let lexer = new Lexer();
       let parser = new Parser(lexer);
 
-      return parser.parse((<string>expression));
+      const parseFunction = parser.parse((<string>expression));
+
+      if (parseFunction.constant) {
+        parseFunction.$$watchDelegate = constantWatchDelegate;
+      }
+
+      return parseFunction
     case 'function':
       return <IParseResult>expression;
     default:
@@ -47,6 +59,25 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
 
       return result;
   }
+}
+
+function constantWatchDelegate(
+  scope: Scope,
+  listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
+  checkValueEquality: boolean,
+  watchFunction: (scope: Scope) => any) {
+
+  const unWatch = scope.$watch(
+    () => watchFunction(scope),
+    (newValue, oldValue, scope) => {
+      if (_.isFunction(listenerFunction)) {
+        listenerFunction(newValue, oldValue, scope);
+      }
+
+      unWatch();
+    }, checkValueEquality);
+
+  return unWatch;
 }
 
 class Lexer {

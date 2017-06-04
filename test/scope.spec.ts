@@ -291,6 +291,13 @@ describe('Scope', () => {
 
       expect(theValue).toBe(42);
     });
+
+    it('removes constant watches after the first invocation', () => {
+      scope.$watch('[1, 2, 3]', () => 42);
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
   });
 
   describe('$eval', () => {

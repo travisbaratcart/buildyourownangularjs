@@ -28,7 +28,7 @@ export class Scope {
   // as the name implies not supposed to be public in angular, but we need it public for test
   public $$phase: string;
 
-  private $$watchers: IWatcher[] = [];
+  public $$watchers: IWatcher[] = [];
   private $$lastDirtyWatch: IWatcher = null; // Optimization to avoid cycling all watches when unnecessary
 
   private $$asyncQueue: IAsyncQueueItem[];
@@ -68,8 +68,18 @@ export class Scope {
     /* Watchers can add other watchers. Avoid optimizations when adding new watchers */
     this.$root.$$lastDirtyWatch = null;
 
+    let watchFunction = parse(watchExpression);
+
+    if (watchFunction.$$watchDelegate) {
+      return watchFunction.$$watchDelegate(
+        this,
+        listenerFunction,
+        checkValueEquality,
+        watchFunction);
+    }
+
     const watcher: IWatcher = {
-      watchFunction: parse(watchExpression),
+      watchFunction: watchFunction,
       listenerFunction: listenerFunction,
       lastWatchValue: initialWatchValue,
       checkValueEquality: checkValueEquality
