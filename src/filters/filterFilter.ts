@@ -7,7 +7,7 @@ export class FilterFilter {
     return (
       arr: any[],
       filter: any,
-      customComparator?: (actual: any, expected: any) => boolean): any[] => {
+      customComparator?: ((actual: any, expected: any) => boolean) | boolean): any[] => {
       let test: (element: any) => boolean;
 
       if (_.isFunction(filter)) {
@@ -29,9 +29,16 @@ export class FilterFilter {
 
   private createTest = (
     expected: any,
-    customComparator?: (actual: any, expected: any) => boolean) => {
+    customComparator?: ((actual: any, expected: any) => boolean) | boolean) => {
 
-    const testComparator = customComparator || this.contains;
+    let testComparator: (actual: any, expected: any) => boolean;
+
+    if (customComparator === true) {
+      testComparator = (actual: any, expected: any) => actual === expected;
+    } else {
+      testComparator = customComparator || this.contains;
+    }
+
 
     const shoudlMatchPrimitives = _.isObject(expected) && ('$' in expected);
 

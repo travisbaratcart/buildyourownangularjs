@@ -294,4 +294,15 @@ describe('filter filter', () => {
       }
     })).toEqual(['o']);
   });
+
+  it('allows using an equality comparator', () => {
+    const result = parse('arr | filter: { name: "Jo" }:true');
+
+    expect(result({ arr: [
+      { name: 'Jo' },
+      { name: 'Joe' }
+    ]})).toEqual([
+      { name: 'Jo' }
+    ]);
+  });
 });

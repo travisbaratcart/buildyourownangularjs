@@ -667,4 +667,14 @@ describe('parse', () => {
   it('returns the value of the last statement', () => {
     expect(parse('a = 1; b = 2; a + b')({})).toBe(3);
   });
+
+  it('returns the function itself if given one', () => {
+    const fn = () => 7;
+
+    expect(parse(fn)).toBe(fn);
+  });
+
+  it('still returns a function when given no argument', () => {
+    expect(parse()).toEqual(jasmine.any(Function));
+  });
 });

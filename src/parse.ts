@@ -25,11 +25,18 @@ enum ASTComponents {
   ConditionalExpression
 };
 
-export function parse(expression: string): Function {
-  let lexer = new Lexer();
-  let parser = new Parser(lexer);
+export function parse(expression?: string | Function): Function {
+  switch (typeof expression) {
+    case 'string':
+      let lexer = new Lexer();
+      let parser = new Parser(lexer);
 
-  return parser.parse(expression);
+      return parser.parse((<string>expression));
+    case 'function':
+      return <Function>expression;
+    default:
+      return _.noop;
+  }
 }
 
 class Lexer {
