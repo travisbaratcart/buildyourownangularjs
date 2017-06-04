@@ -278,6 +278,19 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(0);
     });
+
+    it('accepts expressions for watch functions', () => {
+      let theValue;
+
+      (<any>scope).aValue = 42;
+      scope.$watch('aValue', (newValue, oldValue, scope) => {
+        theValue = newValue;
+      });
+
+      scope.$digest();
+
+      expect(theValue).toBe(42);
+    });
   });
 
   describe('$eval', () => {

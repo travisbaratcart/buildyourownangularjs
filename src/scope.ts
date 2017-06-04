@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { parse } from './parse';
 
 interface IWatcher {
   watchFunction: (scope: Scope) => any,
@@ -60,7 +61,7 @@ export class Scope {
 
   /* Not putting these on prototype until typescript makes it reasonable to do so */
   public $watch(
-    watchFunction: (scope: Scope) => any,
+    watchExpression: (string | ((scope: Scope) => any)),
     listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any,
     checkValueEquality: boolean = false): () => void {
 
@@ -68,7 +69,7 @@ export class Scope {
     this.$root.$$lastDirtyWatch = null;
 
     const watcher: IWatcher = {
-      watchFunction: watchFunction,
+      watchFunction: parse(watchExpression),
       listenerFunction: listenerFunction,
       lastWatchValue: initialWatchValue,
       checkValueEquality: checkValueEquality
