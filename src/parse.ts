@@ -1092,7 +1092,9 @@ class ASTCompiler {
       case ASTComponents.Identifier:
         return this.isReservedIdentifier(ast.name);
       case ASTComponents.MemberExpression:
-        return this.isConstant(ast.object);
+        return ast.isComputed
+          ? this.isConstant(ast.object) && this.isConstant(ast.property)
+          : this.isConstant(ast.object);
       default:
         return false;
     }
