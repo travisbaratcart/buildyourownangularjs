@@ -25,7 +25,13 @@ enum ASTComponents {
   ConditionalExpression
 };
 
-export function parse(expression?: string | ((context?: any, locals?: any) => any)): (context?: any, locals?: any) => any {
+interface IParseResult {
+  (context?: any, locals?: any): any,
+  literal: boolean,
+  constant: boolean
+};
+
+export function parse(expression?: string | ((context?: any, locals?: any) => any)): IParseResult {
   switch (typeof expression) {
     case 'string':
       let lexer = new Lexer();
@@ -33,9 +39,13 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
 
       return parser.parse((<string>expression));
     case 'function':
-      return <(context: any) => any>expression;
+      return <IParseResult>expression;
     default:
-      return _.noop;
+      let result = <IParseResult>_.noop;
+      result.literal = true;
+      result.constant = true;
+
+      return result;
   }
 }
 
@@ -637,7 +647,7 @@ class ASTCompiler {
 
   }
 
-  public compile(text: string): Function {
+  public compile(text: string): IParseResult {
     let ast = this.astBuilder.ast(text);
 
     this.state = {
@@ -1074,7 +1084,7 @@ class Parser {
     this.astCompiler = new ASTCompiler(this.ast);
   }
 
-  public parse(text: string): (context?: any, locals?: any) => any {
-    return (<(context?: any, locals?: any) => any>this.astCompiler.compile(text));
+  public parse(text: string): IParseResult {
+    return this.astCompiler.compile(text);
   }
 }

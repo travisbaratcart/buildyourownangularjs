@@ -719,4 +719,9 @@ describe('parse', () => {
 
     expect(result.literal).toBe(false);
   });
+
+  it('marks integers constant', () => {
+    const result = parse('42');
+    expect(result.constant).toBe(true);
+  });
 });
