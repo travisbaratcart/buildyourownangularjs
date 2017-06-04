@@ -754,4 +754,13 @@ describe('parse', () => {
     expect(parse('{ a: 1, b: something }').constant).toBe(false);
     expect(parse('{ a: 1, b: { c: something } }').constant).toBe(false);
   });
+
+  it('marks this as non-constant', () => {
+    expect(parse('this').constant).toBe(false);
+  });
+
+  it('marks non-computed lookup constant when the object is constant', () => {
+    expect(parse('{ a: 1 }.a').constant).toBe(true);
+    expect(parse('obj.a').constant).toBe(false);
+  });
 });

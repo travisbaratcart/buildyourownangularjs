@@ -1090,7 +1090,9 @@ class ASTCompiler {
       case ASTComponents.Literal:
         return true;
       case ASTComponents.Identifier:
-        return this.isReservedIdentifier(ast.name)
+        return this.isReservedIdentifier(ast.name);
+      case ASTComponents.MemberExpression:
+        return this.isConstant(ast.object);
       default:
         return false;
     }
