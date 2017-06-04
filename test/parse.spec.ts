@@ -734,4 +734,17 @@ describe('parse', () => {
     const result = parse('true');
     expect(result.constant).toBe(true);
   });
+
+  it('marks identifiers non-constant', () => {
+    const result = parse('a');
+
+    expect(result.constant).toBe(false);
+  });
+
+  it('marks arrays constant when elements are constant', () => {
+    expect(parse('[1, 2, 3]').constant).toBe(true);
+    expect(parse('[1, 2, [3]]').constant).toBe(true);
+    expect(parse('[1, 2, a]').constant).toBe(false);
+    expect(parse('[1, 2, [a]]').constant).toBe(false);
+  });
 });

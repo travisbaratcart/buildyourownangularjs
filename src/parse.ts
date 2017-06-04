@@ -1079,6 +1079,10 @@ class ASTCompiler {
         return ast.body.every((expression: any) => {
           return this.isConstant(expression);
         });
+      case ASTComponents.ArrayExpression:
+        return ast.elements.every((element: any) => {
+          return this.isConstant(element);
+        });
       case ASTComponents.Literal:
         return true;
       case ASTComponents.Identifier:
