@@ -1100,6 +1100,8 @@ class ASTCompiler {
           && ast.arguments.every((argument: any) => this.isConstant(argument));
       case ASTComponents.AssignmentExpression:
         return this.isConstant(ast.left) && this.isConstant(ast.right);
+      case ASTComponents.UnaryExpression:
+        return this.isConstant(ast.argument);
       default:
         return false;
     }
