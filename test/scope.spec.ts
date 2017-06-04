@@ -1512,6 +1512,20 @@ describe('Scope', () => {
 
       expect(oldValueGiven).toEqual({ a: 1, b: 2});
     });
+
+    it('accepts expressions for watch functions', () => {
+      let theValue: any;
+
+      (<any>scope).arr = [1, 2, 3];
+
+      scope.$watchCollection('arr', (newValue, oldValue, scope) => {
+        theValue = newValue;
+      });
+
+      scope.$digest();
+
+      expect(theValue).toEqual([1, 2, 3]);
+    })
   });
 
   describe('events', () => {

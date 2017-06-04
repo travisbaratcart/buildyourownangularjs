@@ -276,8 +276,10 @@ export class Scope {
   }
 
   public $watchCollection(
-    watchFunction: (scope: Scope) => any,
+    watchExpression: string | ((scope: Scope) => any),
     listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): () => void {
+
+    const watchFunction = parse(watchExpression);
 
     // Performance optimization: Only worry about maintaining deep copies of old value
     // if actually needed for listener.
