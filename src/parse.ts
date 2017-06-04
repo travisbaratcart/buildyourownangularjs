@@ -104,7 +104,9 @@ function oneTimeWatchDelegate(
         listenerFunction(newValue, oldValue, scope);
       }
 
-      unWatch();
+      if (newValue !== undefined) {
+        unWatch();
+      }
     }, checkValueEquality);
 
   return unWatch;

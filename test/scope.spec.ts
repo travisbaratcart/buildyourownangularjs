@@ -320,6 +320,18 @@ describe('Scope', () => {
       scope.$digest();
       expect(scope.$$watchers.length).toBe(0);
     });
+
+    it('does not remove one-time watches until the value is defined', () => {
+      scope.$watch('::aValue', () => 42);
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(1);
+
+      (<any>scope).aValue = 42;
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
   });
 
   describe('$eval', () => {
