@@ -724,4 +724,14 @@ describe('parse', () => {
     const result = parse('42');
     expect(result.constant).toBe(true);
   });
+
+  it('marks strings constant', () => {
+    const result = parse('"abc"');
+    expect(result.constant).toBe(true);
+  });
+
+  it('marks booleans constant', () => {
+    const result = parse('true');
+    expect(result.constant).toBe(true);
+  });
 });

@@ -687,6 +687,7 @@ class ASTCompiler {
       );
 
     result.literal = this.isLiteral(ast);
+    result.constant = this.isConstant(ast);
 
     return result;
   }
@@ -1070,6 +1071,21 @@ class ASTCompiler {
         || statementType === ASTComponents.ArrayExpression
         || statementType === ASTComponents.ObjectExpression
         || (statementType === ASTComponents.Identifier && this.isReservedIdentifier(statement.name));
+  }
+
+  private isConstant(ast: any): boolean {
+    switch (ast.type) {
+      case ASTComponents.Program:
+        return ast.body.every((expression: any) => {
+          return this.isConstant(expression);
+        });
+      case ASTComponents.Literal:
+        return true;
+      case ASTComponents.Identifier:
+        return this.isReservedIdentifier(ast.name)
+      default:
+        return false;
+    }
   }
 }
 
