@@ -677,4 +677,46 @@ describe('parse', () => {
   it('still returns a function when given no argument', () => {
     expect(parse()).toEqual(jasmine.any(Function));
   });
+
+  it('marks integers literal', () => {
+    const result = parse('42');
+
+    expect(result.literal).toBe(true);
+  });
+
+  it('marks strings literal', () => {
+    const result = parse('"abc"');
+
+    expect(result.literal).toBe(true);
+  });
+
+  it('marks booleans literal', () => {
+    const result = parse('true');
+
+    expect(result.literal).toBe(true);
+  });
+
+  it('marks arrays literal', () => {
+    const result = parse('[1, 2, aVariable]');
+
+    expect(result.literal).toBe(true);
+  });
+
+  it('marks objects literal', () => {
+    const result = parse('{ a: 1, b: aVariable }');
+
+    expect(result.literal).toBe(true);
+  });
+
+  it('marks unary expressions non-literal', () => {
+    const result = parse('!false');
+
+    expect(result.literal).toBe(false);
+  });
+
+  it('marks binary expressions non-literal', () => {
+    const result = parse('1 + 2');
+
+    expect(result.literal).toBe(false);
+  });
 });

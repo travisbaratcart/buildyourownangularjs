@@ -662,7 +662,7 @@ class ASTCompiler {
       + functionBody
       + '}; return fn;'
 
-    return new Function(
+    const result = new Function(
       'validateAttributeSafety',
       'validateObjectSafety',
       'validateFunctionSafety',
@@ -675,18 +675,23 @@ class ASTCompiler {
         this.ifDefined,
         FilterService.getInstance()
       );
+
+    result.literal = this.isLiteral(ast);
+
+    return result;
   }
 
   private recurse(ast: any, context?: any, safeTraverse?: boolean): any {
     switch (ast.type) {
       case ASTComponents.Program:
-        const lastStatement = ast.body.pop();
-
         ast.body.forEach((statement: any) => {
-          this.state.body.push(this.recurse(statement) + ';');
+          const isLastElement = ast.body.indexOf(statement) === ast.body.length - 1;
+
+          isLastElement
+            ? this.state.body.push('return ', this.recurse(statement), ';')
+            : this.state.body.push(this.recurse(statement) + ';');
         });
 
-        this.state.body.push('return ', this.recurse(lastStatement), ';');
         break;
       case ASTComponents.Literal:
         return this.escapeIfNecessary(ast.value);
@@ -1035,6 +1040,26 @@ class ASTCompiler {
 
       return `var ${filterDeclarations.join(',')};`;
     }
+  }
+
+  private isLiteral(ast: any): boolean {
+    let numberOfStatements = ast.body.length;
+
+    if (numberOfStatements === 0) {
+      return true;
+    }
+
+    if (numberOfStatements > 1) {
+      return false;
+    }
+
+    let statement = ast.body[0];
+    let statementType = statement.type;
+
+    return statementType === ASTComponents.Literal
+        || statementType === ASTComponents.ArrayExpression
+        || statementType === ASTComponents.ObjectExpression
+        || (statementType === ASTComponents.Identifier && this.isReservedIdentifier(statement.name));
   }
 }
 
