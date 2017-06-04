@@ -9,7 +9,7 @@ interface IWatcher {
 };
 
 interface IAsyncQueueItem {
-  functionToEvaluate: (scope: Scope) => void;
+  evalExpression: string | ((scope: Scope) => void);
   scope: Scope;
 }
 
@@ -106,7 +106,7 @@ export class Scope {
       while (this.$$asyncQueue.length) {
         try {
           const asyncTask = this.$$asyncQueue.shift();
-          asyncTask.scope.$eval(asyncTask.functionToEvaluate);
+          asyncTask.scope.$eval(asyncTask.evalExpression);
         } catch (error) {
           console.error(error);
         }
@@ -135,24 +135,24 @@ export class Scope {
   }
 
   public $eval(
-    evalFunction: (scope: Scope, passThroughArg?: any) => any,
-    passThroughArg?: any): any {
+    evalExpression: string | ((scope: Scope, locals?: any) => any),
+    locals?: any): any {
 
-    return evalFunction(this, passThroughArg);
+    return parse(evalExpression)(this, locals);
   }
 
-  public $apply(applyFunction: (scope: Scope) => void) {
+  public $apply(applyExpression: string | ((scope: Scope) => void)) {
     this.$beginPhase('$apply');
 
     try {
-      this.$eval(applyFunction);
+      this.$eval(applyExpression);
     } finally {
       this.$clearPhase();
       this.$root.$digest();
     }
   }
 
-  public $evalAsync(functionToEvaluate: (scope: Scope) => void) {
+  public $evalAsync(evalExpression: string | ((scope: Scope) => void)) {
     if (!this.$$phase && !this.$$asyncQueue.length) {
       // If the queue item added below isn't picked up by another digest cycle,
       // this will set another digest cycle on the next js turn.
@@ -164,7 +164,7 @@ export class Scope {
     }
 
     let newAsyncQueueItem: IAsyncQueueItem = {
-      functionToEvaluate,
+      evalExpression,
       scope: this
     };
 

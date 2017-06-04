@@ -347,6 +347,10 @@ describe('Scope', () => {
       scope.$digest();
       expect((<any>scope).counter).toBe(1);
     });
+
+    it('accepts expressions in $eval', () => {
+      expect(scope.$eval('42')).toBe(42);
+    });
   });
 
   describe('$apply', () => {
@@ -370,6 +374,16 @@ describe('Scope', () => {
       scope.$apply((scope) => (<any>scope).aValue = 'someOtherValue');
 
       expect((<any>scope).counter).toBe(2);
+    });
+
+    it('accepts expressions', () => {
+      let theValue: any;
+
+      (<any>scope).aFunction = () => theValue = 42;
+
+      scope.$apply('aFunction()');
+
+      expect(theValue).toBe(42);
     });
   });
 
@@ -477,6 +491,19 @@ describe('Scope', () => {
         expect((<any>scope).counter).toBe(1);
         done();
       }, 50);
+    });
+
+    it('accepts expressions', (done) => {
+      let called = false;
+
+      (<any>scope).aFunction = () => called = true;
+
+      scope.$evalAsync('aFunction()');
+
+      scope.$$postDigest(() => {
+        expect(called).toBe(true);
+        done()
+      })
     });
   });
 
