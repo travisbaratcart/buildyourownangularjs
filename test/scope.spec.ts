@@ -351,6 +351,30 @@ describe('Scope', () => {
       scope.$digest();
       expect(scope.$$watchers.length).toBe(0);
     });
+
+    it('does  not remove one-time watches before all array items are defined', () => {
+      scope.$watch('::[1, 2, aValue]', () => 42, true);
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(1);
+
+      (<any>scope).aValue = 42;
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
+
+    it('does  not remove one-time watches before all objects properties are defined', () => {
+      scope.$watch('::{ a: 1, b: aValue }', () => 42, true);
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(1);
+
+      (<any>scope).aValue = 42;
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
   });
 
   describe('$eval', () => {

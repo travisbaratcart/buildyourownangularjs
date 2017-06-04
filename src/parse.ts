@@ -57,7 +57,11 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
       if (parseFunction.constant) {
         parseFunction.$$watchDelegate = constantWatchDelegate;
       } else if (isOneTimeExpression) {
-        parseFunction.$$watchDelegate = oneTimeWatchDelegate;
+        // Order important. Constant, one-time, literal expressions
+        // already handled by constant condition above.
+        parseFunction.$$watchDelegate = parseFunction.literal
+          ? oneTimeArrOrObjWatchDelegate
+          : oneTimeWatchDelegate;
       }
 
       return parseFunction
@@ -111,6 +115,35 @@ function oneTimeWatchDelegate(
       if (newValue !== undefined) {
         scope.$$postDigest(() => {
           if (finalValue !== undefined) {
+            unWatch();
+          }
+        })
+      }
+    }, checkValueEquality);
+
+  return unWatch;
+}
+
+function oneTimeArrOrObjWatchDelegate(
+  scope: Scope,
+  listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
+  checkValueEquality: boolean,
+  watchFunction: (scope: Scope) => any) {
+
+  function areAllDefined(arrOrObj: any) {
+    return _.every(arrOrObj, (val) => !_.isUndefined(val));
+  }
+
+  const unWatch = scope.$watch(
+    () => watchFunction(scope),
+    (newValue, oldValue, scope) => {
+      if (_.isFunction(listenerFunction)) {
+        listenerFunction(newValue, oldValue, scope);
+      }
+
+      if (areAllDefined(newValue)) {
+        scope.$$postDigest(() => {
+          if (areAllDefined(newValue)) {
             unWatch();
           }
         })
