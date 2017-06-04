@@ -814,4 +814,12 @@ describe('parse', () => {
     expect(parse('a && false').constant).toBe(false);
     expect(parse('a && b').constant).toBe(false);
   });
+
+  it('marks ternaries constant when all arguments are', () => {
+    expect(parse('true ? 1 : 2').constant).toBe(true);
+    expect(parse('a ? 1 : 2').constant).toBe(false);
+    expect(parse('true ? a : 2').constant).toBe(false);
+    expect(parse('true ? 1 : a').constant).toBe(false);
+    expect(parse('a ? b : c').constant).toBe(false);
+  });
 });

@@ -1105,6 +1105,10 @@ class ASTCompiler {
       case ASTComponents.BinaryExpression:
       case ASTComponents.LogicalExpression:
         return this.isConstant(ast.left) && this.isConstant(ast.right);
+      case ASTComponents.ConditionalExpression:
+        return this.isConstant(ast.test)
+          && this.isConstant(ast.consequent)
+          && this.isConstant(ast.alternate);
       default:
         return false;
     }
