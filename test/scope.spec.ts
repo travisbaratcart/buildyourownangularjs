@@ -332,6 +332,25 @@ describe('Scope', () => {
       scope.$digest();
       expect(scope.$$watchers.length).toBe(0);
     });
+
+    it('does not remove one-time watches until the value stays defined', () => {
+      (<any>scope).aValue = 42;
+
+      scope.$watch('::aValue', () => 42);
+
+      const unwatchDeleter = scope.$watch('aValue', () => {
+        delete (<any>scope).aValue;
+      });
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(2);
+
+      (<any>scope).aValue = 42;
+      unwatchDeleter();
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
   });
 
   describe('$eval', () => {

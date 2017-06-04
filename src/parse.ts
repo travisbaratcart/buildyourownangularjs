@@ -97,15 +97,23 @@ function oneTimeWatchDelegate(
   checkValueEquality: boolean,
   watchFunction: (scope: Scope) => any) {
 
+  let finalValue: any;
+
   const unWatch = scope.$watch(
     () => watchFunction(scope),
     (newValue, oldValue, scope) => {
+      finalValue = newValue;
+
       if (_.isFunction(listenerFunction)) {
         listenerFunction(newValue, oldValue, scope);
       }
 
       if (newValue !== undefined) {
-        unWatch();
+        scope.$$postDigest(() => {
+          if (finalValue !== undefined) {
+            unWatch();
+          }
+        })
       }
     }, checkValueEquality);
 
