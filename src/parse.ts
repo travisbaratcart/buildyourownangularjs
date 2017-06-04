@@ -1102,6 +1102,9 @@ class ASTCompiler {
         return this.isConstant(ast.left) && this.isConstant(ast.right);
       case ASTComponents.UnaryExpression:
         return this.isConstant(ast.argument);
+      case ASTComponents.BinaryExpression:
+      case ASTComponents.LogicalExpression:
+        return this.isConstant(ast.left) && this.isConstant(ast.right);
       default:
         return false;
     }
