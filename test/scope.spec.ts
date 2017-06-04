@@ -298,6 +298,28 @@ describe('Scope', () => {
       scope.$digest();
       expect(scope.$$watchers.length).toBe(0);
     });
+
+    it('accepts one-time watches', () => {
+      let theValue: any;
+
+      (<any>scope).aValue = 42;
+
+      scope.$watch('::aValue', (newValue, oldValue, scope) => {
+        theValue = newValue;
+      });
+
+      scope.$digest();
+
+      expect(theValue).toBe(42);
+    });
+
+    it('removes one-time watches after first invocation', () => {
+      (<any>scope).aValue = 42;
+      scope.$watch('::aValue', () => 42);
+
+      scope.$digest();
+      expect(scope.$$watchers.length).toBe(0);
+    });
   });
 
   describe('$eval', () => {

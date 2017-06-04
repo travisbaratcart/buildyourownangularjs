@@ -43,10 +43,21 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
       let lexer = new Lexer();
       let parser = new Parser(lexer);
 
-      const parseFunction = parser.parse((<string>expression));
+      let stringExpression = <string>expression;
+
+      const isOneTimeExpression = stringExpression.charAt(0) === ':'
+        && stringExpression.charAt(1) === ':';
+
+      const processedExpression = isOneTimeExpression
+        ? stringExpression.substring(2)
+        : stringExpression;
+
+      const parseFunction = parser.parse(processedExpression);
 
       if (parseFunction.constant) {
         parseFunction.$$watchDelegate = constantWatchDelegate;
+      } else if (isOneTimeExpression) {
+        parseFunction.$$watchDelegate = oneTimeWatchDelegate;
       }
 
       return parseFunction
@@ -62,6 +73,25 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
 }
 
 function constantWatchDelegate(
+  scope: Scope,
+  listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
+  checkValueEquality: boolean,
+  watchFunction: (scope: Scope) => any) {
+
+  const unWatch = scope.$watch(
+    () => watchFunction(scope),
+    (newValue, oldValue, scope) => {
+      if (_.isFunction(listenerFunction)) {
+        listenerFunction(newValue, oldValue, scope);
+      }
+
+      unWatch();
+    }, checkValueEquality);
+
+  return unWatch;
+}
+
+function oneTimeWatchDelegate(
   scope: Scope,
   listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
   checkValueEquality: boolean,
