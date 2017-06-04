@@ -1,4 +1,5 @@
 import { parse } from '../src/parse';
+import { FilterService } from '../src/filter';
 
 describe('parse', () => {
   it('can parse an integer', () => {
@@ -769,5 +770,20 @@ describe('parse', () => {
     expect(parse('obj["a"]').constant).toBe(false);
     expect(parse('{ a: 1 }[something]').constant).toBe(false);
     expect(parse('obj[something]').constant).toBe(false);
+  });
+
+  it('marks function calls non-constant', () => {
+    expect(parse('aFunction()').constant).toBe(false);
+  });
+
+  it('marks filters contant if arguments are', () => {
+    FilterService.getInstance().register('aFilter', function() {
+      return (val) => val;
+    });
+
+    expect(parse('[1, 2, 3] | aFilter').constant).toBe(true);
+    expect(parse('[1, 2, a] | aFilter').constant).toBe(false);
+    expect(parse('[1, 2, 3] | aFilter:42').constant).toBe(true);
+    expect(parse('[1, 2, 3] | aFilter:a').constant).toBe(false);
   });
 });

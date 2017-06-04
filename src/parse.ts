@@ -1095,6 +1095,9 @@ class ASTCompiler {
         return ast.isComputed
           ? this.isConstant(ast.object) && this.isConstant(ast.property)
           : this.isConstant(ast.object);
+      case ASTComponents.CallExpression:
+        return ast.filter
+          && ast.arguments.every((argument: any) => this.isConstant(argument));
       default:
         return false;
     }
