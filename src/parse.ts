@@ -23,16 +23,19 @@ enum ASTComponents {
   UnaryExpression,
   BinaryExpression,
   LogicalExpression,
-  ConditionalExpression
+  ConditionalExpression,
+  NGValueParameter
 };
 
 enum CompileStage {
   Inputs,
-  Main
+  Main,
+  Assign
 }
 
 interface IParseResult {
   (context?: any, locals?: any): any,
+  assign(context: any, value: any): any,
   literal: boolean,
   constant: boolean,
   inputs: any[],
@@ -805,7 +808,11 @@ class ASTCompiler {
       },
       filters: {},
       computingNode: '',
-      inputs: []
+      inputs: [],
+      assign: {
+        body: [],
+        vars: []
+      }
     };
 
     this.stage = CompileStage.Inputs
@@ -817,6 +824,14 @@ class ASTCompiler {
       this.state[inputKey].body.push(`return ${this.recurse(input)};`);
       this.state.inputs.push(inputKey);
     });
+
+    this.stage = CompileStage.Assign;
+
+    let assignableAst = this.getAssignableAst(ast);
+    if (assignableAst) {
+      this.state.computingNode = 'assign';
+      this.state.assign.body.push(this.recurse(assignableAst));
+    }
 
     this.stage = CompileStage.Main;
     this.state.computingNode = 'func';
@@ -837,6 +852,7 @@ class ASTCompiler {
       + functionBody
       + '};'
       + this.getWatchFunctions()
+      + this.getAssign()
       + 'return fn;'
 
     const result = new Function(
@@ -923,6 +939,10 @@ class ASTCompiler {
         return nextId;
       case ASTComponents.ConditionalExpression:
         return this.getConditionalExpression(ast);
+      case ASTComponents.NGValueParameter:
+        // Must maintain parity with this.getAssign
+        // TODO: Improve design of this code.
+        return 'val';
       default:
         throw 'Invalid syntax component.'
     }
@@ -1097,7 +1117,7 @@ class ASTCompiler {
   }
 
   private lookupPropertyOnObject(obj: string, property: string): string {
-    return `${obj}.${property}`;
+    return `(${obj}).${property}`;
   }
 
   private lookupComputedPropertyOnObject(obj: string, property: string): string {
@@ -1384,6 +1404,32 @@ class ASTCompiler {
     }
 
     return result.join('');
+  }
+
+  private getAssignableAst(ast: any): any {
+    if (ast.body.length === 1 && this.isAssignable(ast.body[0])) {
+      return {
+        type: ASTComponents.AssignmentExpression,
+        left: ast.body[0],
+        right: {
+          type: ASTComponents.NGValueParameter
+        }
+      };
+    }
+  }
+
+  private isAssignable(ast: any) {
+    return ast.type === ASTComponents.Identifier
+      || ast.type === ASTComponents.MemberExpression;
+  }
+
+  private getAssign(): string {
+    return 'fn.assign = function(scope, val, locals) {'
+      + (this.state.assign.vars.length
+        ? `var ${this.state.assign.vars.join(',')};`
+        : '')
+      + this.state.assign.body.join('')
+      + '};';
   }
 }
 

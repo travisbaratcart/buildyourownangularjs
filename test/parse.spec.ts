@@ -822,4 +822,23 @@ describe('parse', () => {
     expect(parse('true ? 1 : a').constant).toBe(false);
     expect(parse('a ? b : c').constant).toBe(false);
   });
+
+  it('allows calling assign on identifier expressions', () => {
+    const result = parse('anAttribute');
+    expect(result.assign).toBeDefined();
+
+    const scope: any = {};
+    result.assign(scope, 42);
+
+    expect(scope.anAttribute).toBe(42);
+  });
+
+  it('allows calling assign on member expressions', () => {
+    const result = parse('anObject.anAttribute');
+    expect(result.assign).toBeDefined();
+
+    const scope: any = {};
+    result.assign(scope, 42);
+    expect(scope.anObject).toEqual({ anAttribute: 42 });
+  });
 });
