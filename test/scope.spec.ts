@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { FilterService } from '../src/filter';
 import {
   Scope,
   IEvent
@@ -398,6 +399,27 @@ describe('Scope', () => {
       scope.$digest();
       expect(values.length).toBe(2);
       expect(values[1]).toEqual([1, 2, 4]);
+    });
+
+    it('allows $stateful filter value to change over time', (done) => {
+      FilterService.getInstance().register('withTime', function() {
+        return _.extend((str: string) => `${new Date().toISOString()}: ${str}`)
+      }, {
+        $stateful: true
+      });
+
+      const listenerSpy = jasmine.createSpy('listener');
+      scope.$watch('42 | withTime', listenerSpy);
+
+      scope.$digest();
+      const firstValue = listenerSpy.calls.mostRecent().args[0];
+
+      setTimeout(() => {
+        scope.$digest();
+        const secondValue = listenerSpy.calls.mostRecent().args[0];
+        expect(secondValue).not.toEqual(firstValue);
+        done();
+      }, 100)
     });
   });
 

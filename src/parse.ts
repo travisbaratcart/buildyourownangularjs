@@ -1267,7 +1267,7 @@ class ASTCompiler {
           ? this.isConstant(ast.object) && this.isConstant(ast.property)
           : this.isConstant(ast.object);
       case ASTComponents.CallExpression:
-        return ast.filter
+        return this.isCallStateless(ast)
           && ast.arguments.every((argument: any) => this.isConstant(argument));
       case ASTComponents.AssignmentExpression:
         return this.isConstant(ast.left) && this.isConstant(ast.right);
@@ -1336,7 +1336,7 @@ class ASTCompiler {
           .filter((arg: any) => !this.isConstant(arg))
           .forEach((arg: any) => callInputs = callInputs.concat(this.findInputs(arg)));
 
-        return ast.filter ? callInputs : [ast];
+        return this.isCallStateless(ast) ? callInputs : [ast];
       case ASTComponents.AssignmentExpression:
         let assignmentInputs: any[] = [];
 
@@ -1356,6 +1356,15 @@ class ASTCompiler {
       default:
         return <any[]>[];
     }
+  }
+
+  private isCallStateless(ast: any) {
+    if (ast.type !== ASTComponents.CallExpression) {
+      throw 'Not a call expression.';
+    }
+
+    return ast.filter
+      && !FilterService.getInstance().filter(ast.callee.name).$stateful;
   }
 
   private getWatchFunctions(): string {

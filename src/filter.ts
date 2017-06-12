@@ -1,8 +1,13 @@
 import * as _ from 'lodash';
 import { FilterFilter } from './filters/filterFilter';
 
+export interface IFilter {
+  (...args: any[]): any;
+  $stateful?: boolean;
+}
+
 export class FilterService {
-  private filters: { [filterName: string]: (...args: any[]) => any } = {};
+  private filters: { [filterName: string]: IFilter } = {};
 
   private constructor() {
     this.register('filter', (new FilterFilter()).getFilter);
@@ -18,22 +23,30 @@ export class FilterService {
     return FilterService.filterService;
   }
 
-  public register(filterNameOrObject: string | { [filterName: string]: () => (...args: any[]) => any }, factory?: () => (...args: any[]) => any): ((...args: any[]) => any)[] {
+  public register(
+    filterNameOrObject: string | { [filterName: string]: () => IFilter },
+    factory?: () => IFilter,
+    options?: { $stateful?: boolean }): IFilter[] {
     if (_.isObject(filterNameOrObject)) {
-      const filterObject = <{ [filterName: string]: () => (obj: any) => any }>filterNameOrObject;
+      const filterObject = <{ [filterName: string]: IFilter }>filterNameOrObject;
 
       return _.map(filterObject, (factory, filterName) => {
-        return this.register(filterName, factory)[0];
+        return this.register(filterName, factory, options)[0];
       });
     }
 
     const filterName = <string>filterNameOrObject;
     const filter = factory();
+
+    if (options) {
+      filter.$stateful = options.$stateful;
+    }
+
     this.filters[filterName] = filter;
     return [filter];
   }
 
-  public filter(filterName: string): (obj: any) => any {
+  public filter(filterName: string): IFilter {
     return this.filters[filterName];
   }
 }
