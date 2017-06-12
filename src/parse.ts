@@ -26,10 +26,16 @@ enum ASTComponents {
   ConditionalExpression
 };
 
+enum CompileStage {
+  Inputs,
+  Main
+}
+
 interface IParseResult {
   (context?: any, locals?: any): any,
   literal: boolean,
   constant: boolean,
+  inputs: any[],
   $$watchDelegate(
     scope: Scope,
     listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
@@ -62,6 +68,8 @@ export function parse(expression?: string | ((context?: any, locals?: any) => an
         parseFunction.$$watchDelegate = parseFunction.literal
           ? oneTimeArrOrObjWatchDelegate
           : oneTimeWatchDelegate;
+      } else if (parseFunction.inputs && parseFunction.inputs.length > 0) {
+        parseFunction.$$watchDelegate = inputsWatchDelegate;
       }
 
       return parseFunction
@@ -80,7 +88,7 @@ function constantWatchDelegate(
   scope: Scope,
   listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
   checkValueEquality: boolean,
-  watchFunction: (scope: Scope) => any) {
+  watchFunction: IParseResult) {
 
   const unWatch = scope.$watch(
     () => watchFunction(scope),
@@ -99,7 +107,7 @@ function oneTimeWatchDelegate(
   scope: Scope,
   listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
   checkValueEquality: boolean,
-  watchFunction: (scope: Scope) => any) {
+  watchFunction: IParseResult) {
 
   let finalValue: any;
 
@@ -128,7 +136,7 @@ function oneTimeArrOrObjWatchDelegate(
   scope: Scope,
   listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
   checkValueEquality: boolean,
-  watchFunction: (scope: Scope) => any) {
+  watchFunction: IParseResult) {
 
   function areAllDefined(arrOrObj: any) {
     return _.every(arrOrObj, (val) => !_.isUndefined(val));
@@ -151,6 +159,41 @@ function oneTimeArrOrObjWatchDelegate(
     }, checkValueEquality);
 
   return unWatch;
+}
+
+function inputsWatchDelegate(
+  scope: Scope,
+  listenerFunction: (newValue: any, oldValue: any, scope: Scope) => any,
+  checkValueEquality: boolean,
+  watchFunction: IParseResult) {
+
+  const inputExpressions = watchFunction.inputs;
+
+  const oldValues = _.times(inputExpressions.length, () => () => null);
+  let lastResult: any;
+
+  return scope.$watch(() => {
+    let changed = false;
+
+    inputExpressions.forEach((inputExpression: any, i: number) => {
+      const newValue = inputExpression(scope);
+
+      if (didValueChange(newValue, oldValues[i])) {
+        changed = true;
+        oldValues[i] = newValue;
+      }
+    });
+
+    if (changed) {
+      lastResult = watchFunction(scope);
+    }
+
+    return lastResult;
+  }, listenerFunction, checkValueEquality);
+}
+
+function didValueChange(newValue: any, oldValue: any): boolean {
+  return newValue !== oldValue && !(newValue === NaN && oldValue === NaN);
 }
 
 class Lexer {
@@ -743,6 +786,7 @@ class AST {
 class ASTCompiler {
   private state: any;
   private stringEscapeRegex = /[^a-zA-Z0-9]/g
+  private stage: CompileStage;
 
   private nextId = 0;
 
@@ -755,26 +799,45 @@ class ASTCompiler {
     let ast = this.astBuilder.ast(text);
 
     this.state = {
-      body: [],
-      vars: [],
-      filters: {}
+      func: {
+        body: [],
+        vars: [],
+      },
+      filters: {},
+      computingNode: '',
+      inputs: []
     };
+
+    this.stage = CompileStage.Inputs
+
+    this.findTopLevelWatchInputs(ast.body).forEach((input: any, i: number) => {
+      const inputKey = `fn${i}`;
+      this.state[inputKey] = { body: [], vars: [] };
+      this.state.computingNode = inputKey;
+      this.state[inputKey].body.push(`return ${this.recurse(input)};`);
+      this.state.inputs.push(inputKey);
+    });
+
+    this.stage = CompileStage.Main;
+    this.state.computingNode = 'func';
 
     this.recurse(ast);
 
     const filterPrefix = this.filterPrefix();
 
-    const varsDeclaration = this.state.vars.length
-      ? `var ${this.state.vars.join(',')};`
+    const varsDeclaration = this.state.func.vars.length
+      ? `var ${this.state.func.vars.join(',')};`
       : '';
 
-    const functionBody = varsDeclaration + this.state.body.join('');
+    const functionBody = varsDeclaration + this.state.func.body.join('');
 
     const functionString = filterPrefix
       + 'var fn = function(scope, locals){'
       + varsDeclaration
       + functionBody
-      + '}; return fn;'
+      + '};'
+      + this.getWatchFunctions()
+      + 'return fn;'
 
     const result = new Function(
       'validateAttributeSafety',
@@ -790,8 +853,8 @@ class ASTCompiler {
         FilterService.getInstance()
       );
 
-    result.literal = this.isLiteral(ast);
     result.constant = this.isConstant(ast);
+    result.literal = this.isLiteral(ast);
 
     return result;
   }
@@ -803,8 +866,8 @@ class ASTCompiler {
           const isLastElement = ast.body.indexOf(statement) === ast.body.length - 1;
 
           isLastElement
-            ? this.state.body.push('return ', this.recurse(statement), ';')
-            : this.state.body.push(this.recurse(statement) + ';');
+            ? this.state[this.state.computingNode].body.push('return ', this.recurse(statement), ';')
+            : this.state[this.state.computingNode].body.push(this.recurse(statement) + ';');
         });
 
         break;
@@ -852,7 +915,7 @@ class ASTCompiler {
           : this.getMultiplicativeOperation(ast);
       case ASTComponents.LogicalExpression:
         let nextId = this.getNextDistinctVariableName()  ;
-        this.state.body.push(this.assign(nextId, this.recurse(ast.left)));
+        this.state[this.state.computingNode].body.push(this.assign(nextId, this.recurse(ast.left)));
 
         this.if_(ast.operator === '&&' ? nextId : this.not(nextId),
           this.assign(nextId, this.recurse(ast.right)));
@@ -889,20 +952,24 @@ class ASTCompiler {
     } else {
       const nextId = this.getNextDistinctVariableName();
 
-      this.if_(this.getHasOwnProperty('locals', rawIdentifier), this.assign(nextId, this.lookupPropertyOnObject('locals', rawIdentifier)));
+      const inLocals = this.stage === CompileStage.Inputs
+        ? 'false'
+        : this.getHasOwnProperty('locals', rawIdentifier)
+
+      this.if_(inLocals, this.assign(nextId, this.lookupPropertyOnObject('locals', rawIdentifier)));
 
       if (safeTraverse) {
         this.if_(
-          this.not(this.getHasOwnProperty('locals', rawIdentifier))
+          this.not(inLocals)
           + '&& scope && '
           + this.not(this.getHasOwnProperty('scope', rawIdentifier)),
           this.assign(this.lookupPropertyOnObject('scope', rawIdentifier), '{}'));
       }
 
-      this.if_(`${this.not(this.getHasOwnProperty('locals', rawIdentifier))} && scope`, this.assign(nextId, this.lookupPropertyOnObject('scope', rawIdentifier)));
+      this.if_(`${this.not(inLocals)} && scope`, this.assign(nextId, this.lookupPropertyOnObject('scope', rawIdentifier)));
 
       if (context) {
-        context.context = `${this.getHasOwnProperty('locals', rawIdentifier)} ? locals : scope`;
+        context.context = `${inLocals} ? locals : scope`;
         context.name = rawIdentifier;
         context.isComputed = false;
       }
@@ -979,7 +1046,7 @@ class ASTCompiler {
   private getConditionalExpression(ast: any): string {
     const testId = this.getNextDistinctVariableName();
 
-    this.state.body.push(this.assign(testId, this.recurse(ast.test)));
+    this.state[this.state.computingNode].body.push(this.assign(testId, this.recurse(ast.test)));
 
     const resultId = this.getNextDistinctVariableName();
 
@@ -1042,7 +1109,7 @@ class ASTCompiler {
   }
 
   private if_(test: string, consequence: string): void {
-    this.state.body.push(`if(${test}) { ${consequence} } `);
+    this.state[this.state.computingNode].body.push(`if(${test}) { ${consequence} } `);
   }
 
   private assign(id: string, value: string): string {
@@ -1061,7 +1128,7 @@ class ASTCompiler {
     const nextId = `v${this.nextId++}`;
 
     if (!skipDeclaration) {
-      this.state.vars.push(nextId);
+      this.state[this.state.computingNode].vars.push(nextId);
     }
 
     return nextId;
@@ -1130,15 +1197,15 @@ class ASTCompiler {
   }
 
   private addAttributeSafetyValidation(expr: string): void {
-    this.state.body.push(`validateAttributeSafety(${expr});`);
+    this.state[this.state.computingNode].body.push(`validateAttributeSafety(${expr});`);
   }
 
   private addObjectSafetyValidation(expr: string): void {
-    this.state.body.push(`validateObjectSafety(${expr});`);
+    this.state[this.state.computingNode].body.push(`validateObjectSafety(${expr});`);
   }
 
   private addFunctionSafetyValidation(expr: string): void {
-    this.state.body.push(`validateFunctionSafety(${expr});`);
+    this.state[this.state.computingNode].body.push(`validateFunctionSafety(${expr});`);
   }
 
   private addIfDefined(value: any, defaultValue: any): string {
@@ -1216,6 +1283,98 @@ class ASTCompiler {
       default:
         return false;
     }
+  }
+
+  private findTopLevelWatchInputs(ast: any): any[] {
+    if (ast.length !== 1) {
+      return [];
+    }
+
+    const candidateWatches = this.findInputs(ast[0])
+
+    if (candidateWatches.length !== 1 || candidateWatches[0] !== ast[0]) {
+      return candidateWatches;
+    } else {
+      return [];
+    }
+  }
+
+  private findInputs(ast: any): any[] {
+    switch (ast.type) {
+      case ASTComponents.Program:
+        let programInputs: any[] = [];
+
+        ast.body.forEach((expression: any) => {
+          programInputs = programInputs.concat(this.findInputs(expression));
+        });
+
+        return programInputs;
+      case ASTComponents.ArrayExpression:
+        let arrayInputs: any[] = [];
+
+        ast.elements
+          .filter((element: any) => !this.isConstant(element))
+          .forEach((element: any) => arrayInputs = arrayInputs.concat(this.findInputs(element)));
+
+        return arrayInputs;
+      case ASTComponents.ObjectExpression:
+        let objectInputs: any[] = [];
+
+        _.forEach(ast.properties, (property) => {
+          if (!this.isConstant(property.value)) {
+            objectInputs = objectInputs.concat(this.findInputs(property.value));
+          }
+        });
+
+        return objectInputs;
+      case ASTComponents.MemberExpression:
+        return [ast];
+      case ASTComponents.CallExpression:
+        let callInputs: any[] = [];
+
+        ast.arguments
+          .filter((arg: any) => !this.isConstant(arg))
+          .forEach((arg: any) => callInputs = callInputs.concat(this.findInputs(arg)));
+
+        return ast.filter ? callInputs : [ast];
+      case ASTComponents.AssignmentExpression:
+        let assignmentInputs: any[] = [];
+
+        assignmentInputs = assignmentInputs.concat(this.findInputs(ast.left));
+        assignmentInputs = assignmentInputs.concat(this.findInputs(ast.right));
+
+        return assignmentInputs;
+      case ASTComponents.UnaryExpression:
+        return this.findInputs(ast.argument);
+      case ASTComponents.BinaryExpression:
+      case ASTComponents.LogicalExpression:
+        return this.findInputs(ast.left).concat(this.findInputs(ast.right));
+      case ASTComponents.ConditionalExpression:
+        return [ast];
+      case ASTComponents.Identifier:
+        return [ast];
+      default:
+        return <any[]>[];
+    }
+  }
+
+  private getWatchFunctions(): string {
+    const result = this.state.inputs.map((inputName: string) => {
+      let watchFunction = `var ${inputName} = function(scope) {`
+        + (this.state[inputName].vars.length
+          ? `var ${this.state[inputName].vars.join(',')};`
+          : '')
+        + this.state[inputName].body.join('')
+        + '};'
+
+        return watchFunction
+    });
+
+    if (result.length) {
+      result.push(`fn.inputs = [${this.state.inputs.join(',')}];`);
+    }
+
+    return result.join('');
   }
 }
 
