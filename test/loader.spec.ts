@@ -54,5 +54,9 @@ describe('setupModuleLoder', () => {
       expect(gotModule).toBeDefined();
       expect(gotModule).toBe(myModule);
     });
+
+    it('throws when trying to get a nonexistent module', () => {
+      expect(() => (<any>window).angular.module('myModule')).toThrow();
+    });
   });
 });

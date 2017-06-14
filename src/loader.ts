@@ -36,6 +36,12 @@ class Angular {
   }
 
   private getModule(moduleName: string): Module {
-    return this.modules[moduleName];
+    const gotModule = this.modules[moduleName];
+
+    if (!gotModule) {
+      throw `Module ${moduleName} is not available`;
+    }
+
+    return gotModule;
   }
 }
