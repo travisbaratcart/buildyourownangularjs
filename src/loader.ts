@@ -10,13 +10,14 @@ function ensure (obj: any, name: string, factory: () => any): any {
 
 class Module {
   constructor(
-    private name: string) {
+    public name: string,
+    public depenedencies: string[]) {
 
   }
 }
 
 class Angular {
-  public module(moduleName: string): Module {
-    return new Module(moduleName);
+  public module(moduleName: string, depenedencies: any[]): Module {
+    return new Module(moduleName, depenedencies);
   }
 }

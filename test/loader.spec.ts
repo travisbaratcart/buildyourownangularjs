@@ -41,5 +41,10 @@ describe('setupModuleLoder', () => {
 
       expect(myNewModule).not.toBe(myModule);
     });
+
+    it('attaches the depenedencies array to the registered module', () => {
+      const myModule = (<any>window).angular.module('myModule', ['myOtherModule']);
+      expect(myModule.depenedencies).toEqual(['myOtherModule']);
+    });
   });
 });
