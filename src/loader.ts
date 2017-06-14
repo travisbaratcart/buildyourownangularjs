@@ -1,5 +1,5 @@
 'use strict';
 
 export function setupModuleLoder(window: any) {
-  const angular = window.angular = {};
+  const angular = (window.angular = window.angular || {});
 }
