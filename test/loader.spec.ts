@@ -46,5 +46,13 @@ describe('setupModuleLoder', () => {
       const myModule = (<any>window).angular.module('myModule', ['myOtherModule']);
       expect(myModule.depenedencies).toEqual(['myOtherModule']);
     });
+
+    it('allows getting a module', () => {
+      const myModule = (<any>window).angular.module('myModule', []);
+      const gotModule = (<any>window).angular.module('myModule');
+
+      expect(gotModule).toBeDefined();
+      expect(gotModule).toBe(myModule);
+    });
   });
 });

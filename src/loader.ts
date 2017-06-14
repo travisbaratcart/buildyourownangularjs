@@ -17,7 +17,25 @@ class Module {
 }
 
 class Angular {
-  public module(moduleName: string, depenedencies: any[]): Module {
-    return new Module(moduleName, depenedencies);
+  private modules: { [moduleName: string]: Module } = {};
+
+  public module(moduleName: string, depenedencies?: any[]): Module {
+    if (depenedencies) {
+      return this.createModule(moduleName, depenedencies);
+    } else {
+      return this.getModule(moduleName);
+    }
+  }
+
+  private createModule(moduleName: string, depenedencies: any[]): Module {
+    const newModule = new Module(moduleName, depenedencies);
+
+    this.modules[moduleName] = newModule;
+
+    return newModule;
+  }
+
+  private getModule(moduleName: string): Module {
+    return this.modules[moduleName];
   }
 }
