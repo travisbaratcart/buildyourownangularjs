@@ -18,4 +18,28 @@ describe('setupModuleLoder', () => {
     setupModuleLoder(window);
     expect((<any>window).angular).toBe(ng);
   });
+
+  it('exposes the angular module function', () => {
+    setupModuleLoder(window);
+    expect((<any>window).angular.module).toBeDefined();
+  });
+
+  describe('module', () => {
+    beforeEach(() => {
+      setupModuleLoder(window);
+    });
+
+    it('allows registering a module', () => {
+      const myModule = (<any>window).angular.module('myModule', []);
+      expect(myModule).toBeDefined();
+      expect(myModule.name).toEqual('myModule');
+    });
+
+    it('replaces a module when registered with the same name again', () => {
+      const myModule = (<any>window).angular.module('myModule', []);
+      const myNewModule = (<any>window).angular.module('myModule', []);
+
+      expect(myNewModule).not.toBe(myModule);
+    });
+  });
 });
