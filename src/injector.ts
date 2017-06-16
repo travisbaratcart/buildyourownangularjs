@@ -36,7 +36,13 @@ class Injector {
   }
 
   public invoke(func: {(...args: any[]): any, $inject: string[]}) {
-    const args = func.$inject.map(dependency => this.cache[dependency]);
+    const args = func.$inject.map(dependency => {
+      if (typeof dependency !== 'string') {
+        throw 'Injector.invoke: Invalid dependency key type.';
+      }
+
+      return this.cache[dependency]
+    });
 
     return func(...args);
   }
