@@ -127,7 +127,6 @@ describe('injector', () => {
     expect(injector.invoke(obj.func, obj)).toBe(3);
   });
 
-/*
   it('overrides dependencies with locals when invoking', () => {
     const module = angular.module('myModule', []);
 
@@ -140,7 +139,6 @@ describe('injector', () => {
 
     (<any>func).$inject = ['a', 'b'];
 
-    expect(injector.invoke(func, undefined, { }))
+    expect(injector.invoke(func, undefined, { b: 3 })).toBe(4);
   });
-  */
 });

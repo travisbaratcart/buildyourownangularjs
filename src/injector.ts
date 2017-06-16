@@ -35,13 +35,17 @@ class Injector {
     return this.cache.hasOwnProperty(key);
   }
 
-  public invoke(func: {(...args: any[]): any, $inject: string[]}, context?: any) {
+  public invoke(func: {(...args: any[]): any, $inject: string[]}, context?: any, locals?: any) {
     const args = func.$inject.map(dependency => {
       if (typeof dependency !== 'string') {
         throw 'Injector.invoke: Invalid dependency key type.';
       }
 
-      return this.cache[dependency]
+      const isDependencyInLocals = locals && locals.hasOwnProperty(dependency);
+
+      return isDependencyInLocals
+        ? locals[dependency]
+        : this.cache[dependency]
     });
 
     return func.apply(context, args);
