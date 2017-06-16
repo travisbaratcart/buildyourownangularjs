@@ -35,6 +35,12 @@ class Injector {
     return this.cache.hasOwnProperty(key);
   }
 
+  public invoke(func: {(...args: any[]): any, $inject: string[]}) {
+    const args = func.$inject.map(dependency => this.cache[dependency]);
+
+    return func(...args);
+  }
+
   private $provide(registerType: RegisterType): (key: string, value: any) => void {
     switch (registerType) {
       case RegisterType.Constant:

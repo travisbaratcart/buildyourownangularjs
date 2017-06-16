@@ -81,4 +81,19 @@ describe('injector', () => {
 
     createInjector(['myModule']);
   });
+
+  it('invokes an annotated function with dependency injection', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 1);
+    module.constant('b', 2);
+
+    const injector = createInjector(['myModule']);
+
+    const fn = (one: number, two: number) => one + two;
+
+    (<any>fn).$inject = ['a', 'b'];
+
+    expect(injector.invoke(fn)).toBe(3);
+  });
 });
