@@ -1,7 +1,7 @@
 'use strict';
 import { Angular, RegisterType } from './loader';
 
-export function createInjector(modulesToLoad: string[]): any {
+export function createInjector(modulesToLoad: string[]): Injector {
   return new Injector(modulesToLoad);
 }
 
@@ -53,6 +53,12 @@ class Injector {
     });
 
     return func.apply(context, args);
+  }
+
+  public annotateDependencies(func: any | any[]) {
+    return Array.isArray(func)
+      ? func.slice(0, func.length - 1)
+      : func.$inject;
   }
 
   private $provide(registerType: RegisterType): (key: string, value: any) => void {

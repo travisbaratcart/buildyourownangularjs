@@ -90,9 +90,9 @@ describe('injector', () => {
 
     const injector = createInjector(['myModule']);
 
-    const fn = (one: number, two: number) => one + two;
+    const fn: any = (one: number, two: number) => one + two;
 
-    (<any>fn).$inject = ['a', 'b'];
+    fn.$inject = ['a', 'b'];
 
     expect(injector.invoke(fn)).toBe(3);
   });
@@ -104,9 +104,9 @@ describe('injector', () => {
 
     const injector = createInjector(['myModule']);
 
-    const func = (one: number, two: number) => one + two;
+    const func: any = (one: number, two: number) => one + two;
 
-    (<any>func).$inject = ['a', 2];
+    func.$inject = ['a', 2];
 
     expect(() => injector.invoke(func)).toThrow();
   });
@@ -135,10 +135,30 @@ describe('injector', () => {
 
     const injector = createInjector(['myModule']);
 
-    const func = (one: number, two: number) => one + two;
+    const func: any = (one: number, two: number) => one + two;
 
-    (<any>func).$inject = ['a', 'b'];
+    func.$inject = ['a', 'b'];
 
     expect(injector.invoke(func, undefined, { b: 3 })).toBe(4);
+  });
+
+  describe('annotateDependencies', () => {
+    it('returns the $inject annotation of a function when it has one', () => {
+      const injector = createInjector([]);
+
+      const func: any = function() {};
+
+      func.$inject = ['a', 'b'];
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'b']);
+    });
+
+    it('returns the array-style annotations of a function', () => {
+      const injector = createInjector([]);
+
+      const func = ['a', 'b', function() {}];
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'b']);
+    });
   });
 });
