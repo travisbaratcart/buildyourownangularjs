@@ -1,5 +1,16 @@
 'use strict';
 
+export enum RegisterType {
+  NotSpecified,
+  Constant
+}
+
+interface IRegisterItem {
+  type: RegisterType;
+  key: string;
+  value: any;
+}
+
 export function setupModuleLoder(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
 }
@@ -9,14 +20,26 @@ function ensure (obj: any, name: string, factory: () => any): any {
 }
 
 class Module {
+  public $$invokeQueue: IRegisterItem[] = [];
+
   constructor(
     public name: string,
     public depenedencies: string[]) {
 
   }
+
+  public constant(key: string, value: any): void {
+    const newRegisterItem: IRegisterItem = {
+      type: RegisterType.Constant,
+      key,
+      value
+    };
+
+    this.$$invokeQueue.push(newRegisterItem);
+  }
 }
 
-class Angular {
+export class Angular {
   private modules: { [moduleName: string]: Module } = {};
 
   public module(moduleName: string, depenedencies?: any[]): Module {
