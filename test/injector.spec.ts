@@ -176,5 +176,21 @@ describe('injector', () => {
 
       expect(injector.annotateDependencies(func)).toEqual(['a', 'b']);
     });
+
+    it('strips comments from argument lists when parsing', () => {
+      const injector = createInjector([]);
+
+      const func = function(a: any, /* b, */  c: any) { };
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'c']);
+    });
+
+    it('strips several comments from argument lists when parsing', () => {
+      const injector = createInjector([]);
+
+      const func = function(a: any, /* b, */ c: any /*, d*/) { };
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'c']);
+    });
   });
 });

@@ -63,9 +63,11 @@ class Injector {
     } else if (!func.length) {
       return [];
     } else {
+      const comments = /\/\*.*?\*\//g;
       const argsRegexp = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
 
-      const args = func.toString().match(argsRegexp);
+      const functionWithoutComments = func.toString().replace(comments, '');
+      const args = functionWithoutComments.match(argsRegexp);
 
       return args[1].split(',').map((arg: string) => arg.trim());
     }
