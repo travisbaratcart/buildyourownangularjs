@@ -10,11 +10,17 @@ class Injector {
 
   constructor(modulesToLoad: string[]) {
     modulesToLoad.forEach(moduleName => {
-      const module = (<Angular>(<any>window).angular).module(moduleName);
+      this.loadModule(moduleName);
+    });
+  }
 
-      module.$$invokeQueue.forEach(registerItem => {
-        this.$provide(registerItem.type)(registerItem.key, registerItem.value);
-      });
+  private loadModule(moduleName: string): void {
+    const module = (<Angular>(<any>window).angular).module(moduleName);
+
+    module.depenedencies.forEach(dependency => this.loadModule(dependency));
+
+    module.$$invokeQueue.forEach(registerItem => {
+      this.$provide(registerItem.type)(registerItem.key, registerItem.value);
     });
   }
 
