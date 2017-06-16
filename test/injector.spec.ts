@@ -110,4 +110,37 @@ describe('injector', () => {
 
     expect(() => injector.invoke(func)).toThrow();
   });
+
+  it('invokes a function with the given this context', () => {
+    const module = angular.module('myModule', []);
+    module.constant('a', 1);
+
+    const injector = createInjector(['myModule']);
+
+    const obj: any = {
+      two: 2,
+      func: function(one: number) { return one + this.two }
+    };
+
+    obj.func.$inject = ['a'];
+
+    expect(injector.invoke(obj.func, obj)).toBe(3);
+  });
+
+/*
+  it('overrides dependencies with locals when invoking', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 1);
+    module.constant('b', 2);
+
+    const injector = createInjector(['myModule']);
+
+    const func = (one: number, two: number) => one + two;
+
+    (<any>func).$inject = ['a', 'b'];
+
+    expect(injector.invoke(func, undefined, { }))
+  });
+  */
 });

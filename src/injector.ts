@@ -35,7 +35,7 @@ class Injector {
     return this.cache.hasOwnProperty(key);
   }
 
-  public invoke(func: {(...args: any[]): any, $inject: string[]}) {
+  public invoke(func: {(...args: any[]): any, $inject: string[]}, context?: any) {
     const args = func.$inject.map(dependency => {
       if (typeof dependency !== 'string') {
         throw 'Injector.invoke: Invalid dependency key type.';
@@ -44,7 +44,7 @@ class Injector {
       return this.cache[dependency]
     });
 
-    return func(...args);
+    return func.apply(context, args);
   }
 
   private $provide(registerType: RegisterType): (key: string, value: any) => void {
