@@ -7,6 +7,7 @@ export function createInjector(modulesToLoad: string[]): any {
 
 class Injector {
   private cache: any = {};
+  private loadedModules: { [module: string]: boolean } = {}
 
   constructor(modulesToLoad: string[]) {
     modulesToLoad.forEach(moduleName => {
@@ -15,6 +16,12 @@ class Injector {
   }
 
   private loadModule(moduleName: string): void {
+    if (this.loadedModules[moduleName]) {
+      return;
+    }
+
+    this.loadedModules[moduleName] = true;
+
     const module = (<Angular>(<any>window).angular).module(moduleName);
 
     module.depenedencies.forEach(dependency => this.loadModule(dependency));
