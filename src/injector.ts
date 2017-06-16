@@ -56,9 +56,19 @@ class Injector {
   }
 
   public annotateDependencies(func: any | any[]) {
-    return Array.isArray(func)
-      ? func.slice(0, func.length - 1)
-      : func.$inject;
+    if (Array.isArray(func)) {
+      return func.slice(0, func.length - 1)
+    } else if (func.$inject) {
+      return func.$inject;
+    } else if (!func.length) {
+      return [];
+    } else {
+      const argsRegexp = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
+
+      const args = func.toString().match(argsRegexp);
+
+      return args[1].split(',').map((arg: string) => arg.trim());
+    }
   }
 
   private $provide(registerType: RegisterType): (key: string, value: any) => void {

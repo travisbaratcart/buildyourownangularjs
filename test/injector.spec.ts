@@ -160,5 +160,21 @@ describe('injector', () => {
 
       expect(injector.annotateDependencies(func)).toEqual(['a', 'b']);
     });
+
+    it('returns an empty array for a non-annotated 0-arg function', () => {
+      const injector = createInjector([]);
+
+      const func = function() {};
+
+      expect(injector.annotateDependencies(func)).toEqual([]);
+    });
+
+    it('returns annotations parsed from functions arguments when not annotated', () => {
+      const injector = createInjector([]);
+
+      const func = function(a: any, b: any) { };
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'b']);
+    });
   });
 });
