@@ -211,5 +211,13 @@ describe('injector', () => {
 
       expect(injector.annotateDependencies(func)).toEqual(['a', 'b', 'c_', '_d', 'an_argument']);
     });
+
+    it('throws when using a non-annotated function in strict mode', () => {
+      const injector = createInjector([], true);
+
+      const func = function(a: any, b: any, c: any) { };
+
+      expect(() => injector.annotateDependencies(func)).toThrow();
+    });
   });
 });

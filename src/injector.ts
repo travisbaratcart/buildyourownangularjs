@@ -1,15 +1,18 @@
 'use strict';
 import { Angular, RegisterType } from './loader';
 
-export function createInjector(modulesToLoad: string[]): Injector {
-  return new Injector(modulesToLoad);
+export function createInjector(modulesToLoad: string[], strictInjection?: boolean): Injector {
+  return new Injector(modulesToLoad, strictInjection);
 }
 
 class Injector {
   private cache: any = {};
-  private loadedModules: { [module: string]: boolean } = {}
+  private loadedModules: { [module: string]: boolean } = {};
+  private strictInjection = false;
 
-  constructor(modulesToLoad: string[]) {
+  constructor(modulesToLoad: string[], strictInjection?: boolean) {
+    this.strictInjection = !!strictInjection;
+
     modulesToLoad.forEach(moduleName => {
       this.loadModule(moduleName);
     });
@@ -63,6 +66,10 @@ class Injector {
     } else if (!func.length) {
       return [];
     } else {
+      if (this.strictInjection) {
+        throw 'Injector.annotateDependencies: Expected depenedencies to be strictly defined.'
+      }
+
       const comments = /(\/\/.*$)|(\/\*.*?\*\/)/mg;
       const argsRegexp = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
       const argRegexp = /^\s*(_?)(\S+?)\1\s*$/;
