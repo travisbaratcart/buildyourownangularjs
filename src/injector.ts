@@ -39,26 +39,32 @@ class Injector {
   }
 
   public invoke(
-    func: {(...args: any[]): any, $inject: string[]},
+    funcWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
     context?: any,
     locals?: any) {
 
-    const args = func.$inject.map(dependency => {
-      if (typeof dependency !== 'string') {
+    const dependencyNames = this.annotateDependencies(funcWithDependencies);
+
+    const dependencies = dependencyNames.map(dependencyName => {
+      if (typeof dependencyName !== 'string') {
         throw 'Injector.invoke: Invalid dependency key type.';
       }
 
-      const isDependencyInLocals = locals && locals.hasOwnProperty(dependency);
+      const isDependencyInLocals = locals && locals.hasOwnProperty(dependencyName);
 
       return isDependencyInLocals
-      ? locals[dependency]
-      : this.cache[dependency]
+      ? locals[dependencyName]
+      : this.cache[dependencyName]
     });
 
-    return func.apply(context, args);
+    const func = Array.isArray(funcWithDependencies)
+      ? funcWithDependencies[funcWithDependencies.length - 1]
+      : funcWithDependencies;
+
+    return func.apply(context, dependencies);
   }
 
-  public annotateDependencies(func: any | any[]) {
+  public annotateDependencies(func: any | any[]): string[] {
     if (Array.isArray(func)) {
       return func.slice(0, func.length - 1)
     } else if (func.$inject) {

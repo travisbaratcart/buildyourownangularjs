@@ -219,5 +219,29 @@ describe('injector', () => {
 
       expect(() => injector.annotateDependencies(func)).toThrow();
     });
+
+    it('invokes an array-annotated function with dependency injection', () => {
+      const module = angular.module('myModule', []);
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      const func = ['a', 'b', (one: number, two: number) => one + two];
+
+      expect(injector.invoke(func)).toBe(3);
+    });
+
+    it('invokes a non-annotated function with dependency injection', () => {
+      const module = angular.module('myModule', []);
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      const func = (a: number, b: number) => a + b;
+
+      expect(injector.invoke(func)).toBe(3);
+    });
   });
 });
