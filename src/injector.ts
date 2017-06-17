@@ -144,7 +144,12 @@ class Injector {
       return this.instanceCache[name];
     } else if (this.providerCache.hasOwnProperty(this.normalizeProviderName(name))) {
       const provider = this.providerCache[this.normalizeProviderName(name)];
-      return this.invoke(provider.$get, provider);
+
+      const instance = this.invoke(provider.$get, provider);
+
+      this.instanceCache[name] = instance;
+
+      return instance;
     } else {
       throw `Injector.getValue: No registered item for name ${name}`;
     }

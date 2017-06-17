@@ -211,167 +211,180 @@ describe('injector', () => {
 
       expect(injector.annotateDependencies(func)).toEqual(['a', 'b', 'c_', '_d', 'an_argument']);
     });
+  });
 
-    it('throws when using a non-annotated function in strict mode', () => {
-      const injector = createInjector([], true);
+  it('throws when using a non-annotated function in strict mode', () => {
+    const injector = createInjector([], true);
 
-      const func = function(a: any, b: any, c: any) { };
+    const func = function(a: any, b: any, c: any) { };
 
-      expect(() => injector.annotateDependencies(func)).toThrow();
-    });
+    expect(() => injector.annotateDependencies(func)).toThrow();
+  });
 
-    it('invokes an array-annotated function with dependency injection', () => {
-      const module = angular.module('myModule', []);
-      module.constant('a', 1);
-      module.constant('b', 2);
+  it('invokes an array-annotated function with dependency injection', () => {
+    const module = angular.module('myModule', []);
+    module.constant('a', 1);
+    module.constant('b', 2);
 
-      const injector = createInjector(['myModule']);
+    const injector = createInjector(['myModule']);
 
-      const func = ['a', 'b', (one: number, two: number) => one + two];
+    const func = ['a', 'b', (one: number, two: number) => one + two];
 
-      expect(injector.invoke(func)).toBe(3);
-    });
+    expect(injector.invoke(func)).toBe(3);
+  });
 
-    it('invokes a non-annotated function with dependency injection', () => {
-      const module = angular.module('myModule', []);
-      module.constant('a', 1);
-      module.constant('b', 2);
+  it('invokes a non-annotated function with dependency injection', () => {
+    const module = angular.module('myModule', []);
+    module.constant('a', 1);
+    module.constant('b', 2);
 
-      const injector = createInjector(['myModule']);
+    const injector = createInjector(['myModule']);
 
-      const func = (a: number, b: number) => a + b;
+    const func = (a: number, b: number) => a + b;
 
-      expect(injector.invoke(func)).toBe(3);
-    });
+    expect(injector.invoke(func)).toBe(3);
+  });
 
-    it('instantiates an annotated constructor function', () => {
-      const module = angular.module('myModule', []);
+  it('instantiates an annotated constructor function', () => {
+    const module = angular.module('myModule', []);
 
-      module.constant('a', 1);
-      module.constant('b', 2);
+    module.constant('a', 1);
+    module.constant('b', 2);
 
-      const injector = createInjector(['myModule']);
+    const injector = createInjector(['myModule']);
 
-      function Type(one: number, two: number) {
-        this.result = one + two;
+    function Type(one: number, two: number) {
+      this.result = one + two;
+    }
+
+    (<any>Type).$inject = ['a', 'b'];
+
+    const instance = injector.instantiate(Type);
+    expect(instance.result).toBe(3);
+  });
+
+  it('instantiates an array-annotated constructor function', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 1);
+    module.constant('b', 2);
+
+    const injector = createInjector(['myModule']);
+
+    function Type(one: number, two: number) {
+      this.result = one + two;
+    }
+
+    const instance = injector.instantiate(['a', 'b', Type]);
+    expect(instance.result).toBe(3);
+  });
+
+  it('instantiates a non--annotated constructor function', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 1);
+    module.constant('b', 2);
+
+    const injector = createInjector(['myModule']);
+
+    function Type(a: number, b: number) {
+      this.result = a + b;
+    }
+
+    const instance = injector.instantiate(Type);
+    expect(instance.result).toBe(3);
+  });
+
+  it('uses the prototype of the constructor when instantiating', () => {
+    function BaseType() { }
+    BaseType.prototype.getValue = function() { return 42; };
+
+    function Type() { this.v = this.getValue(); }
+    Type.prototype = BaseType.prototype;
+
+    const module = angular.module('myModule', []);
+    const injector = createInjector(['myModule']);
+
+    const instance = injector.instantiate(Type);
+    expect(instance.v).toBe(42);
+  });
+
+  it('supports locals when instantiating', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 1);
+    module.constant('b', 2);
+
+    const injector = createInjector(['myModule']);
+
+    function Type(a: number, b: number) {
+      this.result = a + b;
+    }
+
+    const instance = injector.instantiate(Type, { b: 3 });
+
+    expect(instance.result).toBe(4);
+  });
+
+  it('allows registering a provider and uses its $get', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', {
+      $get: function() {
+        return 42;
       }
-
-      (<any>Type).$inject = ['a', 'b'];
-
-      const instance = injector.instantiate(Type);
-      expect(instance.result).toBe(3);
     });
 
-    it('instantiates an array-annotated constructor function', () => {
-      const module = angular.module('myModule', []);
+    const injector = createInjector(['myModule']);
 
-      module.constant('a', 1);
-      module.constant('b', 2);
+    expect(injector.has('a')).toBe(true);
+    expect(injector.get('a')).toBe(42);
+  });
 
-      const injector = createInjector(['myModule']);
-
-      function Type(one: number, two: number) {
-        this.result = one + two;
+  it('injects the $get method of a provider', () => {
+    const module = angular.module('myModule', []);
+    module.constant('a', 1);
+    module.provider('b', {
+      $get: function(a: number) {
+        return a + 2;
       }
-
-      const instance = injector.instantiate(['a', 'b', Type]);
-      expect(instance.result).toBe(3);
     });
 
-    it('instantiates a non--annotated constructor function', () => {
-      const module = angular.module('myModule', []);
+    const injector = createInjector(['myModule']);
 
-      module.constant('a', 1);
-      module.constant('b', 2);
+    expect(injector.get('b')).toBe(3);
+  });
 
-      const injector = createInjector(['myModule']);
+  it('injects the $get method of a provider lazilly', () => {
+    const module = angular.module('myModule', []);
 
-      function Type(a: number, b: number) {
-        this.result = a + b;
+    module.provider('b', {
+      $get: function(a: number) {
+        return a + 2;
       }
-
-      const instance = injector.instantiate(Type);
-      expect(instance.result).toBe(3);
     });
 
-    it('uses the prototype of the constructor when instantiating', () => {
-      function BaseType() { }
-      BaseType.prototype.getValue = function() { return 42; };
-
-      function Type() { this.v = this.getValue(); }
-      Type.prototype = BaseType.prototype;
-
-      const module = angular.module('myModule', []);
-      const injector = createInjector(['myModule']);
-
-      const instance = injector.instantiate(Type);
-      expect(instance.v).toBe(42);
-    });
-
-    it('supports locals when instantiating', () => {
-      const module = angular.module('myModule', []);
-
-      module.constant('a', 1);
-      module.constant('b', 2);
-
-      const injector = createInjector(['myModule']);
-
-      function Type(a: number, b: number) {
-        this.result = a + b;
+    module.provider('a', {
+      $get: function() {
+        return 40;
       }
-
-      const instance = injector.instantiate(Type, { b: 3 });
-
-      expect(instance.result).toBe(4);
     });
 
-    it('allows registering a provider and uses its $get', () => {
-      const module = angular.module('myModule', []);
+    const injector = createInjector(['myModule']);
 
-      module.provider('a', {
-        $get: function() {
-          return 42;
-        }
-      });
+    expect(injector.get('b')).toBe(42);
+  });
 
-      const injector = createInjector(['myModule']);
-
-      expect(injector.has('a')).toBe(true);
-      expect(injector.get('a')).toBe(42);
+  it('instantiates a dependency only once', () => {
+    const module = angular.module('myModule', []);
+    module.provider('a', {
+      $get: function () {
+        return {};
+      }
     });
 
-    it('injects the $get method of a provider', () => {
-      const module = angular.module('myModule', []);
-      module.constant('a', 1);
-      module.provider('b', {
-        $get: function(a: number) {
-          return a + 2;
-        }
-      });
+    const injector = createInjector(['myModule']);
 
-      const injector = createInjector(['myModule']);
-
-      expect(injector.get('b')).toBe(3);
-    });
-
-    it('injects the $get method of a provider lazilly', () => {
-      const module = angular.module('myModule', []);
-
-      module.provider('b', {
-        $get: function(a: number) {
-          return a + 2;
-        }
-      });
-
-      module.provider('a', {
-        $get: function() {
-          return 40;
-        }
-      });
-
-      const injector = createInjector(['myModule']);
-
-      expect(injector.get('b')).toBe(42);
-    });
+    expect(injector.get('a')).toBe(injector.get('a'));
   });
 });
