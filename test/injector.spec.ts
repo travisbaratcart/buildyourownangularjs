@@ -192,5 +192,24 @@ describe('injector', () => {
 
       expect(injector.annotateDependencies(func)).toEqual(['a', 'c']);
     });
+
+    it('strips // comments from argument lists when parsing', () => {
+      const injector = createInjector([]);
+
+      const func = function(
+        a: any,
+        //b,
+        c: any) { };
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'c']);
+    });
+
+    it('strips surrounding underscores from argument names when parsing', () => {
+      const injector = createInjector([]);
+
+      const func = function(a: any, _b_: any, c_: any, _d: any, an_argument: any) { };
+
+      expect(injector.annotateDependencies(func)).toEqual(['a', 'b', 'c_', '_d', 'an_argument']);
+    });
   });
 });

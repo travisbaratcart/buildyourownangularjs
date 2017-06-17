@@ -63,13 +63,14 @@ class Injector {
     } else if (!func.length) {
       return [];
     } else {
-      const comments = /\/\*.*?\*\//g;
+      const comments = /(\/\/.*$)|(\/\*.*?\*\/)/mg;
       const argsRegexp = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
+      const argRegexp = /^\s*(_?)(\S+?)\1\s*$/;
 
       const functionWithoutComments = func.toString().replace(comments, '');
       const args = functionWithoutComments.match(argsRegexp);
 
-      return args[1].split(',').map((arg: string) => arg.trim());
+      return args[1].split(',').map((arg: string) => arg.match(argRegexp)[2]);
     }
   }
 
