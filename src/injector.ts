@@ -88,7 +88,8 @@ class Injector {
   }
 
   public instantiate(
-    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[]): any {
+    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
+    locals?: { [key: string]: any }): any {
 
     const constructor = Array.isArray(constructorWithDependencies)
       ? constructorWithDependencies[constructorWithDependencies.length - 1]
@@ -96,7 +97,7 @@ class Injector {
 
     const instance = Object.create(constructor.prototype);
 
-    this.invoke(constructorWithDependencies, instance);
+    this.invoke(constructorWithDependencies, instance, locals);
 
     return instance;
   }

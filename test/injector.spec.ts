@@ -307,5 +307,22 @@ describe('injector', () => {
       const instance = injector.instantiate(Type);
       expect(instance.v).toBe(42);
     });
+
+    it('supports locals when instantiating', () => {
+      const module = angular.module('myModule', []);
+
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      function Type(a: number, b: number) {
+        this.result = a + b;
+      }
+
+      const instance = injector.instantiate(Type, { b: 3 });
+
+      expect(instance.result).toBe(4);
+    });
   });
 });
