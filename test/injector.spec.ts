@@ -426,4 +426,29 @@ describe('injector', () => {
     expect(() => injector.get('a'))
       .toThrowError('Failing instantiation');
   });
+
+  it('instantiates a provider if given a constructor function', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', function () {
+      this.$get = function() { return 42; };
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  });
+
+  it('injects the given provider constructor function', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('b', 2);
+
+    module.provider('a', function(b: number) {
+      this.$get = function() { return 1 + b; };
+    });
+
+    const injector = createInjector(['myModule']);
+    expect(injector.get('a')).toBe(3);
+  });
 });

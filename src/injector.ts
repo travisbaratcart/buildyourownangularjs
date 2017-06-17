@@ -137,7 +137,11 @@ class Injector {
     this.instanceCache[key] = value;
   }
 
-  private provideProvider = (key: string, provider: IProvider) => {
+  private provideProvider = (key: string, value: (() => IProvider) | IProvider) => {
+    const provider = typeof value === 'function'
+      ? this.instantiate(value)
+      : value;
+
     this.providerCache[this.normalizeProviderName(key)] = provider;
   }
 
