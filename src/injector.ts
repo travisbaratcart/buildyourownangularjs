@@ -15,6 +15,8 @@ class Injector {
   private loadedModules: { [module: string]: boolean } = {};
   private strictInjection = false;
 
+  private injectionPath: string[] = [];
+
   // Identifier for dependencies being instantiated
   // Useful for identifying circular dependencies
   private INSTANTIATIONINPROGRESS = {};
@@ -146,20 +148,32 @@ class Injector {
   private getValue(name: string): any {
     if (this.instanceCache.hasOwnProperty(name)) {
       if (this.instanceCache[name] === this.INSTANTIATIONINPROGRESS) {
-        throw new Error('Injector.getValue: Circular dependency identified');
+        throw new Error(
+          `Injector.getValue: Circular dependency identified. ${name} <- ${this.injectionPath.join(' <- ')}`);
+
       }
 
       return this.instanceCache[name];
     } else if (this.providerCache.hasOwnProperty(this.normalizeProviderName(name))) {
+      this.injectionPath.unshift(name);
+
       this.instanceCache[name] = this.INSTANTIATIONINPROGRESS;
 
-      const provider = this.providerCache[this.normalizeProviderName(name)];
+      try {
+        const provider = this.providerCache[this.normalizeProviderName(name)];
 
-      const instance = this.invoke(provider.$get, provider);
+        const instance = this.invoke(provider.$get, provider);
 
-      this.instanceCache[name] = instance;
+        this.instanceCache[name] = instance;
 
-      return instance;
+        return instance;
+      } finally {
+        this.injectionPath.shift();
+
+        if (this.instanceCache[name] === this.INSTANTIATIONINPROGRESS) {
+          delete this.instanceCache[name];
+        }
+      }
     } else {
       throw `Injector.getValue: No registered item for name ${name}`;
     }

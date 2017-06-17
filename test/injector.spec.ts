@@ -406,6 +406,24 @@ describe('injector', () => {
     const injector = createInjector(['myModule']);
 
     expect(() => injector.get('a'))
-      .toThrowError('Injector.getValue: Circular dependency identified');
+      .toThrowError('Injector.getValue: Circular dependency identified. a <- c <- b <- a');
+  });
+
+  it('cleans up the circular marker when instantiation fails', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', {
+      $get: function() {
+        throw new Error('Failing instantiation');
+      }
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(() => injector.get('a'))
+      .toThrowError('Failing instantiation');
+
+    expect(() => injector.get('a'))
+      .toThrowError('Failing instantiation');
   });
 });
