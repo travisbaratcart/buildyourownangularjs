@@ -243,5 +243,69 @@ describe('injector', () => {
 
       expect(injector.invoke(func)).toBe(3);
     });
+
+    it('instantiates an annotated constructor function', () => {
+      const module = angular.module('myModule', []);
+
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      function Type(one: number, two: number) {
+        this.result = one + two;
+      }
+
+      (<any>Type).$inject = ['a', 'b'];
+
+      const instance = injector.instantiate(Type);
+      expect(instance.result).toBe(3);
+    });
+
+    it('instantiates an array-annotated constructor function', () => {
+      const module = angular.module('myModule', []);
+
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      function Type(one: number, two: number) {
+        this.result = one + two;
+      }
+
+      const instance = injector.instantiate(['a', 'b', Type]);
+      expect(instance.result).toBe(3);
+    });
+
+    it('instantiates a non--annotated constructor function', () => {
+      const module = angular.module('myModule', []);
+
+      module.constant('a', 1);
+      module.constant('b', 2);
+
+      const injector = createInjector(['myModule']);
+
+      function Type(a: number, b: number) {
+        this.result = a + b;
+      }
+
+      const instance = injector.instantiate(Type);
+      expect(instance.result).toBe(3);
+    });
+
+    it('uses the prototype of the constructor when instantiating', () => {
+      function BaseType() { }
+      BaseType.prototype.getValue = function() { return 42; };
+
+      function Type() { this.v = this.getValue(); }
+      Type.prototype = BaseType.prototype;
+
+      const module = angular.module('myModule', []);
+      const injector = createInjector(['myModule']);
+
+      const instance = injector.instantiate(Type);
+      expect(instance.v).toBe(42);
+    });
   });
 });

@@ -87,6 +87,20 @@ class Injector {
     }
   }
 
+  public instantiate(
+    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[]): any {
+
+    const constructor = Array.isArray(constructorWithDependencies)
+      ? constructorWithDependencies[constructorWithDependencies.length - 1]
+      : constructorWithDependencies;
+
+    const instance = Object.create(constructor.prototype);
+
+    this.invoke(constructorWithDependencies, instance);
+
+    return instance;
+  }
+
   private $provide(registerType: RegisterType): (key: string, value: any) => void {
     switch (registerType) {
       case RegisterType.Constant:
