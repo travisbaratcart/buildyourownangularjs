@@ -15,6 +15,10 @@ class Injector {
   private loadedModules: { [module: string]: boolean } = {};
   private strictInjection = false;
 
+  // Identifier for dependencies being instantiated
+  // Useful for identifying circular dependencies
+  private INSTANTIATIONINPROGRESS = {};
+
   constructor(modulesToLoad: string[], strictInjection?: boolean) {
     this.strictInjection = !!strictInjection;
 
@@ -141,8 +145,14 @@ class Injector {
 
   private getValue(name: string): any {
     if (this.instanceCache.hasOwnProperty(name)) {
+      if (this.instanceCache[name] === this.INSTANTIATIONINPROGRESS) {
+        throw new Error('Injector.getValue: Circular dependency identified');
+      }
+
       return this.instanceCache[name];
     } else if (this.providerCache.hasOwnProperty(this.normalizeProviderName(name))) {
+      this.instanceCache[name] = this.INSTANTIATIONINPROGRESS;
+
       const provider = this.providerCache[this.normalizeProviderName(name)];
 
       const instance = this.invoke(provider.$get, provider);

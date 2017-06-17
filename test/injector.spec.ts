@@ -387,4 +387,25 @@ describe('injector', () => {
 
     expect(injector.get('a')).toBe(injector.get('a'));
   });
+
+  it('notifies the user about a circular dependency', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', {
+      $get: function(b: any) { }
+    });
+
+    module.provider('b', {
+      $get: function(c: any) { }
+    });
+
+    module.provider('c', {
+      $get: function(a: any) { }
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(() => injector.get('a'))
+      .toThrowError('Injector.getValue: Circular dependency identified');
+  });
 });
