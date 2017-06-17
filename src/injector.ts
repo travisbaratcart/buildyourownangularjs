@@ -5,8 +5,13 @@ export function createInjector(modulesToLoad: string[], strictInjection?: boolea
   return new Injector(modulesToLoad, strictInjection);
 }
 
+interface IProvider {
+  $get: () => any;
+}
+
 class Injector {
-  private cache: any = {};
+  private instanceCache: any = {};
+  private providerCache: { [providerName: string]: IProvider } = {};
   private loadedModules: { [module: string]: boolean } = {};
   private strictInjection = false;
 
@@ -35,7 +40,8 @@ class Injector {
   }
 
   public has(key: string): boolean {
-    return this.cache.hasOwnProperty(key);
+    return this.instanceCache.hasOwnProperty(key)
+      || this.providerCache.hasOwnProperty(this.normalizeProviderName(key));
   }
 
   public get(key: string): any {
@@ -43,7 +49,7 @@ class Injector {
       throw `Injector.get: No cached item ${key}`
     }
 
-    return this.cache[key];
+    return this.getValue(key);
   }
 
   public invoke(
@@ -62,7 +68,7 @@ class Injector {
 
       return isDependencyInLocals
       ? locals[dependencyName]
-      : this.cache[dependencyName]
+      : this.getValue(dependencyName);
     });
 
     const func = Array.isArray(funcWithDependencies)
@@ -122,10 +128,25 @@ class Injector {
   }
 
   private provideConstant = (key: string, value: any) => {
-    this.cache[key] = value;
+    this.instanceCache[key] = value;
   }
 
-  private provideProvider = (key: string, provider: { $get: () => any }) => {
-    this.cache[key] = this.invoke(provider.$get, provider);
+  private provideProvider = (key: string, provider: IProvider) => {
+    this.providerCache[this.normalizeProviderName(key)] = provider;
+  }
+
+  private normalizeProviderName(providerName: string): string {
+    return `${providerName}Provider`;
+  }
+
+  private getValue(name: string): any {
+    if (this.instanceCache.hasOwnProperty(name)) {
+      return this.instanceCache[name];
+    } else if (this.providerCache.hasOwnProperty(this.normalizeProviderName(name))) {
+      const provider = this.providerCache[this.normalizeProviderName(name)];
+      return this.invoke(provider.$get, provider);
+    } else {
+      throw `Injector.getValue: No registered item for name ${name}`;
+    }
   }
 }

@@ -353,5 +353,25 @@ describe('injector', () => {
 
       expect(injector.get('b')).toBe(3);
     });
+
+    it('injects the $get method of a provider lazilly', () => {
+      const module = angular.module('myModule', []);
+
+      module.provider('b', {
+        $get: function(a: number) {
+          return a + 2;
+        }
+      });
+
+      module.provider('a', {
+        $get: function() {
+          return 40;
+        }
+      });
+
+      const injector = createInjector(['myModule']);
+
+      expect(injector.get('b')).toBe(42);
+    });
   });
 });
