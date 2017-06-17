@@ -339,5 +339,19 @@ describe('injector', () => {
       expect(injector.has('a')).toBe(true);
       expect(injector.get('a')).toBe(42);
     });
+
+    it('injects the $get method of a provider', () => {
+      const module = angular.module('myModule', []);
+      module.constant('a', 1);
+      module.provider('b', {
+        $get: function(a: number) {
+          return a + 2;
+        }
+      });
+
+      const injector = createInjector(['myModule']);
+
+      expect(injector.get('b')).toBe(3);
+    });
   });
 });

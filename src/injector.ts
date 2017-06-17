@@ -126,6 +126,6 @@ class Injector {
   }
 
   private provideProvider = (key: string, provider: { $get: () => any }) => {
-    this.cache[key] = provider.$get();
+    this.cache[key] = this.invoke(provider.$get, provider);
   }
 }
