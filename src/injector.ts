@@ -38,6 +38,14 @@ class Injector {
     return this.cache.hasOwnProperty(key);
   }
 
+  public get(key: string): any {
+    if (!this.has(key)) {
+      throw `Injector.get: No cached item ${key}`
+    }
+
+    return this.cache[key];
+  }
+
   public invoke(
     funcWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
     context?: any,
@@ -106,6 +114,8 @@ class Injector {
     switch (registerType) {
       case RegisterType.Constant:
         return this.provideConstant;
+      case RegisterType.Provider:
+        return this.provideProvider;
       default:
         throw 'Injector.$provide: Invalid registration type.';
     }
@@ -113,5 +123,9 @@ class Injector {
 
   private provideConstant = (key: string, value: any) => {
     this.cache[key] = value;
+  }
+
+  private provideProvider = (key: string, provider: { $get: () => any }) => {
+    this.cache[key] = provider.$get();
   }
 }

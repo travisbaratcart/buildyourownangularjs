@@ -2,7 +2,8 @@
 
 export enum RegisterType {
   NotSpecified,
-  Constant
+  Constant,
+  Provider
 }
 
 interface IRegisterItem {
@@ -29,8 +30,16 @@ class Module {
   }
 
   public constant(key: string, value: any): void {
+    this.addInvokeItem(RegisterType.Constant, key, value);
+  }
+
+  public provider(key: string, value: any): void {
+    this.addInvokeItem(RegisterType.Provider, key, value);
+  }
+
+  private addInvokeItem(registerType: RegisterType, key: string, value: any): void {
     const newRegisterItem: IRegisterItem = {
-      type: RegisterType.Constant,
+      type: registerType,
       key,
       value
     };
