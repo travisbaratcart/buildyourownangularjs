@@ -524,4 +524,17 @@ describe('injector', () => {
 
     expect(() => injector.get('aProvider')).toThrow();
   });
+
+  it('registers constants first to make them available to providers', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', function(b: any) {
+      this.$get = function() { return b; };
+    });
+
+    module.constant('b', 42);
+
+    const injector = createInjector(['myModule']);
+    expect(injector.get('a')).toBe(42);
+  });
 });

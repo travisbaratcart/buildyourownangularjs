@@ -44,7 +44,9 @@ class Module {
       value
     };
 
-    this.$$invokeQueue.push(newRegisterItem);
+    registerType === RegisterType.Constant
+      ? this.$$invokeQueue.unshift(newRegisterItem)
+      : this.$$invokeQueue.push(newRegisterItem);
   }
 }
 
