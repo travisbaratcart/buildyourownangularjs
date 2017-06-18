@@ -1,11 +1,5 @@
 'use strict';
 
-export enum RegisterType {
-  NotSpecified,
-  Constant,
-  Provider
-}
-
 export function setupModuleLoder(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
 }
@@ -20,9 +14,10 @@ interface IRegisterItem {
 }
 
 class Module {
-  public $$providerRegistrations: IRegisterItem[] = [];
   public $$constantRegistrations: IRegisterItem[] = [];
+  public $$providerRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
+  public $$runRegistrations: ((...args: any[]) => any)[] = [];
 
   constructor(
     public name: string,
@@ -42,6 +37,10 @@ class Module {
   public provider(key: string, value: any): void {
     const newProvider: IRegisterItem = { key, value };
     this.$$providerRegistrations.push(newProvider);
+  }
+
+  public run(onRun: (...args: any[]) => any): void {
+    this.$$runRegistrations.push(onRun);
   }
 
   public config(configFunction: (...args: any[]) => any) {

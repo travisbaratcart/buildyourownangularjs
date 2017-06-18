@@ -1,5 +1,5 @@
 'use strict';
-import { Angular, RegisterType } from './loader';
+import { Angular } from './loader';
 
 export function createInjector(modulesToLoad: string[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -26,6 +26,8 @@ export class Injector {
   private instanceInjector: InternalInjector;
   private providerInjector: InternalInjector;
 
+  private onRunQueue: ((...args: any[]) => any)[] = [];
+
   constructor(modulesToLoad: string[], strictInjection?: boolean) {
     this.providerInjector = this.providerCache.$injector = new InternalInjector(
       this.providerCache,
@@ -44,6 +46,10 @@ export class Injector {
 
     modulesToLoad.forEach(moduleName => {
       this.loadModule(moduleName);
+    });
+
+    this.onRunQueue.forEach(onRun => {
+      this.instanceInjector.invoke(onRun);
     });
   }
 
@@ -69,6 +75,8 @@ export class Injector {
     module.$$configRegistrations.forEach(configFunc => {
       this.providerInjector.invoke(configFunc)
     });
+
+    this.onRunQueue = this.onRunQueue.concat(module.$$runRegistrations);
   }
 
   public has(key: string): boolean {
