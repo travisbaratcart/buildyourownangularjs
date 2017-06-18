@@ -552,4 +552,23 @@ describe('injector', () => {
 
     expect(injector.get('b')).toBe(42);
   });
+
+  it('allows injecting the provider injector to provider', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', function() {
+      this.value = 42;
+      this.$get = function() { return this.value; };
+    });
+
+    module.provider('b', function($injector: Injector) {
+      const aProvider = $injector.get('aProvider');
+
+      this.$get = function() { return aProvider.value };
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('b')).toBe(42);
+  });
 });

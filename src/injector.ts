@@ -10,10 +10,8 @@ interface IProvider {
 }
 
 export class Injector {
-  private instanceCache: any = {
-    $injector: this
-  };
-  private providerCache: { [providerName: string]: IProvider } = {};
+  private instanceCache: any = {};
+  private providerCache: { [providerName: string]: IProvider | InternalInjector } = {};
 
   private loadedModules: { [module: string]: boolean } = {};
 
@@ -21,15 +19,15 @@ export class Injector {
   private providerInjector: InternalInjector;
 
   constructor(modulesToLoad: string[], strictInjection?: boolean) {
-    this.providerInjector = new InternalInjector(
+    this.providerInjector = this.providerCache.$injector = new InternalInjector(
       this.providerCache,
       null,
       !!strictInjection);
 
-    this.instanceInjector = new InternalInjector(
+    this.instanceInjector = this.instanceCache.$injector = new InternalInjector(
       this.instanceCache,
       (name: string) => {
-        const provider = this.providerInjector.getValue(this.normalizeProviderName(name));
+        const provider = this.providerInjector.get(this.keyProvider(name));
         return this.instanceInjector.invoke(provider.$get, provider);
       },
       !!strictInjection)
@@ -57,7 +55,7 @@ export class Injector {
 
   public has(key: string): boolean {
     return this.instanceCache.hasOwnProperty(key)
-      || this.providerCache.hasOwnProperty(this.normalizeProviderName(key));
+      || this.providerCache.hasOwnProperty(this.keyProvider(key));
   }
 
   public get(key: string): any {
@@ -65,7 +63,7 @@ export class Injector {
       throw `Injector.get: No cached item ${key}`
     }
 
-    return this.instanceInjector.getValue(key);
+    return this.instanceInjector.get(key);
   }
 
   public invoke(
@@ -113,11 +111,11 @@ export class Injector {
       ? this.providerInjector.instantiate(value)
       : value;
 
-    this.providerCache[this.normalizeProviderName(key)] = provider;
+    this.providerCache[this.keyProvider(key)] = provider;
   }
 
-  private normalizeProviderName(providerName: string): string {
-    return `${providerName}Provider`;
+  private keyProvider(key: string): string {
+    return `${key}Provider`
   }
 }
 
@@ -134,7 +132,7 @@ class InternalInjector {
     private strictInjection: boolean) {
   }
 
-  public getValue(name: string): any {
+  public get(name: string): any {
     if (this.cache.hasOwnProperty(name)) {
       if (this.cache[name] === this.INSTANTIATIONINPROGRESS) {
         throw new Error(
@@ -194,7 +192,7 @@ class InternalInjector {
 
       return isDependencyInLocals
       ? locals[dependencyName]
-      : this.getValue(dependencyName);
+      : this.get(dependencyName);
     });
 
     const func = Array.isArray(funcWithDependencies)
