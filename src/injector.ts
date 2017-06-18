@@ -12,17 +12,25 @@ interface IProvider {
 class Injector {
   private instanceCache: any = {};
   private providerCache: { [providerName: string]: IProvider } = {};
+
   private loadedModules: { [module: string]: boolean } = {};
-  private strictInjection = false;
 
-  private injectionPath: string[] = [];
-
-  // Identifier for dependencies being instantiated
-  // Useful for identifying circular dependencies
-  private INSTANTIATIONINPROGRESS = {};
+  private instanceInjector: InternalInjector;
+  private providerInjector: InternalInjector;
 
   constructor(modulesToLoad: string[], strictInjection?: boolean) {
-    this.strictInjection = !!strictInjection;
+    this.providerInjector = new InternalInjector(
+      this.providerCache,
+      null,
+      !!strictInjection);
+
+    this.instanceInjector = new InternalInjector(
+      this.instanceCache,
+      (name: string) => {
+        const provider = this.providerInjector.getValue(this.normalizeProviderName(name));
+        return this.instanceInjector.invoke(provider.$get, provider);
+      },
+      !!strictInjection)
 
     modulesToLoad.forEach(moduleName => {
       this.loadModule(moduleName);
@@ -55,7 +63,117 @@ class Injector {
       throw `Injector.get: No cached item ${key}`
     }
 
-    return this.getValue(key);
+    return this.instanceInjector.getValue(key);
+  }
+
+  public invoke(
+    funcWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
+    context?: any,
+    locals?: any) {
+
+    return this.instanceInjector.invoke(
+      funcWithDependencies,
+      context,
+      locals);
+  }
+
+  public annotateDependencies(func: any | any[]): string[] {
+    return this.providerInjector.annotateDependencies(func);
+  }
+
+  public instantiate(
+    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
+    locals?: { [key: string]: any }): any {
+
+    return this.instanceInjector.instantiate(
+      constructorWithDependencies,
+      locals);
+  }
+
+  private $provide(registerType: RegisterType): (key: string, value: any) => void {
+    switch (registerType) {
+      case RegisterType.Constant:
+        return this.provideConstant;
+      case RegisterType.Provider:
+        return this.provideProvider;
+      default:
+        throw 'Injector.$provide: Invalid registration type.';
+    }
+  }
+
+  private provideConstant = (key: string, value: any) => {
+    this.instanceCache[key] = value;
+    this.providerCache[key] = value; // constants replicated everywhere
+  }
+
+  private provideProvider = (key: string, value: (() => IProvider) | IProvider) => {
+    const provider = typeof value === 'function'
+      ? this.providerInjector.instantiate(value)
+      : value;
+
+    this.providerCache[this.normalizeProviderName(key)] = provider;
+  }
+
+  private normalizeProviderName(providerName: string): string {
+    return `${providerName}Provider`;
+  }
+}
+
+class InternalInjector {
+  // Identifier for dependencies being instantiated
+  // Useful for identifying circular dependencies
+  private INSTANTIATIONINPROGRESS = {};
+
+  private injectionPath: string[] = [];
+
+  constructor(
+    private cache: any,
+    private fallBack: (key: string) => void,
+    private strictInjection: boolean) {
+  }
+
+  public getValue(name: string): any {
+    if (this.cache.hasOwnProperty(name)) {
+      if (this.cache[name] === this.INSTANTIATIONINPROGRESS) {
+        throw new Error(
+          `InternalInjector.getValue: Circular dependency identified. ${name} <- ${this.injectionPath.join(' <- ')}`);
+      }
+
+      return this.cache[name];
+    } else {
+      this.injectionPath.unshift(name);
+
+      this.cache[name] = this.INSTANTIATIONINPROGRESS;
+
+      try {
+        if (!this.fallBack) {
+          throw `Unknown provider: ${name}`;
+        }
+
+        return (this.cache[name] = this.fallBack(name));
+      } finally {
+        this.injectionPath.shift();
+
+        if (this.cache[name] === this.INSTANTIATIONINPROGRESS) {
+          delete this.cache[name];
+        }
+      }
+    }
+  }
+
+  public instantiate(
+    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
+    locals?: { [key: string]: any }): any {
+
+    const constructor = Array.isArray(constructorWithDependencies)
+    ? constructorWithDependencies[constructorWithDependencies.length - 1]
+    : constructorWithDependencies;
+
+    const instance = Object.create(constructor.prototype);
+
+    this.invoke(constructorWithDependencies, instance, locals);
+
+    return instance;
   }
 
   public invoke(
@@ -104,82 +222,6 @@ class Injector {
       const args = functionWithoutComments.match(argsRegexp);
 
       return args[1].split(',').map((arg: string) => arg.match(argRegexp)[2]);
-    }
-  }
-
-  public instantiate(
-    constructorWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
-    locals?: { [key: string]: any }): any {
-
-    const constructor = Array.isArray(constructorWithDependencies)
-      ? constructorWithDependencies[constructorWithDependencies.length - 1]
-      : constructorWithDependencies;
-
-    const instance = Object.create(constructor.prototype);
-
-    this.invoke(constructorWithDependencies, instance, locals);
-
-    return instance;
-  }
-
-  private $provide(registerType: RegisterType): (key: string, value: any) => void {
-    switch (registerType) {
-      case RegisterType.Constant:
-        return this.provideConstant;
-      case RegisterType.Provider:
-        return this.provideProvider;
-      default:
-        throw 'Injector.$provide: Invalid registration type.';
-    }
-  }
-
-  private provideConstant = (key: string, value: any) => {
-    this.instanceCache[key] = value;
-  }
-
-  private provideProvider = (key: string, value: (() => IProvider) | IProvider) => {
-    const provider = typeof value === 'function'
-      ? this.instantiate(value)
-      : value;
-
-    this.providerCache[this.normalizeProviderName(key)] = provider;
-  }
-
-  private normalizeProviderName(providerName: string): string {
-    return `${providerName}Provider`;
-  }
-
-  private getValue(name: string): any {
-    if (this.instanceCache.hasOwnProperty(name)) {
-      if (this.instanceCache[name] === this.INSTANTIATIONINPROGRESS) {
-        throw new Error(
-          `Injector.getValue: Circular dependency identified. ${name} <- ${this.injectionPath.join(' <- ')}`);
-
-      }
-
-      return this.instanceCache[name];
-    } else if (this.providerCache.hasOwnProperty(this.normalizeProviderName(name))) {
-      this.injectionPath.unshift(name);
-
-      this.instanceCache[name] = this.INSTANTIATIONINPROGRESS;
-
-      try {
-        const provider = this.providerCache[this.normalizeProviderName(name)];
-
-        const instance = this.invoke(provider.$get, provider);
-
-        this.instanceCache[name] = instance;
-
-        return instance;
-      } finally {
-        this.injectionPath.shift();
-
-        if (this.instanceCache[name] === this.INSTANTIATIONINPROGRESS) {
-          delete this.instanceCache[name];
-        }
-      }
-    } else {
-      throw `Injector.getValue: No registered item for name ${name}`;
     }
   }
 }
