@@ -26,8 +26,12 @@ class Module {
 
   constructor(
     public name: string,
-    public depenedencies: string[]) {
+    public depenedencies: string[],
+    configFunction?: ((...args: any[]) => any)) {
 
+    if (configFunction) {
+      this.config(configFunction);
+    }
   }
 
   public constant(key: string, value: any): void {
@@ -48,16 +52,22 @@ class Module {
 export class Angular {
   private modules: { [moduleName: string]: Module } = {};
 
-  public module(moduleName: string, depenedencies?: any[]): Module {
+  public module(
+    moduleName: string,
+    depenedencies?: any[],
+    configFunction?: (...args: any[]) => any): Module {
     if (depenedencies) {
-      return this.createModule(moduleName, depenedencies);
+      return this.createModule(moduleName, depenedencies, configFunction);
     } else {
       return this.getModule(moduleName);
     }
   }
 
-  private createModule(moduleName: string, depenedencies: any[]): Module {
-    const newModule = new Module(moduleName, depenedencies);
+  private createModule(
+    moduleName: string,
+    depenedencies: any[],
+    configFunction?: (...args: any[]) => any): Module {
+    const newModule = new Module(moduleName, depenedencies, configFunction);
 
     this.modules[moduleName] = newModule;
 

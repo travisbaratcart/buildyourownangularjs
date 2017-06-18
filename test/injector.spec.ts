@@ -634,4 +634,14 @@ describe('injector', () => {
 
     expect(injector.get('a')).toBe(42);
   });
+
+  it('runs a config block added during module registration', () => {
+    const module = angular.module('myModule', [], function($provide: IProvide) {
+      $provide.constant('a', 42);
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  })
 });
