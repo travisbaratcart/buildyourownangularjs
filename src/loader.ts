@@ -6,12 +6,6 @@ export enum RegisterType {
   Provider
 }
 
-interface IRegisterItem {
-  type: RegisterType;
-  key: string;
-  value: any;
-}
-
 export function setupModuleLoder(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
 }
@@ -20,8 +14,15 @@ function ensure (obj: any, name: string, factory: () => any): any {
   return obj[name] || (obj[name] = factory());
 }
 
+interface IRegisterItem {
+  key: string,
+  value: any
+}
+
 class Module {
-  public $$invokeQueue: IRegisterItem[] = [];
+  public $$providerRegistrations: IRegisterItem[] = [];
+  public $$constantRegistrations: IRegisterItem[] = [];
+  public $$configRegistrations: ((...args: any[]) => any)[] = [];
 
   constructor(
     public name: string,
@@ -30,23 +31,17 @@ class Module {
   }
 
   public constant(key: string, value: any): void {
-    this.addInvokeItem(RegisterType.Constant, key, value);
+    const newConstant: IRegisterItem = { key, value };
+    this.$$constantRegistrations.push(newConstant);
   }
 
   public provider(key: string, value: any): void {
-    this.addInvokeItem(RegisterType.Provider, key, value);
+    const newProvider: IRegisterItem = { key, value };
+    this.$$providerRegistrations.push(newProvider);
   }
 
-  private addInvokeItem(registerType: RegisterType, key: string, value: any): void {
-    const newRegisterItem: IRegisterItem = {
-      type: registerType,
-      key,
-      value
-    };
-
-    registerType === RegisterType.Constant
-      ? this.$$invokeQueue.unshift(newRegisterItem)
-      : this.$$invokeQueue.push(newRegisterItem);
+  public config(configFunction: (...args: any[]) => any) {
+    this.$$configRegistrations.push(configFunction);
   }
 }
 

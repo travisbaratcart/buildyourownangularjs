@@ -58,8 +58,16 @@ export class Injector {
 
     module.depenedencies.forEach(dependency => this.loadModule(dependency));
 
-    module.$$invokeQueue.forEach(registerItem => {
-      this.$provide(registerItem.type)(registerItem.key, registerItem.value);
+    module.$$constantRegistrations.forEach(registerItem => {
+      this.provideConstant(registerItem.key, registerItem.value);
+    });
+
+    module.$$providerRegistrations.forEach(registerItem => {
+      this.provideProvider(registerItem.key, registerItem.value);
+    });
+
+    module.$$configRegistrations.forEach(configFunc => {
+      this.providerInjector.invoke(configFunc)
     });
   }
 
@@ -98,17 +106,6 @@ export class Injector {
     return this.instanceInjector.instantiate(
       constructorWithDependencies,
       locals);
-  }
-
-  private $provide(registerType: RegisterType): (key: string, value: any) => void {
-    switch (registerType) {
-      case RegisterType.Constant:
-        return this.provideConstant;
-      case RegisterType.Provider:
-        return this.provideProvider;
-      default:
-        throw 'Injector.$provide: Invalid registration type.';
-    }
   }
 
   private provideConstant = (key: string, value: any) => {
