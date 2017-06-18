@@ -9,9 +9,17 @@ interface IProvider {
   $get: () => any;
 }
 
+export interface IProvide { [type: string]: (key: string, value: any) => void }
+
+interface IProviderCache {
+  $injector?: InternalInjector;
+  $provide?: IProvide;
+  [providerName: string]: IProvider | InternalInjector | IProvide;
+}
+
 export class Injector {
   private instanceCache: any = {};
-  private providerCache: { [providerName: string]: IProvider | InternalInjector } = {};
+  private providerCache: IProviderCache = {};
 
   private loadedModules: { [module: string]: boolean } = {};
 
@@ -23,6 +31,8 @@ export class Injector {
       this.providerCache,
       null,
       !!strictInjection);
+
+    this.add$provideToProviderCache();
 
     this.instanceInjector = this.instanceCache.$injector = new InternalInjector(
       this.instanceCache,
@@ -116,6 +126,15 @@ export class Injector {
 
   private keyProvider(key: string): string {
     return `${key}Provider`
+  }
+
+  private add$provideToProviderCache(): void {
+    const $provide: IProvide = {
+      constant: this.provideConstant,
+      provider: this.provideProvider
+    };
+
+    this.providerCache.$provide = $provide;
   }
 }
 

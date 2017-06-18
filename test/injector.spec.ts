@@ -1,6 +1,6 @@
 'use strict';
 import { setupModuleLoder, Angular } from '../src/loader';
-import { createInjector, Injector } from '../src/injector';
+import { createInjector, Injector, IProvide } from '../src/injector';
 
 describe('injector', () => {
   let angular: Angular;
@@ -570,5 +570,30 @@ describe('injector', () => {
     const injector = createInjector(['myModule']);
 
     expect(injector.get('b')).toBe(42);
+  });
+
+  it('allows injecting the $provide service to providers', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', function($provide: IProvide) {
+      $provide.constant('b', 2);
+      this.$get = function(b: number) { return b + 1; };
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(3);
+  });
+
+  it('does not allow injecting the $provide service to $get', () => {
+    const module = angular.module('myModule', []);
+
+    module.provider('a', function() {
+      this.$get = function($provide: IProvide) { };
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(() => injector.get('a')).toThrow();
   });
 });
