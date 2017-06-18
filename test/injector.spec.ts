@@ -1,6 +1,6 @@
 'use strict';
 import { setupModuleLoder, Angular } from '../src/loader';
-import { createInjector } from '../src/injector';
+import { createInjector, Injector } from '../src/injector';
 
 describe('injector', () => {
   let angular: Angular;
@@ -536,5 +536,20 @@ describe('injector', () => {
 
     const injector = createInjector(['myModule']);
     expect(injector.get('a')).toBe(42);
+  });
+
+  it('allows injecting the instance injector to $get', () => {
+    const module = angular.module('myModule', []);
+
+    module.constant('a', 42);
+    module.provider('b', function() {
+      this.$get = function($injector: Injector) {
+        return $injector.get('a');
+      };
+    });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('b')).toBe(42);
   });
 });

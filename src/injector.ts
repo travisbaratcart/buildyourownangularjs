@@ -9,8 +9,10 @@ interface IProvider {
   $get: () => any;
 }
 
-class Injector {
-  private instanceCache: any = {};
+export class Injector {
+  private instanceCache: any = {
+    $injector: this
+  };
   private providerCache: { [providerName: string]: IProvider } = {};
 
   private loadedModules: { [module: string]: boolean } = {};
