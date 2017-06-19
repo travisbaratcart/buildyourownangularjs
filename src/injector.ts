@@ -85,6 +85,10 @@ export class Injector {
       this.provideProvider(registerItem.key, registerItem.value);
     });
 
+    module.$$factoryRegistrations.forEach(registerItem => {
+      this.provideFactory(registerItem.key, registerItem.value);
+    });
+
     module.$$configRegistrations.forEach(configFunc => {
       this.providerInjector.invoke(configFunc)
     });
@@ -142,6 +146,14 @@ export class Injector {
     this.providerCache[this.keyProvider(key)] = provider;
   }
 
+  private provideFactory = (key: string, factoryFunction: () => any) => {
+    const factoryProvider: IProvider = {
+      $get: factoryFunction
+    };
+
+    this.provideProvider(key, factoryProvider);
+  }
+
   private keyProvider(key: string): string {
     return `${key}Provider`
   }
@@ -149,7 +161,8 @@ export class Injector {
   private add$provideToProviderCache(): void {
     const $provide: IProvide = {
       constant: this.provideConstant,
-      provider: this.provideProvider
+      provider: this.provideProvider,
+      factory: this.provideFactory
     };
 
     this.providerCache.$provide = $provide;

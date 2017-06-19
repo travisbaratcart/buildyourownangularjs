@@ -15,6 +15,7 @@ interface IRegisterItem {
 
 class Module {
   public $$constantRegistrations: IRegisterItem[] = [];
+  public $$factoryRegistrations: IRegisterItem[] = [];
   public $$providerRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
   public $$runRegistrations: ((...args: any[]) => any)[] = [];
@@ -37,6 +38,11 @@ class Module {
   public provider(key: string, value: any): void {
     const newProvider: IRegisterItem = { key, value };
     this.$$providerRegistrations.push(newProvider);
+  }
+
+  public factory(key: string, value: (...args: any[]) => any): void {
+    const newFactory: IRegisterItem = { key, value };
+    this.$$factoryRegistrations.push(newFactory);
   }
 
   public run(onRun: (...args: any[]) => any): void {

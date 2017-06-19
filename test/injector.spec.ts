@@ -752,4 +752,35 @@ describe('injector', () => {
 
     expect(timesLoaded).toBe(1);
   });
+
+  it('allows registering a factory', () => {
+    const module = angular.module('myModule', []);
+
+    module.factory('a', function() { return 42; });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  });
+
+  it('injects a factory function with instances', () => {
+    const module = angular.module('myModule', []);
+
+    module.factory('a', function() { return 1; });
+    module.factory('b', function(a: number) { return a + 2; });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('b')).toBe(3);
+  });
+
+  it('only calls a factory function once', () => {
+    const module = angular.module('myModule', []);
+
+    module.factory('a', function() { return {}; });
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(injector.get('a'));
+  });
 });
