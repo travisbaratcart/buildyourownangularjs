@@ -1,5 +1,6 @@
 'use strict';
 import { Angular } from './loader';
+import { HashMap } from './hash';
 
 export function createInjector(modulesToLoad: string[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -21,7 +22,7 @@ export class Injector {
   private instanceCache: any = {};
   private providerCache: IProviderCache = {};
 
-  private loadedModules: { [module: string]: boolean } = {};
+  private loadedModules = new HashMap();
 
   private instanceInjector: InternalInjector;
   private providerInjector: InternalInjector;
@@ -54,6 +55,12 @@ export class Injector {
   }
 
   private loadModule(module: string): void {
+    if (this.loadedModules.get(module)) {
+      return;
+    }
+
+    this.loadedModules.put(module, true);
+
     if (typeof module === 'string') {
       this.loadRegisteredModule(module);
     } else {
@@ -66,12 +73,6 @@ export class Injector {
   }
 
   private loadRegisteredModule(moduleName: string): void {
-    if (this.loadedModules[moduleName]) {
-      return;
-    }
-
-    this.loadedModules[moduleName] = true;
-
     const module = (<Angular>(<any>window).angular).module(moduleName);
 
     module.depenedencies.forEach(dependency => this.loadModule(dependency));

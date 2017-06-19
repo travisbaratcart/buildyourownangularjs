@@ -740,7 +740,7 @@ describe('injector', () => {
     expect(result).toBe(42);
   });
 
-  xit('only loads function modules once', () => {
+  it('only loads function modules once', () => {
     let timesLoaded = 0;
     const functionModule = function() {
       timesLoaded++;
