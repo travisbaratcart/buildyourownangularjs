@@ -53,7 +53,15 @@ export class Injector {
     });
   }
 
-  private loadModule(moduleName: string): void {
+  private loadModule(module: string): void {
+    if (typeof module === 'string') {
+      this.loadRegisteredModule(module);
+    } else {
+      this.providerInjector.invoke(module);
+    }
+  }
+
+  private loadRegisteredModule(moduleName: string): void {
     if (this.loadedModules[moduleName]) {
       return;
     }

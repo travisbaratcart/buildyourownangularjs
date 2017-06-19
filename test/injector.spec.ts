@@ -698,4 +698,28 @@ describe('injector', () => {
 
     expect(result).toBe(3);
   });
+
+  it('runs a function module dependency as a config block', () => {
+    const functionModule = function($provide: IProvide) {
+      $provide.constant('a', 42);
+    };
+
+    angular.module('myModule', [functionModule]);
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  });
+
+  it('runs a function module with array injection as a config block', () => {
+    const functionModule = ['$provide', function($provide: IProvide) {
+      $provide.constant('a', 42);
+    }];
+
+    angular.module('myModule', [functionModule]);
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  });
 });
