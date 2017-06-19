@@ -35,4 +35,12 @@ export class HashMap {
   public get(key: any): any {
     return this.cache[hashKey(key)];
   }
+
+  public remove(key: any): any {
+    const value = this.get(key);
+
+    delete this.cache[hashKey(key)];
+
+    return value;;
+  }
 }

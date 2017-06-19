@@ -115,5 +115,20 @@ describe('hash', () => {
       expect(map.get(obj)).toEqual('my value');
       expect(map.get({})).toBeUndefined();
     });
+
+    it('supports remove', () => {
+      const map = new HashMap();
+
+      map.put(42, 'fourty two');
+
+      map.remove(42);
+      expect(map.get(42)).toBeUndefined();
+    });
+
+    it('returns value from remove', () => {
+      const map = new HashMap();
+      map.put(42, 'fourty two');
+      expect(map.remove(42)).toBe('fourty two');
+    });
   });
 });
