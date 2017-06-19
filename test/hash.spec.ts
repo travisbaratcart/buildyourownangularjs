@@ -82,4 +82,17 @@ describe('hashkey', () => {
   it('uses preassigned $$hashKey', () => {
     expect(hashKey({ $$hashKey: 42 })).toBe('object:42');
   });
+
+  it('supports a function $$hashKey', () => {
+    expect(hashKey({ $$hashKey: () => 42 })).toEqual('object:42');
+  });
+
+  it('calls the function $$hashKey as a method with the correct context', () => {
+    expect(hashKey({
+      myKey: 42,
+      $$hashKey: function() {
+        return this.myKey;
+      }
+    })).toBe('object:42');
+  });
 });

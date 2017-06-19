@@ -9,7 +9,15 @@ export function hashKey(item: any): string {
   if (!isObjectOrFunction) {
     return `${type}:${item}`;
   } else {
-    const uid = item.$$hashKey || _.uniqueId();
+    let uid: string;
+
+    if (typeof item.$$hashKey === 'function') {
+      uid = item.$$hashKey();
+    } else if (item.$$hashKey) {
+      uid = item.$$hashKey;
+    } else {
+      uid = _.uniqueId();
+    }
 
     item.$$hashKey = uid;
 
