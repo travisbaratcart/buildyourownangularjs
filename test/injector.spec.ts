@@ -722,4 +722,21 @@ describe('injector', () => {
 
     expect(injector.get('a')).toBe(42);
   });
+
+  it('supports returning a run block from a function module', () => {
+    let result: number;
+
+    const functionModule = function($provide: IProvide) {
+      $provide.constant('a', 42);
+      return function(a: number) {
+        result = a;
+      };
+    }
+
+    angular.module('myModule', [functionModule]);
+
+    createInjector(['myModule']);
+
+    expect(result).toBe(42);
+  });
 });

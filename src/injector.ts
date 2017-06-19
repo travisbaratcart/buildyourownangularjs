@@ -57,7 +57,11 @@ export class Injector {
     if (typeof module === 'string') {
       this.loadRegisteredModule(module);
     } else {
-      this.providerInjector.invoke(module);
+      const runFunc = this.providerInjector.invoke(module);
+
+      if (typeof runFunc === 'function') {
+        this.onRunQueue.push(runFunc);
+      }
     }
   }
 
