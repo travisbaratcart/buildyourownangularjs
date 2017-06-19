@@ -24,3 +24,15 @@ export function hashKey(item: any): string {
     return `${type}:${uid}`;
   }
 }
+
+export class HashMap {
+  private cache: any = {};
+
+  public put(key: any, value: any) {
+    this.cache[hashKey(key)] = value;
+  }
+
+  public get(key: any): any {
+    return this.cache[hashKey(key)];
+  }
+}
