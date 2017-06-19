@@ -739,4 +739,17 @@ describe('injector', () => {
 
     expect(result).toBe(42);
   });
+
+  xit('only loads function modules once', () => {
+    let timesLoaded = 0;
+    const functionModule = function() {
+      timesLoaded++;
+    };
+
+    angular.module('myModule', [functionModule, functionModule]);
+
+    createInjector(['myModule']);
+
+    expect(timesLoaded).toBe(1);
+  });
 });
