@@ -783,4 +783,16 @@ describe('injector', () => {
 
     expect(injector.get('a')).toBe(injector.get('a'));
   });
+
+  it('forces a factory to return a value', () => {
+    const module = angular.module('myModule', []);
+
+    module.factory('a', function() { });
+    module.factory('b', function() { return null; });
+
+    const injector = createInjector(['myModule']);
+
+    expect(() => injector.get('a')).toThrow();
+    expect(injector.get('b')).toBeNull();
+  });
 });

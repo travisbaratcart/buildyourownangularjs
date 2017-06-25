@@ -148,7 +148,7 @@ export class Injector {
 
   private provideFactory = (key: string, factoryFunction: () => any) => {
     const factoryProvider: IProvider = {
-      $get: factoryFunction
+      $get: this.enforceReturnValue(factoryFunction)
     };
 
     this.provideProvider(key, factoryProvider);
@@ -166,6 +166,18 @@ export class Injector {
     };
 
     this.providerCache.$provide = $provide;
+  }
+
+  private enforceReturnValue(factoryFunction: (...args: any[]) => any): () => any {
+    return () => {
+      const value = this.instanceInjector.invoke(factoryFunction);
+
+      if (value === undefined) {
+        throw 'A factory must return a value.';
+      }
+
+      return value;
+    }
   }
 }
 
