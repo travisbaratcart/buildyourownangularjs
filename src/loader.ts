@@ -18,6 +18,7 @@ class Module {
   public $$factoryRegistrations: IRegisterItem[] = [];
   public $$providerRegistrations: IRegisterItem[] = [];
   public $$valueRegistrations: IRegisterItem[] = [];
+  public $$serviceRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
   public $$runRegistrations: ((...args: any[]) => any)[] = [];
 
@@ -32,23 +33,23 @@ class Module {
   }
 
   public constant(key: string, value: any): void {
-    const newConstant: IRegisterItem = { key, value };
-    this.$$constantRegistrations.push(newConstant);
+    this.registerItem(key, value, this.$$constantRegistrations);
   }
 
   public provider(key: string, value: any): void {
-    const newProvider: IRegisterItem = { key, value };
-    this.$$providerRegistrations.push(newProvider);
+    this.registerItem(key, value, this.$$providerRegistrations);
   }
 
   public factory(key: string, value: (...args: any[]) => any): void {
-    const newFactory: IRegisterItem = { key, value };
-    this.$$factoryRegistrations.push(newFactory);
+    this.registerItem(key, value, this.$$factoryRegistrations);
   }
 
   public value(key: string, value: any): void {
-    const newValue: IRegisterItem = { key, value };
-    this.$$valueRegistrations.push(newValue);
+    this.registerItem(key, value, this.$$valueRegistrations);
+  }
+
+  public service(key: string, value: (...args: any[]) => any): void {
+    this.registerItem(key, value, this.$$serviceRegistrations);
   }
 
   public run(onRun: (...args: any[]) => any): void {
@@ -57,6 +58,11 @@ class Module {
 
   public config(configFunction: (...args: any[]) => any) {
     this.$$configRegistrations.push(configFunction);
+  }
+
+  private registerItem(key: string, value: any, registrations: any[]): void {
+    const newRegistration: IRegisterItem = { key, value };
+    registrations.push(newRegistration);
   }
 }
 
