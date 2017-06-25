@@ -19,6 +19,7 @@ class Module {
   public $$providerRegistrations: IRegisterItem[] = [];
   public $$valueRegistrations: IRegisterItem[] = [];
   public $$serviceRegistrations: IRegisterItem[] = [];
+  public $$decoratorRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
   public $$runRegistrations: ((...args: any[]) => any)[] = [];
 
@@ -50,6 +51,10 @@ class Module {
 
   public service(key: string, value: (...args: any[]) => any): void {
     this.registerItem(key, value, this.$$serviceRegistrations);
+  }
+
+  public decorator(serviceName: string, decoratorFunc: (...args: any[]) => any) {
+    this.registerItem(serviceName, decoratorFunc, this.$$decoratorRegistrations);
   }
 
   public run(onRun: (...args: any[]) => any): void {

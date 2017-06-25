@@ -97,6 +97,10 @@ export class Injector {
       this.provideService(registerItem.key, registerItem.value);
     });
 
+    module.$$decoratorRegistrations.forEach(registerItem => {
+      this.provideDecorator(registerItem.key, registerItem.value);
+    });
+
     module.$$configRegistrations.forEach(configFunc => {
       this.providerInjector.invoke(configFunc)
     });
@@ -180,6 +184,20 @@ export class Injector {
     });
   }
 
+  private provideDecorator = (serviceName: string, decoratorFunc: (...args: any[]) => any) => {
+    const provider = this.providerInjector.get(this.keyProvider(serviceName));
+
+    const original$get = provider.$get;
+
+    provider.$get = () => {
+      const instance = this.instanceInjector.invoke(original$get, provider);
+
+      this.instanceInjector.invoke(decoratorFunc, null, { $delegate: instance });
+
+      return instance;
+    };
+  }
+
   private keyProvider(key: string): string {
     return `${key}Provider`
   }
@@ -189,7 +207,8 @@ export class Injector {
       constant: this.provideConstant,
       provider: this.provideProvider,
       factory: this.provideFactory,
-      service: this.provideService
+      service: this.provideService,
+      decorator: this.provideDecorator
     };
 
     this.providerCache.$provide = $provide;
