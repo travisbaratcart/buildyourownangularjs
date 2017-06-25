@@ -17,6 +17,7 @@ class Module {
   public $$constantRegistrations: IRegisterItem[] = [];
   public $$factoryRegistrations: IRegisterItem[] = [];
   public $$providerRegistrations: IRegisterItem[] = [];
+  public $$valueRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
   public $$runRegistrations: ((...args: any[]) => any)[] = [];
 
@@ -43,6 +44,11 @@ class Module {
   public factory(key: string, value: (...args: any[]) => any): void {
     const newFactory: IRegisterItem = { key, value };
     this.$$factoryRegistrations.push(newFactory);
+  }
+
+  public value(key: string, value: any): void {
+    const newValue: IRegisterItem = { key, value };
+    this.$$valueRegistrations.push(newValue);
   }
 
   public run(onRun: (...args: any[]) => any): void {

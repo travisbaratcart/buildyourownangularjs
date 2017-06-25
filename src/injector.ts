@@ -85,6 +85,10 @@ export class Injector {
       this.provideProvider(registerItem.key, registerItem.value);
     });
 
+    module.$$valueRegistrations.forEach(registerItem => {
+      this.provideValue(registerItem.key, registerItem.value);
+    })
+
     module.$$factoryRegistrations.forEach(registerItem => {
       this.provideFactory(registerItem.key, registerItem.value);
     });
@@ -152,6 +156,10 @@ export class Injector {
     };
 
     this.provideProvider(key, factoryProvider);
+  }
+
+  private provideValue = (key: string, value: any) => {
+    this.provideFactory(key, () => value);
   }
 
   private keyProvider(key: string): string {

@@ -795,4 +795,23 @@ describe('injector', () => {
     expect(() => injector.get('a')).toThrow();
     expect(injector.get('b')).toBeNull();
   });
+
+  it('allows registering a value', () => {
+    const module = angular.module('myModule', []);
+
+    module.value('a', 42);
+
+    const injector = createInjector(['myModule']);
+
+    expect(injector.get('a')).toBe(42);
+  });
+
+  it('does not make values available to config blocks', () => {
+    const module = angular.module('myModule', []);
+
+    module.value('a', 42);
+    module.config(function(a: any) { });
+
+    expect(() => createInjector(['myModule'])).toThrow();
+  });
 });
