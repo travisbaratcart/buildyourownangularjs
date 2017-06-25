@@ -150,16 +150,24 @@ export class Injector {
     this.providerCache[this.keyProvider(key)] = provider;
   }
 
-  private provideFactory = (key: string, factoryFunction: () => any) => {
+  private provideFactory = (
+    key: string,
+    inputFactoryFunction: () => any,
+    requireValue = true) => {
+
+    const factoryFunction = requireValue
+      ? this.enforceReturnValue(inputFactoryFunction)
+      : inputFactoryFunction;
+
     const factoryProvider: IProvider = {
-      $get: this.enforceReturnValue(factoryFunction)
+      $get: factoryFunction
     };
 
     this.provideProvider(key, factoryProvider);
   }
 
   private provideValue = (key: string, value: any) => {
-    this.provideFactory(key, () => value);
+    this.provideFactory(key, () => value, false);
   }
 
   private keyProvider(key: string): string {

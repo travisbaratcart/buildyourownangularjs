@@ -814,4 +814,13 @@ describe('injector', () => {
 
     expect(() => createInjector(['myModule'])).toThrow();
   });
+
+  it('allows an undefined value', () => {
+    const module = angular.module('myModule', []);
+
+    module.value('a', undefined);
+
+    const injector = createInjector(['myModule']);
+    expect(injector.get('a')).toBeUndefined();
+  });
 });
