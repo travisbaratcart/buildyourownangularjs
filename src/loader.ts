@@ -1,6 +1,6 @@
 'use strict';
 
-export function setupModuleLoder(window: any): void {
+export function setupModuleLoader(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
 }
 

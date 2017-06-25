@@ -5,3 +5,4 @@ require('./filterFilter.spec');
 require('./loader.spec');
 require('./injector.spec');
 require('./hash.spec');
+require('./angularPublic.spec');

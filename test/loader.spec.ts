@@ -1,5 +1,5 @@
 'use strict';
-import { setupModuleLoder } from '../src/loader';
+import { setupModuleLoader } from '../src/loader';
 
 describe('setupModuleLoder', () => {
   beforeEach(() => {
@@ -7,26 +7,26 @@ describe('setupModuleLoder', () => {
   })
 
   it('exposes angular on the window', () => {
-    setupModuleLoder(window);
+    setupModuleLoader(window);
 
     expect((<any>window).angular).toBeDefined();
   });
 
   it('creates angular only once', () => {
-    setupModuleLoder(window);
+    setupModuleLoader(window);
     const ng = (<any>window).angular;
-    setupModuleLoder(window);
+    setupModuleLoader(window);
     expect((<any>window).angular).toBe(ng);
   });
 
   it('exposes the angular module function', () => {
-    setupModuleLoder(window);
+    setupModuleLoader(window);
     expect((<any>window).angular.module).toBeDefined();
   });
 
   describe('module', () => {
     beforeEach(() => {
-      setupModuleLoder(window);
+      setupModuleLoader(window);
     });
 
     it('allows registering a module', () => {

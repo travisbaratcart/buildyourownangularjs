@@ -1,5 +1,5 @@
 'use strict';
-import { setupModuleLoder, Angular } from '../src/loader';
+import { setupModuleLoader, Angular } from '../src/loader';
 import { createInjector, Injector, IProvide } from '../src/injector';
 
 describe('injector', () => {
@@ -8,7 +8,7 @@ describe('injector', () => {
   beforeEach(() => {
     delete (<any>window).angular;
 
-    setupModuleLoder(window);
+    setupModuleLoader(window);
 
     angular = (<any>window).angular;
   });
