@@ -1,13 +1,13 @@
 'use strinct';
 import * as _ from 'lodash';
-import { FilterService } from '../src/filter';
+import { publishExternalAPI } from '../src/angularPublic';
+import { $FilterProvider } from '../src/filter';
+import { createInjector, IProvide } from '../src/injector';
 import { parse } from '../src/parse';
 
 describe('filter', () => {
-  let filterService: FilterService;
-
   beforeEach(() => {
-    filterService = FilterService.getInstance();
+    publishExternalAPI();
   });
 
   it('can be registered and obtained', () => {
@@ -16,25 +16,35 @@ describe('filter', () => {
       return myFilter;
     };
 
-    filterService.register('my', myFilterFactory);
-    expect(filterService.filter('my')).toBe(myFilter);
+    const injector = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('my', myFilterFactory);
+    }]);
+
+    const $filter = injector.get('$filter');
+
+    expect($filter('my')).toBe(myFilter);
   });
 
-  it('allows registering multiple filters with an objectd', () => {
+  it('allows registering multiple filters with an object', () => {
     const myFilter = function() {};
     const myOtherFilter = function() {};
 
-    filterService.register({
-      my: function() {
-        return myFilter;
-      },
-      myOther: function() {
-        return myOtherFilter;
-      }
-    });
 
-    expect(filterService.filter('my')).toBe(myFilter);
-    expect(filterService.filter('myOther')).toBe(myOtherFilter);
+    const injector = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register({
+        my: function() {
+          return myFilter;
+        },
+        myOther: function() {
+          return myOtherFilter;
+        }
+      });
+    }]);
+
+    const $filter = injector.get('$filter');
+
+    expect($filter('my')).toBe(myFilter);
+    expect($filter('myOther')).toBe(myOtherFilter);
   });
 
   it('can parse filter expressions', () => {
@@ -86,5 +96,32 @@ describe('filter', () => {
 
     const result = parse('"hello" | surround:"*":"!"');
     expect(result()).toBe('*hello!');
+  });
+
+  it('is available through the injector', () => {
+    const myFilter = function() { };
+
+    const injector = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('my', function() {
+        return myFilter;
+      });
+    }]);
+
+    expect(injector.has('myFilter')).toBe(true);
+    expect(injector.get('myFilter')).toBe(myFilter);
+  });
+
+  it('may have dependencies in factory', () => {
+    const injector = createInjector(['ng', function($provide: IProvide, $filterProvider: $FilterProvider) {
+      $provide.constant('suffix', '!');
+
+      $filterProvider.register('my', function(suffix: string) {
+        return function(str: string) {
+          return str + suffix;
+        };
+      });
+    }]);
+
+    expect(injector.has('myFilter')).toBe(true);
   });
 });

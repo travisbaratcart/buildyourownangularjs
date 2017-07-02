@@ -2,12 +2,19 @@
 import { Angular } from './loader';
 import { HashMap } from './hash';
 
-export function createInjector(modulesToLoad: string[], strictInjection?: boolean): Injector {
+export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
 }
 
-interface IProvider {
-  $get: () => any;
+export interface IProvider {
+  $get: Invokable;
+}
+
+export type Invokable = IInjectableFunction | (string | ((...args: any[]) => any))[];
+
+interface IInjectableFunction {
+  (...args: any[]): any,
+  $inject?: string[]
 }
 
 export interface IProvide { [type: string]: (key: string, value: any) => void }
@@ -29,7 +36,7 @@ export class Injector {
 
   private onRunQueue: ((...args: any[]) => any)[] = [];
 
-  constructor(modulesToLoad: string[], strictInjection?: boolean) {
+  constructor(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean) {
     this.providerInjector = this.providerCache.$injector = new InternalInjector(
       this.providerCache,
       null,
@@ -54,7 +61,7 @@ export class Injector {
     });
   }
 
-  private loadModule(module: string): void {
+  private loadModule(module: string | IInjectableFunction): void {
     if (this.loadedModules.get(module)) {
       return;
     }
@@ -285,7 +292,7 @@ class InternalInjector {
   }
 
   public invoke(
-    funcWithDependencies: {(...args: any[]): any, $inject?: string[]} | any[],
+    funcWithDependencies: IInjectableFunction | any[],
     context?: any,
     locals?: any) {
 
