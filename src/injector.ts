@@ -1,6 +1,7 @@
 'use strict';
 import { Angular } from './loader';
 import { HashMap } from './hash';
+import { IFilter, $FilterProvider } from '../src/filter';
 
 export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -108,6 +109,10 @@ export class Injector {
       this.provideDecorator(registerItem.key, registerItem.value);
     });
 
+    module.$$filterRegistrations.forEach(registerItem => {
+      this.provideFilter(registerItem.key, registerItem.value);
+    });
+
     module.$$configRegistrations.forEach(configFunc => {
       this.providerInjector.invoke(configFunc)
     });
@@ -205,8 +210,17 @@ export class Injector {
     };
   }
 
+  private provideFilter = (filterName: string, filterFactory: () => IFilter) => {
+    (<$FilterProvider>this.providerInjector.get('$filterProvider'))
+      .register(filterName, filterFactory);
+  }
+
   private keyProvider(key: string): string {
     return `${key}Provider`
+  }
+
+  private keyFilter(key: string): string {
+    return `${key}Filter`;
   }
 
   private add$provideToProviderCache(): void {

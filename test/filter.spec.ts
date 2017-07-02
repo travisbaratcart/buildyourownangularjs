@@ -4,6 +4,7 @@ import { publishExternalAPI } from '../src/angularPublic';
 import { $FilterProvider } from '../src/filter';
 import { createInjector, IProvide } from '../src/injector';
 import { parse } from '../src/parse';
+import { Angular } from '../src/loader';
 
 describe('filter', () => {
   beforeEach(() => {
@@ -123,5 +124,20 @@ describe('filter', () => {
     }]);
 
     expect(injector.has('myFilter')).toBe(true);
+  });
+
+  it('can be registred through module API', () => {
+    const myFilter = function() { };
+
+    const module = (<Angular>((<any>window).angular)).module('myModule', [])
+
+    module.filter('my', function() {
+      return myFilter;
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    expect(injector.has('myFilter')).toBe(true);
+    expect(injector.get('myFilter')).toBe(myFilter);
   });
 });

@@ -1,4 +1,5 @@
 'use strict';
+import { IFilter } from './filter';
 
 export function setupModuleLoader(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
@@ -20,6 +21,7 @@ class Module {
   public $$valueRegistrations: IRegisterItem[] = [];
   public $$serviceRegistrations: IRegisterItem[] = [];
   public $$decoratorRegistrations: IRegisterItem[] = [];
+  public $$filterRegistrations: IRegisterItem[] = [];
   public $$configRegistrations: ((...args: any[]) => any)[] = [];
   public $$runRegistrations: ((...args: any[]) => any)[] = [];
 
@@ -55,6 +57,10 @@ class Module {
 
   public decorator(serviceName: string, decoratorFunc: (...args: any[]) => any) {
     this.registerItem(serviceName, decoratorFunc, this.$$decoratorRegistrations);
+  }
+
+  public filter(filterName: string, filterFactory: () => IFilter) {
+    this.registerItem(filterName, filterFactory, this.$$filterRegistrations);
   }
 
   public run(onRun: (...args: any[]) => any): void {
