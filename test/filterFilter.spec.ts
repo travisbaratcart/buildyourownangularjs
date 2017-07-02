@@ -1,17 +1,17 @@
 'use strict';
 import * as _ from 'lodash';
-import { FilterService} from '../src/filter';
+import { publishExternalAPI } from '../src/angularPublic';
 import { parse } from '../src/parse';
+import { createInjector } from '../src/injector';
 
 describe('filter filter', () => {
-  let filterService: FilterService;
-
   beforeEach(() => {
-    filterService = FilterService.getInstance();
+    publishExternalAPI();
   });
 
   it('is available', () => {
-    expect(filterService.filter('filter')).toBeDefined();
+    const injector = createInjector(['ng']);
+    expect(injector.has('filterFilter')).toBe(true);
   });
 
   it('can filter an array with a predicate function', () => {
