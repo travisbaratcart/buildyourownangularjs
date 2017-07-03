@@ -141,4 +141,52 @@ describe('q', () => {
     expect(firstSpy.calls.count()).toBe(1);
     expect(secondSpy.calls.count()).toBe(1);
   });
+
+  it('can reject a deferred', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+    deferred.promise.then(resolveSpy, rejectSpy);
+
+    deferred.reject('fail');
+
+    $rootScope.$apply();
+
+    expect(resolveSpy).not.toHaveBeenCalled();
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
+
+  it('can reject just once', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise.then(null, rejectSpy);
+
+    deferred.reject('fail');
+    $rootScope.$apply();
+    expect(rejectSpy.calls.count()).toBe(1);
+
+    deferred.reject('fail again');
+    $rootScope.$apply();
+    expect(rejectSpy.calls.count()).toBe(1);
+  });
+
+  it('cannot fulfill a promise once rejected', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+    deferred.promise.then(resolveSpy, rejectSpy);
+
+    deferred.reject('fail');
+    $rootScope.$apply();
+
+    deferred.resolve('success');
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalled();
+    expect(resolveSpy).not.toHaveBeenCalled();
+  });
 });

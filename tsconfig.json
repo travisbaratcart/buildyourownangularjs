@@ -1,14 +1,15 @@
 {
     "compilerOptions": {
-         "types": [
+        "target": "es5",
+        "types": [
             "requirejs",
             "jasmine",
             "lodash",
             "jquery"
-         ],
-         "typeRoots": [
+        ],
+        "typeRoots": [
             "node_modules/@types"
-         ],
-         "noImplicitAny": true
+        ],
+        "noImplicitAny": true
     }
 }

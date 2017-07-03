@@ -26,35 +26,49 @@ class Deferred {
   }
 
   public resolve(value: any) {
-    if (this.promise.$$fulfilled) {
+    this.tryFulfillPromise(PromiseState.Resolved, value);
+  }
+
+  public reject(value: any) {
+    this.tryFulfillPromise(PromiseState.Rejected, value);
+  }
+
+  private tryFulfillPromise(state: PromiseState, value: any) {
+    if (this.promise.$$isFulfilled) {
       return;
     }
 
-    this.promise.$$fulfilled = true;
+    this.promise.$$state = state;
     this.promise.$$value = value;
     this.promise.scheduleQueueProcessing();
   }
 }
 
-interface IPromiseState {
-  pending?: (resolvedValue: any) => any;
-  value?: any;
+enum PromiseState {
+  NotSpecified,
+  Pending,
+  Resolved,
+  Rejected
 }
 
 class Promise {
   public $$onResolve: ((resolvedValue: any) => any)[] = [];
+  public $$onReject: ((rejectedValue: any) => any)[] = [];
   public $$value: any;
-  public $$fulfilled = false;
+  public $$state: PromiseState;
 
   constructor(
     private $rootScope: Scope) {
-
+    this.$$state = PromiseState.Pending;
   }
 
-  public then(onFulfilled: (resolvedValue: any) => any) {
+  public then(
+    onFulfilled: (resolvedValue: any) => any,
+    onRejected?: (resolvedValue: any) => any) {
     this.$$onResolve.push(onFulfilled);
+    this.$$onReject.push(onRejected);
 
-    if (this.$$fulfilled) {
+    if (this.$$isFulfilled) {
       this.scheduleQueueProcessing();
     }
   }
@@ -65,9 +79,18 @@ class Promise {
     });
   }
 
+  public get $$isFulfilled(): boolean {
+    return this.$$state === PromiseState.Resolved
+      || this.$$state === PromiseState.Rejected;
+  }
+
   private processQueue() {
+    const cbs = this.$$state === PromiseState.Resolved
+      ? this.$$onResolve
+      : this.$$onReject;
+
     while (this.$$onResolve.length > 0) {
-      const cb = this.$$onResolve.pop();
+      const cb = cbs.pop();
       cb(this.$$value);
     }
   }
