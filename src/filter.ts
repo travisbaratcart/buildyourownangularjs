@@ -20,7 +20,7 @@ export class $FilterProvider implements IProvider {
 
   public register(
     filterNameOrObject: string | { [filterName: string]: () => IFilter },
-    factory?: () => IFilter): void {
+    factory?: (...args: any[]) => IFilter): void {
     if (_.isObject(filterNameOrObject)) {
       const filterObject = <{ [filterName: string]: IFilter }>filterNameOrObject;
 

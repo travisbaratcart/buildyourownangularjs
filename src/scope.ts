@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { parse } from './parse';
+import { IParseService } from './parse';
 import { IProvider } from './injector';
 
 interface IWatcher {
@@ -24,11 +24,11 @@ export interface IEvent {
 }
 
 export class $rootScopeProvider implements IProvider {
-  public $get() {
-    const $rootScope = new Scope();
+  public $get = ['$parse', function($parse: IParseService) {
+    const $rootScope = new Scope($parse);
 
     return $rootScope;
-  }
+  }];
 }
 
 const initialWatchValue = (): any => null;
@@ -55,7 +55,10 @@ export class Scope {
 
   public $$listeners: { [eventName: string]: ((event: IEvent, ...args: any[]) => any)[] } = {}
 
-  constructor($parent?: Scope, $root?: Scope) {
+  constructor(
+    private $parse: IParseService,
+    $parent?: Scope,
+    $root?: Scope) {
     this.$root = $root || this;
     this.$parent = $parent || null;
 
@@ -77,7 +80,7 @@ export class Scope {
     /* Watchers can add other watchers. Avoid optimizations when adding new watchers */
     this.$root.$$lastDirtyWatch = null;
 
-    let watchFunction = parse(watchExpression);
+    let watchFunction = this.$parse(watchExpression);
 
     if (watchFunction.$$watchDelegate) {
       return watchFunction.$$watchDelegate(
@@ -157,7 +160,7 @@ export class Scope {
     evalExpression: string | ((scope: Scope, locals?: any) => any),
     locals?: any): any {
 
-    return parse(evalExpression)(this, locals);
+    return this.$parse(evalExpression)(this, locals);
   }
 
   public $apply(applyExpression: string | ((scope: Scope) => void)) {
@@ -278,8 +281,8 @@ export class Scope {
     ChildScope.prototype = this;
 
     const child: Scope = isIsolateScope
-      ? new Scope(parent, parent.$root)
-      : new ChildScope(parent, parent.$root);
+      ? new Scope(this.$parse, parent, parent.$root)
+      : new ChildScope(this.$parse, parent, parent.$root);
 
     parent.$$children.push(child);
 
@@ -298,7 +301,7 @@ export class Scope {
     watchExpression: string | ((scope: Scope) => any),
     listenerFunction?: (newValue: any, oldValue: any, scope: Scope) => any): () => void {
 
-    const watchFunction = parse(watchExpression);
+    const watchFunction = this.$parse(watchExpression);
 
     // Performance optimization: Only worry about maintaining deep copies of old value
     // if actually needed for listener.
