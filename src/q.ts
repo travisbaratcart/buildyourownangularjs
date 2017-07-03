@@ -42,7 +42,7 @@ interface IPromiseState {
 }
 
 class Promise {
-  public $$pending: (resolvedValue: any) => any;
+  public $$onResolve: ((resolvedValue: any) => any)[] = [];
   public $$value: any;
   public $$fulfilled = false;
 
@@ -52,7 +52,7 @@ class Promise {
   }
 
   public then(onFulfilled: (resolvedValue: any) => any) {
-    this.$$pending = onFulfilled;
+    this.$$onResolve.push(onFulfilled);
 
     if (this.$$fulfilled) {
       this.scheduleQueueProcessing();
@@ -66,6 +66,9 @@ class Promise {
   }
 
   private processQueue() {
-    this.$$pending(this.$$value);
+    while (this.$$onResolve.length > 0) {
+      const cb = this.$$onResolve.pop();
+      cb(this.$$value);
+    }
   }
 }
