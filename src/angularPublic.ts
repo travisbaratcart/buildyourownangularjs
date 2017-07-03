@@ -3,6 +3,7 @@ import { Angular, setupModuleLoader } from './loader';
 import { $FilterProvider } from './filter';
 import { $ParseProvider } from './parse';
 import { $RootScopeProvider } from './scope';
+import { $QProvider } from './q';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -12,4 +13,5 @@ export function publishExternalAPI(): void {
   ngModule.provider('$filter', $FilterProvider);
   ngModule.provider('$parse', $ParseProvider);
   ngModule.provider('$rootScope', $RootScopeProvider);
+  ngModule.provider('$q', $QProvider);
 }

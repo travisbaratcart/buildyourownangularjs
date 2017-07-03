@@ -39,4 +39,12 @@ describe('angularPublic', () => {
 
     expect(injector.has('$rootScope')).toBe(true);
   });
+
+  it('sets up $q', () => {
+    publishExternalAPI();
+
+    const injector = createInjector(['ng']);
+
+    expect(injector.has('$q')).toBe(true);
+  });
 });
