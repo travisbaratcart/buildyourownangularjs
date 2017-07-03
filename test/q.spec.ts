@@ -189,4 +189,34 @@ describe('q', () => {
     expect(rejectSpy).toHaveBeenCalled();
     expect(resolveSpy).not.toHaveBeenCalled();
   });
+
+  it('does not require a failure handler each time', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise.then(resolveSpy);
+    deferred.promise.then(null, rejectSpy);
+
+    deferred.reject('fail');
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
+
+  it('does not require a success handler each time', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise.then(resolveSpy);
+    deferred.promise.then(null, rejectSpy);
+
+    deferred.resolve('ok');
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+  });
 });

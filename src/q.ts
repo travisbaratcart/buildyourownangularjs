@@ -65,8 +65,14 @@ class Promise {
   public then(
     onFulfilled: (resolvedValue: any) => any,
     onRejected?: (resolvedValue: any) => any) {
-    this.$$onResolve.push(onFulfilled);
-    this.$$onReject.push(onRejected);
+
+    if (onFulfilled) {
+      this.$$onResolve.push(onFulfilled);
+    }
+
+    if (onRejected) {
+      this.$$onReject.push(onRejected);
+    }
 
     if (this.$$isFulfilled) {
       this.scheduleQueueProcessing();
@@ -89,7 +95,7 @@ class Promise {
       ? this.$$onResolve
       : this.$$onReject;
 
-    while (this.$$onResolve.length > 0) {
+    while (cbs.length > 0) {
       const cb = cbs.pop();
       cb(this.$$value);
     }
