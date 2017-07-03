@@ -2,7 +2,7 @@
 import { Angular, setupModuleLoader } from './loader';
 import { $FilterProvider } from './filter';
 import { $ParseProvider } from './parse';
-import { $rootScopeProvider } from './scope';
+import { $RootScopeProvider } from './scope';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -11,5 +11,5 @@ export function publishExternalAPI(): void {
 
   ngModule.provider('$filter', $FilterProvider);
   ngModule.provider('$parse', $ParseProvider);
-  ngModule.provider('$rootScope', $rootScopeProvider);
+  ngModule.provider('$rootScope', $RootScopeProvider);
 }

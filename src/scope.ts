@@ -23,12 +23,20 @@ export interface IEvent {
   defaultPrevented: boolean
 }
 
-export class $rootScopeProvider implements IProvider {
+export class $RootScopeProvider implements IProvider {
+  private TTL = 10;
+
   public $get = ['$parse', function($parse: IParseService) {
-    const $rootScope = new Scope($parse);
+    const $rootScope = new Scope($parse, this.TTL);
 
     return $rootScope;
   }];
+
+  public digestTtl(value: number) {
+    this.TTL = value;
+
+    return this.TTL;
+  }
 }
 
 const initialWatchValue = (): any => null;
@@ -57,6 +65,7 @@ export class Scope {
 
   constructor(
     private $parse: IParseService,
+    private TTL: number,
     $parent?: Scope,
     $root?: Scope) {
     this.$root = $root || this;
@@ -110,8 +119,6 @@ export class Scope {
   }
 
   public $digest() {
-    const maxChainedDigestCycles = 10;
-
     this.$beginPhase('$digest')
 
     this.isDirty = false;
@@ -138,9 +145,9 @@ export class Scope {
 
       numberOfChainedDigestCycles++;
 
-      if (this.shouldTriggerChainedDigestCycle() && numberOfChainedDigestCycles === maxChainedDigestCycles) {
+      if (this.shouldTriggerChainedDigestCycle() && numberOfChainedDigestCycles === this.TTL) {
         this.$clearPhase();
-        throw '10 digest iterations reached';
+        throw `${this.TTL} digest iterations reached`;
       }
 
     } while (this.shouldTriggerChainedDigestCycle());
@@ -281,8 +288,8 @@ export class Scope {
     ChildScope.prototype = this;
 
     const child: Scope = isIsolateScope
-      ? new Scope(this.$parse, parent, parent.$root)
-      : new ChildScope(this.$parse, parent, parent.$root);
+      ? new Scope(this.$parse, this.TTL, parent, parent.$root)
+      : new ChildScope(this.$parse,this.TTL, parent, parent.$root);
 
     parent.$$children.push(child);
 

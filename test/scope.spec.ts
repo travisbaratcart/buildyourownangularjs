@@ -2,7 +2,8 @@ import * as _ from 'lodash';
 import { $FilterProvider, IFilter } from '../src/filter';
 import {
   Scope,
-  IEvent
+  IEvent,
+  $RootScopeProvider
 } from '../src/scope';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
@@ -2024,6 +2025,39 @@ describe('Scope', () => {
 
       expect(listener1).toHaveBeenCalled();
       expect(listener3).toHaveBeenCalled();
+    });
+  });
+
+  describe('TTL configurability', () => {
+    beforeEach(() => {
+      publishExternalAPI();
+    });
+
+    it('allows configuring a shorter TTL', () => {
+      const injector= createInjector(['ng', function($rootScopeProvider: $RootScopeProvider) {
+        $rootScopeProvider.digestTtl(5);
+      }]);
+
+      const scope: Scope = injector.get('$rootScope');
+
+      (<any>scope).counterA = 0;
+      (<any>scope).counterB = 0;
+
+      scope.$watch(
+        (scope) => (<any>scope).counterA,
+        (newValue, oldValue, scope) => {
+          if ((<any>scope).counterB < 5) {
+            (<any>scope).counterB++;
+          }
+        });
+
+      scope.$watch(
+        (scope) => (<any>scope).counterB,
+        (newValue, oldValue, scope) => {
+          (<any>scope).counterA++;
+        });
+
+      expect(() => scope.$digest()).toThrow();
     });
   });
 });
