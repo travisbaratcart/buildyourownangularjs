@@ -13,5 +13,13 @@ export class $QService {
 }
 
 class Deferred {
+  promise: Promise;
+
+  constructor() {
+    this.promise = new Promise();
+  }
+}
+
+class Promise {
 
 }
