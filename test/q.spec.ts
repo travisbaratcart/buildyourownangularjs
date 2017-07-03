@@ -70,4 +70,21 @@ describe('q', () => {
 
     expect(promiseSpy).toHaveBeenCalledWith(42);
   });
+
+  it('may only ever be resolved once', () => {
+    const deferred = $q.defer();
+
+    const promiseSpy = jasmine.createSpy('promise');
+    deferred.promise.then(promiseSpy);
+
+    deferred.resolve(42);
+
+    $rootScope.$apply();
+    expect(promiseSpy).toHaveBeenCalledWith(42);
+
+    deferred.resolve(43);
+    $rootScope.$apply();
+
+    expect(promiseSpy.calls.count()).toBe(1);
+  });
 });

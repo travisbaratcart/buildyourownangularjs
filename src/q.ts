@@ -27,7 +27,12 @@ class Deferred {
   }
 
   public resolve(value: any) {
-    this.promise.$$state.value = value;
+    if (this.promise.$$fulfilled) {
+      return;
+    }
+
+    this.promise.$$fulfilled = true;
+    this.promise.$$value = value;
     this.scheduleQueueProcessing();
   }
 
@@ -38,7 +43,7 @@ class Deferred {
   }
 
   private processQueue() {
-    this.promise.$$state.pending(this.promise.$$state.value);
+    this.promise.$$pending(this.promise.$$value);
   }
 }
 
@@ -48,9 +53,11 @@ interface IPromiseState {
 }
 
 class Promise {
-  public $$state: IPromiseState = {};
+  public $$pending: (resolvedValue: any) => any;
+  public $$value: any;
+  public $$fulfilled = false;
 
   public then(onFulfilled: (resolvedValue: any) => any) {
-    this.$$state.pending = onFulfilled;
+    this.$$pending = onFulfilled;
   }
 }
