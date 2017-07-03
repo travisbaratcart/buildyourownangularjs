@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { parse } from './parse';
+import { IProvider } from './injector';
 
 interface IWatcher {
   watchFunction: (scope: Scope) => any,
@@ -20,6 +21,14 @@ export interface IEvent {
   stopPropagation: () => void,
   preventDefault: () => void,
   defaultPrevented: boolean
+}
+
+export class $rootScopeProvider implements IProvider {
+  public $get() {
+    const $rootScope = new Scope();
+
+    return $rootScope;
+  }
 }
 
 const initialWatchValue = (): any => null;

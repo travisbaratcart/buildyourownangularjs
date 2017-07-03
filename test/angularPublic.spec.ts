@@ -31,4 +31,12 @@ describe('angularPublic', () => {
 
     expect(injector.has('$parse')).toBe(true);
   });
+
+  it('sets up the $rootScope', () => {
+    publishExternalAPI();
+
+    const injector = createInjector(['ng']);
+
+    expect(injector.has('$rootScope')).toBe(true);
+  });
 });
