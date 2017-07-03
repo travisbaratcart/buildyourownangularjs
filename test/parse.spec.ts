@@ -1,7 +1,16 @@
-import { parse } from '../src/parse';
-import { FilterService } from '../src/filter';
+import { IParseService } from '../src/parse';
+import { IFilterService, $FilterProvider } from '../src/filter';
+import { publishExternalAPI } from '../src/angularPublic';
+import { createInjector } from '../src/injector';
 
 describe('parse', () => {
+  let parse: IParseService;
+
+  beforeEach(() => {
+    publishExternalAPI();
+    parse = createInjector(['ng']).get('$parse');
+  });
+
   it('can parse an integer', () => {
     let result = parse('42');
     expect(result).toBeDefined();
@@ -647,7 +656,7 @@ describe('parse', () => {
         b: 43,
         c: 42
       })
-    ).toBe('c');
+      ).toBe('c');
   });
 
   it('parses parentheses altering precedence order', () => {
@@ -777,9 +786,11 @@ describe('parse', () => {
   });
 
   it('marks filters contant if arguments are', () => {
-    FilterService.getInstance().register('aFilter', function() {
-      return (val) => val;
-    });
+    const parse: IParseService = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('aFilter', function() {
+        return (val: any) => val;
+      });
+    }]).get('$parse');
 
     expect(parse('[1, 2, 3] | aFilter').constant).toBe(true);
     expect(parse('[1, 2, a] | aFilter').constant).toBe(false);

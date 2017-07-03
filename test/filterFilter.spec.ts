@@ -1,12 +1,15 @@
 'use strict';
 import * as _ from 'lodash';
 import { publishExternalAPI } from '../src/angularPublic';
-import { parse } from '../src/parse';
+import { IParseService } from '../src/parse';
 import { createInjector } from '../src/injector';
 
 describe('filter filter', () => {
+  let parse: IParseService;
+
   beforeEach(() => {
     publishExternalAPI();
+    parse = createInjector(['ng']).get('$parse');
   });
 
   it('is available', () => {

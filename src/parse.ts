@@ -1,11 +1,15 @@
 import * as _ from 'lodash';
-import { FilterService } from './filter';
+import { IFilterService } from './filter';
 import { Scope } from '../src/scope';
 
 interface IToken {
   text: string;
   value?: any;
   isIdentifier: boolean
+}
+
+export interface IParseService {
+  (expression?: string | ((context?: any, locals?: any) => any)): IParseResult;
 }
 
 enum ASTComponents {
@@ -46,45 +50,50 @@ interface IParseResult {
     watchFunction: (scope: Scope) => any): () => void
 };
 
-export function parse(expression?: string | ((context?: any, locals?: any) => any)): IParseResult {
-  switch (typeof expression) {
-    case 'string':
-      let lexer = new Lexer();
-      let parser = new Parser(lexer);
+export class $ParseProvider {
+  public $get: (string | ((...args: any[]) => IParseService))[]
+    = ['$filter', ($filter: IFilterService) => {
+    return (expression?: string | ((context?: any, locals?: any) => any)) => {
+      switch (typeof expression) {
+        case 'string':
+          let lexer = new Lexer();
+          let parser = new Parser(lexer, $filter);
 
-      let stringExpression = <string>expression;
+          let stringExpression = <string>expression;
 
-      const isOneTimeExpression = stringExpression.charAt(0) === ':'
-        && stringExpression.charAt(1) === ':';
+          const isOneTimeExpression = stringExpression.charAt(0) === ':'
+            && stringExpression.charAt(1) === ':';
 
-      const processedExpression = isOneTimeExpression
-        ? stringExpression.substring(2)
-        : stringExpression;
+          const processedExpression = isOneTimeExpression
+            ? stringExpression.substring(2)
+            : stringExpression;
 
-      const parseFunction = parser.parse(processedExpression);
+          const parseFunction = parser.parse(processedExpression);
 
-      if (parseFunction.constant) {
-        parseFunction.$$watchDelegate = constantWatchDelegate;
-      } else if (isOneTimeExpression) {
-        // Order important. Constant, one-time, literal expressions
-        // already handled by constant condition above.
-        parseFunction.$$watchDelegate = parseFunction.literal
-          ? oneTimeArrOrObjWatchDelegate
-          : oneTimeWatchDelegate;
-      } else if (parseFunction.inputs && parseFunction.inputs.length > 0) {
-        parseFunction.$$watchDelegate = inputsWatchDelegate;
+          if (parseFunction.constant) {
+            parseFunction.$$watchDelegate = constantWatchDelegate;
+          } else if (isOneTimeExpression) {
+            // Order important. Constant, one-time, literal expressions
+            // already handled by constant condition above.
+            parseFunction.$$watchDelegate = parseFunction.literal
+              ? oneTimeArrOrObjWatchDelegate
+              : oneTimeWatchDelegate;
+          } else if (parseFunction.inputs && parseFunction.inputs.length > 0) {
+            parseFunction.$$watchDelegate = inputsWatchDelegate;
+          }
+
+          return parseFunction
+        case 'function':
+          return <IParseResult>expression;
+        default:
+          let result = <IParseResult>_.noop;
+          result.literal = true;
+          result.constant = true;
+
+          return result;
       }
-
-      return parseFunction
-    case 'function':
-      return <IParseResult>expression;
-    default:
-      let result = <IParseResult>_.noop;
-      result.literal = true;
-      result.constant = true;
-
-      return result;
-  }
+    }
+  }]
 }
 
 function constantWatchDelegate(
@@ -794,7 +803,8 @@ class ASTCompiler {
   private nextId = 0;
 
   constructor(
-    private astBuilder: AST) {
+    private astBuilder: AST,
+    private $filter: IFilterService) {
 
   }
 
@@ -866,7 +876,7 @@ class ASTCompiler {
         this.validateObjectSafety,
         this.validateFunctionSafety,
         this.ifDefined,
-        FilterService.getInstance()
+        this.$filter
       );
 
     result.constant = this.isConstant(ast);
@@ -1237,7 +1247,7 @@ class ASTCompiler {
       return '';
     } else {
       const filterDeclarations = _.map(this.state.filters, (filterId, filterName) => {
-        return `${filterId} = filterService.filter(${this.escapeIfNecessary(filterName)})`;
+        return `${filterId} = filterService(${this.escapeIfNecessary(filterName)})`;
       });
 
       return `var ${filterDeclarations.join(',')};`;
@@ -1384,7 +1394,7 @@ class ASTCompiler {
     }
 
     return ast.filter
-      && !FilterService.getInstance().filter(ast.callee.name).$stateful;
+      && !this.$filter(ast.callee.name).$stateful;
   }
 
   private getWatchFunctions(): string {
@@ -1438,10 +1448,10 @@ class Parser {
   private ast: AST;
   private astCompiler: ASTCompiler
 
-  constructor(lexer: Lexer) {
+  constructor(lexer: Lexer, $filter: IFilterService) {
     this.lexer = lexer;
     this.ast = new AST(lexer);
-    this.astCompiler = new ASTCompiler(this.ast);
+    this.astCompiler = new ASTCompiler(this.ast, $filter);
   }
 
   public parse(text: string): IParseResult {

@@ -7,6 +7,10 @@ export interface IFilter {
   $stateful?: boolean;
 }
 
+export interface IFilterService {
+  (filterName: string): IFilter
+};
+
 export class $FilterProvider implements IProvider {
   $inject = ['$provide'];
 

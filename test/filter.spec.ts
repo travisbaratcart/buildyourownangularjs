@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { publishExternalAPI } from '../src/angularPublic';
 import { $FilterProvider } from '../src/filter';
 import { createInjector, IProvide } from '../src/injector';
-import { parse } from '../src/parse';
+import { IParseService } from '../src/parse';
 import { Angular } from '../src/loader';
 
 describe('filter', () => {
@@ -49,28 +49,33 @@ describe('filter', () => {
   });
 
   it('can parse filter expressions', () => {
-    filterService.register('upcase', function() {
-      return function(str: string) {
-        return str.toUpperCase();
-      };
-    });
+    const parse: IParseService = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('upcase', function() {
+        return function(str: string) {
+          return str.toUpperCase();
+        };
+      });
+    }]).get('$parse');
 
     const result = (parse('aString | upcase'));
     expect(result({ aString: 'Hello' })).toBe('HELLO');
   });
 
   it('can parse filter chain expressions', () => {
-    filterService.register('upcase', function() {
-      return function(str: string) {
-        return str.toUpperCase();
-      }
-    })
+    const parse: IParseService = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('upcase', function() {
+        return function(str: string) {
+          return str.toUpperCase();
+        }
+      })
 
-    filterService.register('exclamate', function() {
-      return function(str: string) {
-        return str + '!';
-      }
-    })
+      $filterProvider.register('exclamate', function() {
+        return function(str: string) {
+          return str + '!';
+        }
+      })
+    }]).get('$parse');
+
 
     const result = parse('"hello" | upcase | exclamate');
 
@@ -78,22 +83,26 @@ describe('filter', () => {
   });
 
   it('can pass an additional argument to filters', () => {
-    filterService.register('repeat', function() {
-      return function(str: string, times: number) {
-        return _.repeat(str, times);
-      }
-    })
+    const parse: IParseService = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('repeat', function() {
+        return function(str: string, times: number) {
+          return _.repeat(str, times);
+        }
+      });
+    }]).get('$parse');
 
     const result = parse('"hello" | repeat:3');
     expect(result()).toBe('hellohellohello');
   });
 
   it('can pass several additional arguments to filters', () => {
-    filterService.register('surround', function() {
-      return function(str: string, left: string, right: string) {
-        return left + str + right;
-      };
-    })
+    const parse: IParseService = createInjector(['ng', function($filterProvider: $FilterProvider) {
+      $filterProvider.register('surround', function() {
+        return function(str: string, left: string, right: string) {
+          return left + str + right;
+        };
+      });
+    }]).get('$parse');
 
     const result = parse('"hello" | surround:"*":"!"');
     expect(result()).toBe('*hello!');
