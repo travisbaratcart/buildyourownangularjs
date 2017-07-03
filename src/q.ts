@@ -21,9 +21,8 @@ export class $QService {
 class Deferred {
   promise: Promise;
 
-  constructor(
-    private $rootScope: Scope) {
-    this.promise = new Promise();
+  constructor($rootScope: Scope) {
+    this.promise = new Promise($rootScope);
   }
 
   public resolve(value: any) {
@@ -33,17 +32,7 @@ class Deferred {
 
     this.promise.$$fulfilled = true;
     this.promise.$$value = value;
-    this.scheduleQueueProcessing();
-  }
-
-  private scheduleQueueProcessing() {
-    this.$rootScope.$evalAsync(() => {
-      this.processQueue();
-    });
-  }
-
-  private processQueue() {
-    this.promise.$$pending(this.promise.$$value);
+    this.promise.scheduleQueueProcessing();
   }
 }
 
@@ -57,7 +46,26 @@ class Promise {
   public $$value: any;
   public $$fulfilled = false;
 
+  constructor(
+    private $rootScope: Scope) {
+
+  }
+
   public then(onFulfilled: (resolvedValue: any) => any) {
     this.$$pending = onFulfilled;
+
+    if (this.$$fulfilled) {
+      this.scheduleQueueProcessing();
+    }
+  }
+
+  public scheduleQueueProcessing() {
+    this.$rootScope.$evalAsync(() => {
+      this.processQueue();
+    });
+  }
+
+  private processQueue() {
+    this.$$pending(this.$$value);
   }
 }

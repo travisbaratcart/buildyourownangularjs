@@ -87,4 +87,20 @@ describe('q', () => {
 
     expect(promiseSpy.calls.count()).toBe(1);
   });
+
+  it('resolves a listener added after resolution', () => {
+    const deferred = $q.defer();
+
+    deferred.resolve(42);
+
+    $rootScope.$apply();
+
+    const promiseSpy = jasmine.createSpy('promise');
+
+    deferred.promise.then(promiseSpy);
+
+    $rootScope.$apply();
+
+    expect(promiseSpy).toHaveBeenCalledWith(42);
+  });
 });
