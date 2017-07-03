@@ -255,4 +255,37 @@ describe('q', () => {
     $rootScope.$apply();
     expect(finallySpy).toHaveBeenCalledWith();
   });
+
+  it('allows chaining handlers', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .then((result: number) => result + 1)
+      .then((result: number) => result * 2)
+      .then(resolveSpy)
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(42);
+  });
+
+  it('does not modify original resolution in chains', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .then((result: number) => result + 1)
+      .then((result: number) => result * 2);
+
+    deferred.promise.then(resolveSpy);
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(20);
+  });
 });

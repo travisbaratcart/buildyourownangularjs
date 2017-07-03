@@ -64,29 +64,39 @@ class Promise {
 
   public then(
     onFulfilled: (resolvedValue: any) => any,
-    onRejected?: (resolvedValue: any) => any) {
+    onRejected?: (resolvedValue: any) => any): Promise {
+
+    const returnDeferred = new Deferred(this.$rootScope);
 
     if (onFulfilled) {
-      this.$$onResolve.push(onFulfilled);
+      this.$$onResolve.push((value: any) => {
+        const nextValue = onFulfilled(value);
+        returnDeferred.resolve(nextValue);
+      });
     }
 
     if (onRejected) {
-      this.$$onReject.push(onRejected);
+      this.$$onReject.push((value: any) => {
+        const nextValue = onRejected(value);
+        returnDeferred.resolve(nextValue);
+      });
     }
 
     if (this.$$isFulfilled) {
       this.scheduleQueueProcessing();
     }
+
+    return returnDeferred.promise;
   }
 
-  public catch(onRejected?: (resolvedValue: any) => any) {
-    this.then(null, onRejected);
+  public catch(onRejected?: (resolvedValue: any) => any): Promise {
+    return this.then(null, onRejected);
   }
 
-  public finally(onFinally: () => any) {
+  public finally(onFinally: () => any): Promise {
     let finallyCb = () => onFinally();
 
-    this.then(finallyCb, finallyCb);
+    return this.then(finallyCb, finallyCb);
   }
 
   public scheduleQueueProcessing() {
