@@ -79,6 +79,10 @@ class Promise {
     }
   }
 
+  public catch(onRejected?: (resolvedValue: any) => any) {
+    this.then(null, onRejected);
+  }
+
   public scheduleQueueProcessing() {
     this.$rootScope.$evalAsync(() => {
       this.processQueue();

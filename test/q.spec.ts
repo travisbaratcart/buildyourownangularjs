@@ -219,4 +219,16 @@ describe('q', () => {
 
     expect(resolveSpy).toHaveBeenCalledWith('ok');
   });
+
+  it('can register rejection handler with catch', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+    deferred.promise.catch(rejectSpy);
+    deferred.reject('fail');
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalled();
+  });
 });
