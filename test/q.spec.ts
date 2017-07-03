@@ -2,13 +2,18 @@
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
 import { $QService } from '../src/q';
+import { Scope } from '../src/scope';
 
 describe('q', () => {
   let $q: $QService;
+  let $rootScope: Scope;
 
   beforeEach(() => {
     publishExternalAPI();
-    $q = createInjector(['ng']).get('$q');
+    const injector = createInjector(['ng']);
+
+    $q = injector.get('$q');
+    $rootScope = injector.get('$rootScope');
   });
 
   it('can create a deferred', () => {
@@ -36,5 +41,33 @@ describe('q', () => {
       expect(promiseSpy).toHaveBeenCalledWith('a-ok');
       done()
     }, 1);
+  });
+
+  it('works when resolved before promise listener', (done) => {
+    const deferred = $q.defer();
+    deferred.resolve(42);
+
+    const promiseSpy = jasmine.createSpy('promise');
+
+    deferred.promise.then(promiseSpy);
+
+    setTimeout(() => {
+      expect(promiseSpy).toHaveBeenCalledWith(42);
+      done();
+    }, 1);
+  });
+
+  it('resolves promise at the next digest', () => {
+    const deferred = $q.defer();
+
+    const promiseSpy = jasmine.createSpy('promise');
+
+    deferred.promise.then(promiseSpy);
+
+    deferred.resolve(42);
+
+    $rootScope.$apply();
+
+    expect(promiseSpy).toHaveBeenCalledWith(42);
   });
 });

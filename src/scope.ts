@@ -164,13 +164,13 @@ export class Scope {
   }
 
   public $eval(
-    evalExpression: string | ((scope: Scope, locals?: any) => any),
+    evalExpression?: string | ((scope: Scope, locals?: any) => any),
     locals?: any): any {
 
     return this.$parse(evalExpression)(this, locals);
   }
 
-  public $apply(applyExpression: string | ((scope: Scope) => void)) {
+  public $apply(applyExpression?: string | ((scope: Scope) => void)) {
     this.$beginPhase('$apply');
 
     try {
