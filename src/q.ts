@@ -18,8 +18,20 @@ class Deferred {
   constructor() {
     this.promise = new Promise();
   }
+
+  public resolve(value: any) {
+    this.promise.$$state.pending(value);
+  }
+}
+
+interface IPromiseState {
+  pending?: (resolvedValue: any) => any
 }
 
 class Promise {
+  private $$state: IPromiseState = {};
 
+  public then(onFulfilled: (resolvedValue: any) => any) {
+    this.$$state.pending = onFulfilled;
+  }
 }

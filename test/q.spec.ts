@@ -22,4 +22,19 @@ describe('q', () => {
 
     expect(deferred.promise).toBeDefined();
   });
+
+  it('can resolve a promise', (done) => {
+    const deferred = $q.defer();
+    const promise = deferred.promise;
+
+    const promiseSpy = jasmine.createSpy('promise');
+    promise.then(promiseSpy);
+
+    deferred.resolve('a-ok');
+
+    setTimeout(function() {
+      expect(promiseSpy).toHaveBeenCalledWith('a-ok');
+      done()
+    }, 1);
+  });
 });
