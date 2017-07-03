@@ -83,6 +83,12 @@ class Promise {
     this.then(null, onRejected);
   }
 
+  public finally(onFinally: () => any) {
+    let finallyCb = () => onFinally();
+
+    this.then(finallyCb, finallyCb);
+  }
+
   public scheduleQueueProcessing() {
     this.$rootScope.$evalAsync(() => {
       this.processQueue();
