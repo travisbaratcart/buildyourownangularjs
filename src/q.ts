@@ -33,6 +33,10 @@ class Deferred {
     this.tryFulfillPromise(PromiseState.Rejected, value);
   }
 
+  public notify(progress: any) {
+    this.promise.$$notifyAll(progress);
+  }
+
   private tryFulfillPromise(state: PromiseState, value: any) {
     if (this.promise.$$isFulfilled) {
       return;
@@ -62,6 +66,7 @@ enum PromiseState {
 class Promise {
   public $$onResolve: ((resolvedValue: any) => any)[] = [];
   public $$onReject: ((rejectedValue: any) => any)[] = [];
+  public $$onNotify: ((progress: any) => any)[] = [];
   public $$value: any;
   public $$state: PromiseState;
 
@@ -72,7 +77,8 @@ class Promise {
 
   public then(
     onFulfilled: (resolvedValue: any) => any,
-    onRejected?: (resolvedValue: any) => any): Promise {
+    onRejected?: (resolvedValue: any) => any,
+    onNotify?: (progress: any) => any): Promise {
 
     const returnDeferred = new Deferred(this.$rootScope);
 
@@ -107,6 +113,10 @@ class Promise {
       });
     }
 
+    if (onNotify) {
+      this.$$onNotify.push(onNotify);
+    }
+
     if (this.$$isFulfilled) {
       this.scheduleQueueProcessing();
     }
@@ -134,16 +144,10 @@ class Promise {
 
       if (result && typeof result.then === 'function') {
         return result.then(() => {
-          const deferred = new Deferred(this.$rootScope);
-
-          deferred.reject(value);
-
-          return deferred.promise;
+          return this.newImmediatelyInvokedPromise(value, false);
         });
       } else {
-        const deferred = new Deferred(this.$rootScope);
-        deferred.reject(value);
-        return deferred.promise;
+        return this.newImmediatelyInvokedPromise(value, false)
       }
     }
 
@@ -153,6 +157,14 @@ class Promise {
   public scheduleQueueProcessing() {
     this.$rootScope.$evalAsync(() => {
       this.processQueue();
+    });
+  }
+
+  public $$notifyAll(progress: any) {
+    this.$rootScope.$evalAsync(() => {
+      this.$$onNotify.forEach(cb => {
+        cb(progress);
+      });
     });
   }
 
@@ -170,5 +182,17 @@ class Promise {
       const cb = cbs.pop();
       cb(this.$$value);
     }
+  }
+
+  private newImmediatelyInvokedPromise(value: any, resolved: boolean): Promise {
+    const deferred = new Deferred(this.$rootScope);
+
+    if (resolved) {
+      deferred.resolve(value);
+    } else {
+      deferred.reject(value);
+    }
+
+    return deferred.promise;
   }
 }

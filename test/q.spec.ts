@@ -556,4 +556,36 @@ describe('q', () => {
     expect(resolveSpy).not.toHaveBeenCalled();
     expect(rejectSpy).toHaveBeenCalledWith('fail');
   });
+
+  it('can report progress', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise
+      .then(null, null, progressSpy);
+
+    deferred.notify('working...');
+
+    $rootScope.$apply();
+
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+  });
+
+  it('can report progress many times', () => {
+    const deferred = $q.defer();
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise.then(null, null, progressSpy);
+
+    deferred.notify('40%');
+    $rootScope.$apply();
+
+    deferred.notify('80%');
+    deferred.notify('100%');
+
+    $rootScope.$apply();
+
+    expect(progressSpy.calls.count()).toBe(3);
+  });
 });
