@@ -618,4 +618,19 @@ describe('q', () => {
     $rootScope.$apply();
     expect(progressSpy).not.toHaveBeenCalled();
   });
+
+  it('can notify progress through chain', () => {
+    const deferred = $q.defer();
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise
+      .then(() => 7)
+      .catch(() => 8)
+      .then(null, null, progressSpy);
+
+    deferred.notify('working...');
+    $rootScope.$apply();
+
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+  });
 });

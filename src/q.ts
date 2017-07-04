@@ -73,6 +73,7 @@ class Promise {
   public $$onNotify: ((progress: any) => any)[] = [];
   public $$value: any;
   public $$state: PromiseState;
+  public $$childPromises: Promise[] = [];
 
   constructor(
     private $rootScope: Scope) {
@@ -125,6 +126,7 @@ class Promise {
       this.scheduleQueueProcessing();
     }
 
+    this.$$childPromises.push(returnDeferred.promise);
     return returnDeferred.promise;
   }
 
@@ -170,6 +172,8 @@ class Promise {
         cb(progress);
       });
     });
+
+    this.$$childPromises.forEach(childPromise => childPromise.$$notifyAll(progress));
   }
 
   public get $$isFulfilled(): boolean {
@@ -197,6 +201,7 @@ class Promise {
       deferred.reject(value);
     }
 
+    this.$$childPromises.push(deferred.promise);
     return deferred.promise;
   }
 }
