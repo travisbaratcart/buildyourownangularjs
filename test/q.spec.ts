@@ -816,5 +816,27 @@ describe('q', () => {
 
       expect(resolveSpy).toHaveBeenCalledWith({ a: 1, b: 2 });
     });
+
+    it('resolves an empty array of promises immediately', () => {
+      const promise = $q.all([]);
+
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      promise.then(resolveSpy);
+
+      $rootScope.$apply();
+      expect(resolveSpy).toHaveBeenCalledWith([]);
+    });
+
+    it('resolves an empty object of promises immediately', () => {
+      const promise = $q.all({});
+
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      promise.then(resolveSpy);
+
+      $rootScope.$apply();
+      expect(resolveSpy).toHaveBeenCalledWith({});
+    });
   });
 });

@@ -62,6 +62,10 @@ export class $QService {
       });
     });
 
+    if (numLeftToResolve === 0) {
+      deferred.resolve(results);
+    }
+
     return deferred.promise;
   }
 }
