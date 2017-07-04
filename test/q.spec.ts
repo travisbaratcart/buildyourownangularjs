@@ -588,4 +588,34 @@ describe('q', () => {
 
     expect(progressSpy.calls.count()).toBe(3);
   });
+
+  it('does not notify progress after being resolved', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise.then(null, null, progressSpy);
+
+    deferred.resolve('ok');
+
+    deferred.notify('working...');
+
+    $rootScope.$apply();
+    expect(progressSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not notify progress after being rejected', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise.then(null, null, progressSpy);
+
+    deferred.reject('fail');
+
+    deferred.notify('working...');
+
+    $rootScope.$apply();
+    expect(progressSpy).not.toHaveBeenCalled();
+  });
 });

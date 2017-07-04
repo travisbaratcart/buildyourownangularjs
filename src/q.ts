@@ -34,6 +34,10 @@ class Deferred {
   }
 
   public notify(progress: any) {
+    if (this.promise.$$isFulfilled) {
+      return;
+    }
+
     this.promise.$$notifyAll(progress);
   }
 
