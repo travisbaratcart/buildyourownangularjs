@@ -38,7 +38,7 @@ class Deferred {
       return;
     }
 
-    if (value instanceof Promise) {
+    if (value && typeof value.then === 'function') {
       value.then(
         (resolvedValue: any) => this.resolve(resolvedValue),
         (rejectedValue: any) => this.reject(rejectedValue));
@@ -119,9 +119,35 @@ class Promise {
   }
 
   public finally(onFinally: () => any): Promise {
-    let finallyCb = () => onFinally();
+    const finallyThen = (value: any) => {
+      const result = onFinally();
 
-    return this.then(finallyCb, finallyCb);
+      if (result && typeof result.then === 'function') {
+        return result.then(() => value);
+      } else {
+        return value;
+      }
+    }
+
+    const finallyCatch = (value: any) => {
+      const result = onFinally();
+
+      if (result && typeof result.then === 'function') {
+        return result.then(() => {
+          const deferred = new Deferred(this.$rootScope);
+
+          deferred.reject(value);
+
+          return deferred.promise;
+        });
+      } else {
+        const deferred = new Deferred(this.$rootScope);
+        deferred.reject(value);
+        return deferred.promise;
+      }
+    }
+
+    return this.then(finallyThen, finallyCatch);
   }
 
   public scheduleQueueProcessing() {

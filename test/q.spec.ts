@@ -426,4 +426,134 @@ describe('q', () => {
 
     expect(rejectSpy).toHaveBeenCalledWith('fail');
   });
+
+  it('ignores the return value of finally blocks in following then\'s', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .then((result: number) => result + 1)
+      .finally(() => 42)
+      .then(resolveSpy);
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith(21);
+  });
+
+  it('ignores the return value of finally blocks in following catch\'s', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise
+      .then((result: number) => {
+        throw 'fail';
+      })
+      .finally(() => 47)
+      .catch(rejectSpy);
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
+
+  it('resolves to the original value when a promise returned from finally resolves', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    let resolveFinally: () => void;
+
+    deferred.promise
+      .then((result: number) => result + 1)
+      .finally(() => {
+        const deferred2 = $q.defer();
+
+        resolveFinally = () => {
+          deferred2.resolve('abc');
+        };
+
+        return deferred2.promise;
+      })
+      .then(resolveSpy);
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+    expect(resolveSpy).not.toHaveBeenCalled();
+
+    resolveFinally();
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(21);
+  });
+
+  it('rejects to original value when a promise returned from finally resolves', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    let resolveFinally: () => void;
+
+    deferred.promise
+      .then(() => {
+        throw 'fail';
+      })
+      .finally(() => {
+        const deferred2 = $q.defer();
+
+        resolveFinally = () => {
+          deferred2.resolve('abc');
+        };
+
+        return deferred2.promise;
+      })
+      .catch(rejectSpy);
+
+    deferred.resolve(rejectSpy);
+
+    $rootScope.$apply();
+    expect(rejectSpy).not.toHaveBeenCalled();
+
+    resolveFinally();
+    $rootScope.$apply();
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
+
+  it('rejects when promise is rejected in finally', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    let rejectFinally: () => void;
+
+    deferred.promise
+      .then((result: number) => result + 1)
+      .finally(() => {
+         const deferred2 = $q.defer();
+
+         rejectFinally = () => {
+           deferred2.reject('fail');
+         };
+
+         return deferred2.promise;
+      })
+      .then(resolveSpy, rejectSpy);
+
+    deferred.resolve(20);
+
+    $rootScope.$apply();
+    expect(resolveSpy).not.toHaveBeenCalled();
+
+    rejectFinally();
+    $rootScope.$apply();
+    expect(resolveSpy).not.toHaveBeenCalled();
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
 });
