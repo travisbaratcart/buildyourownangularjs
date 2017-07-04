@@ -288,4 +288,33 @@ describe('q', () => {
     $rootScope.$apply();
     expect(resolveSpy).toHaveBeenCalledWith(20);
   });
+
+  it('catches rejection on chained handler', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+    deferred.promise
+      .then(() => 7)
+      .catch(rejectSpy);
+
+    deferred.reject('fail');
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
+
+  it('fulfills on chained handler', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .catch(() => 7)
+      .then(resolveSpy);
+
+    deferred.resolve(42);
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(42);
+  });
 });

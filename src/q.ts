@@ -73,12 +73,20 @@ class Promise {
         const nextValue = onFulfilled(value);
         returnDeferred.resolve(nextValue);
       });
+    } else {
+      this.$$onResolve.push((value: any) => {
+        returnDeferred.resolve(value);
+      });
     }
 
     if (onRejected) {
       this.$$onReject.push((value: any) => {
         const nextValue = onRejected(value);
         returnDeferred.resolve(nextValue);
+      });
+    } else {
+      this.$$onReject.push((value: any) => {
+        returnDeferred.reject(value);
       });
     }
 
