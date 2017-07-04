@@ -8,12 +8,13 @@ export class $QProvider {
   }];
 }
 
-export class $QService {
-  constructor(
-    private $rootScope: Scope) {
+export class $$QProvider {
+  public $get = function() {
+    return new $$QService();
+  };
+}
 
-  }
-
+abstract class QBase {
   public Promise(
     resolver: (resolve?: (value: any) => void, reject?: (value: any) => void) => any,): Promise {
     if (!resolver || typeof resolver !== 'function') {
@@ -32,9 +33,7 @@ export class $QService {
     return deferred.promise;
   }
 
-  public defer() {
-    return new Deferred(this.$rootScope);
-  }
+  public abstract defer(): Deferred;
 
   public reject(rejectVal: any): Promise {
     const deferred = this.defer();
@@ -90,12 +89,28 @@ export class $QService {
   }
 }
 
-class Deferred {
-  promise: Promise;
-
-  constructor($rootScope: Scope) {
-    this.promise = new Promise($rootScope);
+export class $QService extends QBase {
+  constructor(private $rootScope: Scope) {
+    super();
   }
+
+  public defer(): Deferred {
+    return new DigestDeferred(this.$rootScope)
+  }
+}
+
+export class $$QService extends QBase {
+  constructor() {
+    super();
+  }
+
+  public defer(): Deferred {
+    return new NoDigestDeferred()
+  }
+}
+
+abstract class Deferred {
+  promise: Promise;
 
   public resolve(value: any) {
     this.tryFulfillPromise(PromiseState.Resolved, value);
@@ -133,6 +148,20 @@ class Deferred {
   }
 }
 
+class DigestDeferred extends Deferred {
+  constructor($rootScope: Scope) {
+    super();
+    this.promise = new DigestPromise($rootScope);
+  }
+}
+
+class NoDigestDeferred extends Deferred {
+  constructor() {
+    super();
+    this.promise = new NoDigestPromise();
+  }
+}
+
 enum PromiseState {
   NotSpecified,
   Pending,
@@ -140,7 +169,7 @@ enum PromiseState {
   Rejected
 }
 
-class Promise {
+abstract class Promise {
   public $$onResolve: ((resolvedValue: any) => any)[] = [];
   public $$onReject: ((rejectedValue: any) => any)[] = [];
   public $$onNotify: ((progress: any) => any)[] = [];
@@ -148,17 +177,19 @@ class Promise {
   public $$state: PromiseState;
   public $$childPromises: Promise[] = [];
 
-  constructor(
-    private $rootScope: Scope) {
+  constructor() {
     this.$$state = PromiseState.Pending;
   }
+
+  abstract getNewDeferred(): Deferred;
+  abstract schedule(cb: () => any): void;
 
   public then(
     onResolved: (resolvedValue: any) => any,
     onRejected?: (resolvedValue: any) => any,
     onNotify?: (progress: any) => any): Promise {
 
-    const returnDeferred = new Deferred(this.$rootScope);
+    const returnDeferred = this.getNewDeferred();
 
     if (onResolved) {
       this.$$onResolve.push((value: any) => {
@@ -240,15 +271,13 @@ class Promise {
   }
 
   public scheduleQueueProcessing() {
-    this.$rootScope.$evalAsync(() => {
-      this.processQueue();
-    });
+    this.schedule(() => this.processQueue());
   }
 
   public $$notifyAll(progress: any) {
     let newNotifyResult = progress;
 
-    this.$rootScope.$evalAsync(() => {
+    this.schedule(() => {
       this.$$onNotify.forEach(cb => {
         let result: any;
 
@@ -284,7 +313,7 @@ class Promise {
   }
 
   private newImmediatelyInvokedPromise(value: any, resolved: boolean): Promise {
-    const deferred = new Deferred(this.$rootScope);
+    const deferred = this.getNewDeferred();
 
     if (resolved) {
       deferred.resolve(value);
@@ -296,3 +325,32 @@ class Promise {
     return deferred.promise;
   }
 }
+
+class DigestPromise extends Promise {
+  constructor(private $rootScope: Scope) {
+    super();
+  }
+
+  public getNewDeferred() {
+    return new DigestDeferred(this.$rootScope);
+  }
+
+  public schedule(cb: () => any) {
+    this.$rootScope.$evalAsync(cb);
+  }
+}
+
+class NoDigestPromise extends Promise {
+  constructor() {
+    super();
+  }
+
+  public getNewDeferred() {
+    return new NoDigestDeferred();
+  }
+
+  public schedule(cb: () => any) {
+    setTimeout(cb, 0);
+  }
+}
+

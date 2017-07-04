@@ -1,11 +1,13 @@
 'use strict';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
-import { $QService } from '../src/q';
+import { $QService, $$QService } from '../src/q';
 import { Scope } from '../src/scope';
+import * as _ from 'lodash';
 
 describe('q', () => {
   let $q: $QService;
+  let $$q: $$QService;
   let $rootScope: Scope;
 
   beforeEach(() => {
@@ -13,6 +15,7 @@ describe('q', () => {
     const injector = createInjector(['ng']);
 
     $q = injector.get('$q');
+    $$q = injector.get('$$q');
     $rootScope = injector.get('$rootScope');
   });
 
@@ -906,6 +909,59 @@ describe('q', () => {
 
       expect(resolveSpy).not.toHaveBeenCalled();
       expect(rejectSpy).toHaveBeenCalledWith('fail');
+    });
+  });
+
+  describe('$$q', () => {
+    beforeEach(() => {
+      jasmine.clock().install();
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    })
+
+    it('uses deferreds that do not resolve at digest', () => {
+      const deferred = $$q.defer();
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      deferred.promise
+        .then(resolveSpy);
+
+      deferred.resolve('ok');
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).not.toHaveBeenCalled();
+    });
+
+    it('uses deferreds that resolve later', () => {
+      const deferred = $$q.defer();
+
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      deferred.promise
+        .then(resolveSpy);
+
+      deferred.resolve('ok');
+
+      jasmine.clock().tick(1);
+
+      expect(resolveSpy).toHaveBeenCalledWith('ok');
+    });
+
+    it('does not invoke digest', () => {
+      const deferred = $$q.defer();
+
+      deferred.promise.then(_.noop);
+      deferred.resolve('ok');
+
+      const watchSpy = jasmine.createSpy('watch');
+      $rootScope.$watch(watchSpy);
+
+      jasmine.clock().tick(1);
+
+      expect(watchSpy).not.toHaveBeenCalled();
     });
   });
 });
