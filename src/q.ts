@@ -16,6 +16,14 @@ export class $QService {
   public defer() {
     return new Deferred(this.$rootScope);
   }
+
+  public reject(rejectVal: any): Promise {
+    const deferred = new Deferred(this.$rootScope);
+
+    deferred.reject(rejectVal);
+
+    return deferred.promise;
+  }
 }
 
 class Deferred {
