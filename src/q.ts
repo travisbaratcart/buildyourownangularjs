@@ -25,12 +25,16 @@ export class $QService {
     return deferred.promise;
   }
 
-  public when(value: any) {
+  public when(
+    value: any,
+    onFulfilled?: (resolvedValue: any) => any,
+    onRejected?: (resolvedValue: any) => any,
+    onNotify?: (progress: any) => any) {
     const deferred = new Deferred(this.$rootScope);
 
     deferred.resolve(value);
 
-    return deferred.promise;
+    return deferred.promise.then(onFulfilled, onRejected, onNotify);
   }
 }
 

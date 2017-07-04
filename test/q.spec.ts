@@ -756,4 +756,26 @@ describe('q', () => {
     expect(resolveSpy).toHaveBeenCalledWith('ok');
     expect(rejectSpy).not.toHaveBeenCalled();
   });
+
+  it('takes callbacks directly when wrapping', () => {
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+    const progressSpy = jasmine.createSpy('progress');
+
+    const wrapped = $q.defer();
+
+    $q.when(
+      wrapped.promise,
+      resolveSpy,
+      rejectSpy,
+      progressSpy);
+
+    wrapped.notify('working...');
+    wrapped.resolve('ok');
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+    expect(rejectSpy).not.toHaveBeenCalled();
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+  });
 });
