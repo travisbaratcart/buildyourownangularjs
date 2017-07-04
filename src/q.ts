@@ -1,5 +1,6 @@
 'use strict';
 import { Scope } from '../src/scope';
+import * as _ from 'lodash';
 
 export class $QProvider {
   public $get = ['$rootScope', function($rootScope: Scope) {
@@ -41,17 +42,21 @@ export class $QService {
     return deferred.promise.then(onFulfilled, onRejected, onNotify);
   }
 
-  public all(promises: Promise[]): Promise {
+  public all(promises: Promise[] | { [key: string]: Promise }): Promise {
     const deferred = new Deferred(this.$rootScope);
-    const results: any[] = [];
-    let numResolved = 0;
+    const results = Array.isArray(promises)
+      ? <any[]>[]
+      : <any>{};
+    let numLeftToResolve = 0;
 
-    promises.forEach((promise, index) => {
-      promise.then((result) => {
+    _.forEach(promises, (promise, index) => {
+      numLeftToResolve++;
+
+      promise.then((result: any) => {
         results[index] = result;
-        numResolved++;
+        numLeftToResolve--;
 
-        if (numResolved === promises.length) {
+        if (numLeftToResolve <= 0) {
           deferred.resolve(results);
         }
       });

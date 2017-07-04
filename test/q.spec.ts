@@ -804,5 +804,17 @@ describe('q', () => {
 
        expect(resolveSpy).toHaveBeenCalledWith([1, 2, 3]);
     });
+
+    it('can resolve an object of promises to an object of results', () => {
+      const promise = $q.all({ a: $q.when(1), b: $q.when(2) });
+
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      promise.then(resolveSpy);
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).toHaveBeenCalledWith({ a: 1, b: 2 });
+    });
   });
 });
