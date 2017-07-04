@@ -42,23 +42,25 @@ export class $QService {
     return deferred.promise.then(onFulfilled, onRejected, onNotify);
   }
 
-  public all(promises: Promise[] | { [key: string]: Promise }): Promise {
+  public all(values: any[] | { [key: string]: Promise }): Promise {
     const deferred = new Deferred(this.$rootScope);
-    const results = Array.isArray(promises)
+    const results = Array.isArray(values)
       ? <any[]>[]
       : <any>{};
     let numLeftToResolve = 0;
 
-    _.forEach(promises, (promise, index) => {
+    _.forEach(values, (value, index) => {
       numLeftToResolve++;
 
-      promise.then((result: any) => {
+      this.when(value).then((result: any) => {
         results[index] = result;
         numLeftToResolve--;
 
         if (numLeftToResolve <= 0) {
           deferred.resolve(results);
         }
+      }, (error: any) => {
+        deferred.reject(error);
       });
     });
 
@@ -134,16 +136,16 @@ class Promise {
   }
 
   public then(
-    onFulfilled: (resolvedValue: any) => any,
+    onResolved: (resolvedValue: any) => any,
     onRejected?: (resolvedValue: any) => any,
     onNotify?: (progress: any) => any): Promise {
 
     const returnDeferred = new Deferred(this.$rootScope);
 
-    if (onFulfilled) {
+    if (onResolved) {
       this.$$onResolve.push((value: any) => {
         try {
-          const nextValue = onFulfilled(value);
+          const nextValue = onResolved(value);
           returnDeferred.resolve(nextValue);
         } catch(error) {
           returnDeferred.reject(error);

@@ -838,5 +838,31 @@ describe('q', () => {
       $rootScope.$apply();
       expect(resolveSpy).toHaveBeenCalledWith({});
     });
+
+    it('rejects when any of the promises rejects', () => {
+      const promise = $q.all([$q.when(1), $q.when(2), $q.reject('fail')]);
+
+      const resolveSpy = jasmine.createSpy('resolved');
+      const rejectSpy = jasmine.createSpy('rejected');
+
+      promise.then(resolveSpy, rejectSpy);
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).not.toHaveBeenCalled();
+      expect(rejectSpy).toHaveBeenCalledWith('fail');
+    });
+
+    it('wraps non-promises in the input collection', () => {
+      const promise = $q.all([$q.when(1), 2, 3]);
+
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      promise.then(resolveSpy)
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).toHaveBeenCalledWith([1, 2, 3]);
+    });
   });
 });
