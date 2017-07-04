@@ -25,6 +25,10 @@ export class $QService {
     return deferred.promise;
   }
 
+  public resolve(value: any) {
+    return this.when(value);
+  }
+
   public when(
     value: any,
     onFulfilled?: (resolvedValue: any) => any,

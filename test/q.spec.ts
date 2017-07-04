@@ -778,4 +778,17 @@ describe('q', () => {
     expect(rejectSpy).not.toHaveBeenCalled();
     expect(progressSpy).toHaveBeenCalledWith('working...');
   });
+
+  it('makes an immediately resolved promise with resolve', () => {
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine .createSpy('rejected');
+
+    const promise = $q.resolve('ok');
+    promise.then(resolveSpy, rejectSpy);
+
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+    expect(rejectSpy).not.toHaveBeenCalled();
+  });
 });
