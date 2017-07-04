@@ -171,7 +171,13 @@ class Promise {
 
     this.$rootScope.$evalAsync(() => {
       this.$$onNotify.forEach(cb => {
-        const result = cb(progress);
+        let result: any;
+
+        try {
+          result = cb(progress);
+        } catch(error) {
+          console.error(error);
+        }
 
         if (result) {
           newNotifyResult = result;

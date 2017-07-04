@@ -653,4 +653,26 @@ describe('q', () => {
 
     expect(progressSpy).toHaveBeenCalledWith('***working...***');
   });
+
+  it('recovers from progressBack exceptions', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .then(null, null, (progress: any) => {
+        throw 'fail';
+      })
+
+    deferred.promise
+      .then(resolveSpy, null, progressSpy);
+
+    deferred.notify('working...');
+    deferred.resolve('ok');
+
+    $rootScope.$apply();
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+  });
 });
