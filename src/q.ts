@@ -49,7 +49,8 @@ class Deferred {
     if (value && typeof value.then === 'function') {
       value.then(
         (resolvedValue: any) => this.resolve(resolvedValue),
-        (rejectedValue: any) => this.reject(rejectedValue));
+        (rejectedValue: any) => this.reject(rejectedValue),
+        (progress: any) => this.notify(progress));
 
       return;
     }

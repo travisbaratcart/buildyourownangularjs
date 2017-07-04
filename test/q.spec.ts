@@ -675,4 +675,23 @@ describe('q', () => {
     expect(progressSpy).toHaveBeenCalledWith('working...');
     expect(resolveSpy).toHaveBeenCalledWith('ok');
   });
+
+  it('can notify progress through promise return from handler', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+
+    deferred.promise
+      .then(null, null, progressSpy);
+
+    const deferred2 = $q.defer();
+
+    deferred.resolve(deferred2.promise);
+
+    deferred2.notify('working...');
+
+    $rootScope.$apply();
+
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+  });
 });
