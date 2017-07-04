@@ -24,6 +24,14 @@ export class $QService {
 
     return deferred.promise;
   }
+
+  public when(value: any) {
+    const deferred = new Deferred(this.$rootScope);
+
+    deferred.resolve(value);
+
+    return deferred.promise;
+  }
 }
 
 class Deferred {

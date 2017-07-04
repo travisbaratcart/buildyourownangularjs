@@ -721,4 +721,39 @@ describe('q', () => {
     expect(resolveSpy).not.toHaveBeenCalled();
     expect(rejectSpy).toHaveBeenCalledWith('fail');
   });
+
+  it('can make an immediately resolved promise', () => {
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    const promise = $q.when('ok');
+
+    promise.then(resolveSpy, rejectSpy);
+
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+    expect(rejectSpy).not.toHaveBeenCalled();
+  });
+
+  it('can wrap a foreign promise with when', () => {
+    const resolveSpy = jasmine.createSpy('resolved');
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    const promise = $q.when({
+      then: function(handler: any) {
+        $rootScope.$evalAsync(function() {
+          handler('ok');
+        });
+      }
+    });
+
+    promise
+      .then(resolveSpy, rejectSpy);
+
+    $rootScope.$apply();
+
+    expect(resolveSpy).toHaveBeenCalledWith('ok');
+    expect(rejectSpy).not.toHaveBeenCalled();
+  });
 });
