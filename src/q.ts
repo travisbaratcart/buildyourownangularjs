@@ -167,13 +167,19 @@ class Promise {
   }
 
   public $$notifyAll(progress: any) {
+    let newNotifyResult = progress;
+
     this.$rootScope.$evalAsync(() => {
       this.$$onNotify.forEach(cb => {
-        cb(progress);
-      });
-    });
+        const result = cb(progress);
 
-    this.$$childPromises.forEach(childPromise => childPromise.$$notifyAll(progress));
+        if (result) {
+          newNotifyResult = result;
+        }
+      });
+
+      this.$$childPromises.forEach(childPromise => childPromise.$$notifyAll(newNotifyResult));
+    });
   }
 
   public get $$isFulfilled(): boolean {
