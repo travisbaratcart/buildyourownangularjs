@@ -40,6 +40,25 @@ export class $QService {
 
     return deferred.promise.then(onFulfilled, onRejected, onNotify);
   }
+
+  public all(promises: Promise[]): Promise {
+    const deferred = new Deferred(this.$rootScope);
+    const results: any[] = [];
+    let numResolved = 0;
+
+    promises.forEach((promise, index) => {
+      promise.then((result) => {
+        results[index] = result;
+        numResolved++;
+
+        if (numResolved === promises.length) {
+          deferred.resolve(results);
+        }
+      });
+    });
+
+    return deferred.promise;
+  }
 }
 
 class Deferred {
