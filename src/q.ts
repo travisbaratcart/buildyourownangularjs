@@ -38,6 +38,14 @@ class Deferred {
       return;
     }
 
+    if (value instanceof Promise) {
+      value.then(
+        (resolvedValue: any) => this.resolve(resolvedValue),
+        (rejectedValue: any) => this.reject(rejectedValue));
+
+      return;
+    }
+
     this.promise.$$state = state;
     this.promise.$$value = value;
     this.promise.scheduleQueueProcessing();

@@ -350,4 +350,80 @@ describe('q', () => {
 
     expect(rejectSpy).toHaveBeenCalledWith('fail');
   });
+
+  it('does not reject current promise when handler throws', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise
+      .then(() => {
+        throw 'fail;'
+      });
+
+    deferred.promise.catch(rejectSpy);
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).not.toHaveBeenCalled();
+  });
+
+  it('waits on promise returned from handler', () => {
+    const deferred = $q.defer();
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .then((value: number) => {
+        const deferred2 = $q.defer();
+
+        deferred2.resolve(value + 1);
+
+        return deferred2.promise;
+      })
+      .then((value: number) => value * 2)
+      .then(resolveSpy);
+
+      deferred.resolve(20);
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).toHaveBeenCalledWith(42);
+  });
+
+  it('waits on promise given to resolve', () => {
+    const deferred = $q.defer();
+    const deferred2 = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise.then(resolveSpy);
+
+    deferred2.resolve(42);
+    deferred.resolve(deferred2.promise);
+
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(42);
+  });
+
+  it('rejects when promise returned from handler rejects', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise
+      .then(() => {
+        const deferred2 = $q.defer();
+
+        deferred2.reject('fail');
+
+        return deferred2.promise;
+      })
+      .catch(rejectSpy);
+
+    deferred.resolve('ok');
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
 });
