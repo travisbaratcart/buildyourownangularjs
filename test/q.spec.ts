@@ -694,4 +694,16 @@ describe('q', () => {
 
     expect(progressSpy).toHaveBeenCalledWith('working...');
   });
+
+  it('allows attaching progressBack in finally', () => {
+    const deferred = $q.defer();
+
+    const progressSpy = jasmine.createSpy('progress');
+    deferred.promise.finally(null, progressSpy);
+
+    deferred.notify('working...');
+
+    $rootScope.$apply();
+    expect(progressSpy).toHaveBeenCalledWith('working...');
+  });
 });

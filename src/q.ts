@@ -135,7 +135,9 @@ class Promise {
     return this.then(null, onRejected);
   }
 
-  public finally(onFinally: () => any): Promise {
+  public finally(
+    onFinally: () => any,
+    onNotify?: (progress: any) => any): Promise {
     const finallyThen = (value: any) => {
       const result = onFinally();
 
@@ -156,6 +158,10 @@ class Promise {
       } else {
         return this.newImmediatelyInvokedPromise(value, false)
       }
+    }
+
+    if (onNotify) {
+      this.$$onNotify.push(onNotify);
     }
 
     return this.then(finallyThen, finallyCatch);
