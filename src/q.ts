@@ -14,12 +14,30 @@ export class $QService {
 
   }
 
+  public Promise(
+    resolver: (resolve?: (value: any) => void, reject?: (value: any) => void) => any,): Promise {
+    if (!resolver || typeof resolver !== 'function') {
+      throw `Expected function, got ${resolver}`;
+    }
+
+    const deferred = this.defer();
+
+    resolver((value: any) => {
+        deferred.resolve(value);
+      },
+      (value: any) => {
+        deferred.reject(value);
+      });
+
+    return deferred.promise;
+  }
+
   public defer() {
     return new Deferred(this.$rootScope);
   }
 
   public reject(rejectVal: any): Promise {
-    const deferred = new Deferred(this.$rootScope);
+    const deferred = this.defer();
 
     deferred.reject(rejectVal);
 
@@ -35,7 +53,7 @@ export class $QService {
     onFulfilled?: (resolvedValue: any) => any,
     onRejected?: (resolvedValue: any) => any,
     onNotify?: (progress: any) => any) {
-    const deferred = new Deferred(this.$rootScope);
+    const deferred = this.defer();
 
     deferred.resolve(value);
 
@@ -43,7 +61,7 @@ export class $QService {
   }
 
   public all(values: any[] | { [key: string]: Promise }): Promise {
-    const deferred = new Deferred(this.$rootScope);
+    const deferred = this.defer();
     const results = Array.isArray(values)
       ? <any[]>[]
       : <any>{};

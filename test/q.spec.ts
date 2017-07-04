@@ -865,4 +865,47 @@ describe('q', () => {
       expect(resolveSpy).toHaveBeenCalledWith([1, 2, 3]);
     });
   });
+
+  describe('es6 style', () => {
+    it('is a function', () => {
+      // Using as class method as opposed to directly due to using typescript classes
+      expect($q.Promise).toBeDefined();
+    });
+
+    it('expects a function as an argument', () => {
+      expect($q.Promise).toThrow();
+    });
+
+    it('returns a promise', () => {
+      expect($q.Promise(() => null)).toBeDefined();
+      expect($q.Promise(() => null).then).toBeDefined();
+    });
+
+    it('calls function with a resolve function', () => {
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      $q.Promise(resolve => {
+        resolve('ok');
+      })
+        .then(resolveSpy);
+
+      $rootScope.$apply();
+      expect(resolveSpy).toHaveBeenCalledWith('ok');
+    });
+
+    it('calls function with a reject function', () => {
+      const resolveSpy = jasmine.createSpy('resolved');
+      const rejectSpy = jasmine.createSpy('rejected');
+
+      $q.Promise((resolve, reject) => {
+        reject('fail');
+      })
+        .then(resolveSpy, rejectSpy);
+
+      $rootScope.$apply();
+
+      expect(resolveSpy).not.toHaveBeenCalled();
+      expect(rejectSpy).toHaveBeenCalledWith('fail');
+    });
+  });
 });
