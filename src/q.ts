@@ -70,8 +70,13 @@ class Promise {
 
     if (onFulfilled) {
       this.$$onResolve.push((value: any) => {
-        const nextValue = onFulfilled(value);
-        returnDeferred.resolve(nextValue);
+        try {
+          const nextValue = onFulfilled(value);
+          returnDeferred.resolve(nextValue);
+        } catch(error) {
+          returnDeferred.reject(error);
+        }
+
       });
     } else {
       this.$$onResolve.push((value: any) => {
@@ -81,8 +86,12 @@ class Promise {
 
     if (onRejected) {
       this.$$onReject.push((value: any) => {
-        const nextValue = onRejected(value);
-        returnDeferred.resolve(nextValue);
+        try {
+          const nextValue = onRejected(value);
+          returnDeferred.resolve(nextValue);
+        } catch(error) {
+          returnDeferred.reject(error);
+        }
       });
     } else {
       this.$$onReject.push((value: any) => {

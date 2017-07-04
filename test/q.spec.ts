@@ -332,4 +332,22 @@ describe('q', () => {
     $rootScope.$apply();
     expect(resolveSpy).toHaveBeenCalledWith(42);
   });
+
+  it('rejects the chained promise when handler throws', () => {
+    const deferred = $q.defer();
+
+    const rejectSpy = jasmine.createSpy('rejected');
+
+    deferred.promise
+      .then(() => {
+        throw 'fail';
+      })
+      .catch(rejectSpy);
+
+    deferred.resolve(42);
+
+    $rootScope.$apply();
+
+    expect(rejectSpy).toHaveBeenCalledWith('fail');
+  });
 });
