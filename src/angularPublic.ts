@@ -4,6 +4,8 @@ import { $FilterProvider } from './filter';
 import { $ParseProvider } from './parse';
 import { $RootScopeProvider } from './scope';
 import { $QProvider, $$QProvider } from './q';
+import { $HttpBackendProvider } from './httpBackend';
+import { $HttpProvider } from './http';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -15,4 +17,6 @@ export function publishExternalAPI(): void {
   ngModule.provider('$rootScope', $RootScopeProvider);
   ngModule.provider('$q', $QProvider);
   ngModule.provider('$$q', $$QProvider)
+  ngModule.provider('$httpBackend', $HttpBackendProvider)
+  ngModule.provider('$http', $HttpProvider)
 }
