@@ -317,4 +317,19 @@ describe('q', () => {
     $rootScope.$apply();
     expect(resolveSpy).toHaveBeenCalledWith(42);
   });
+
+  it('treats catch return value as a resolution', () => {
+    const deferred = $q.defer();
+
+    const resolveSpy = jasmine.createSpy('resolved');
+
+    deferred.promise
+      .catch(() => 42)
+      .then(resolveSpy);
+
+    deferred.reject('fail');
+
+    $rootScope.$apply();
+    expect(resolveSpy).toHaveBeenCalledWith(42);
+  });
 });
