@@ -46,7 +46,9 @@ export class $HttpService {
         config
       }
 
-      deferred.resolve(httpResponse);
+      this.isSuccess(statusCode)
+        ? deferred.resolve(httpResponse)
+        : deferred.reject(httpResponse);
 
       if (!this.$rootScope.$$phase) {
         this.$rootScope.$apply();
@@ -56,5 +58,9 @@ export class $HttpService {
     this.$httpBackend.request(config.method, config.url, config.data, onDone);
 
     return deferred.promise;
+  }
+
+  private isSuccess(statusCode: number) {
+    return 200 <= statusCode && statusCode < 300;
   }
 }

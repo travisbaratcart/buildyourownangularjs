@@ -66,5 +66,25 @@ describe('$http', () => {
       expect(receivedResponse.data).toBe('Hello');
       expect(receivedResponse.config.url).toBe('http://example.com');
     });
+
+    it('rejects promimse when XHR result received with error status', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .catch((error: any) => {
+          receivedResponse = error;
+        });
+
+      requests[0].respond(401, {}, 'Fail');
+
+      expect(receivedResponse).toBeDefined();
+      expect(receivedResponse.status).toBe(401);
+      expect(receivedResponse.statusText).toBe('Unauthorized');
+      expect(receivedResponse.data).toBe('Fail');
+      expect(receivedResponse.config.url).toBe('http://example.com');
+    });
   });
 });
