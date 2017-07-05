@@ -137,5 +137,17 @@ describe('$http', () => {
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders.Accept).toBe('application/json, text/plain, */*');
     });
+
+    it('sets method-specific default headers on request', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: '42'
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].requestHeaders['Content-Type'])
+        .toBe('application/json;charset=utf-8');
+    });
   });
 });

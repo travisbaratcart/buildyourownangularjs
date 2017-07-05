@@ -69,11 +69,34 @@ export class $HttpService {
       config.method = 'GET';
     }
 
-    const defaultHeaders = {
+    this.setDefaultHeadersIfNecessary(config);
+  }
+
+  private setDefaultHeadersIfNecessary(config: IHttpRequestConfig) {
+    const commonDefaultHeaders = {
       Accept: 'application/json, text/plain, */*'
     };
 
-    config.headers = _.extend({}, defaultHeaders, config.headers);
+    const methodSpecificDefaultHeaders: any = {
+      post: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      put: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      patch: {
+        'Content-Type': 'application/json;charset=utf-8'
+      }
+    }
+
+    const relevantMethodSpecificDefaultHeaders =
+      methodSpecificDefaultHeaders[config.method.toLowerCase()] || {};
+
+    config.headers = _.extend(
+      {},
+      commonDefaultHeaders,
+      relevantMethodSpecificDefaultHeaders,
+      config.headers);
   }
 
   private isSuccess(statusCode: number) {
