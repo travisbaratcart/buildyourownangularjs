@@ -1,5 +1,6 @@
 'use strict';
 import { IProvider } from './injector';
+import * as _ from 'lodash';
 
 export class $HttpBackendProvider implements IProvider {
   public $get() {
@@ -12,9 +13,13 @@ export class $HttpBackendService {
     method: string,
     url: string,
     body: any,
-    cb: (statusCode: number, response: any, statusText: string) => any) {
+    cb: (statusCode: number, response: any, statusText: string) => any,
+    headers: { [ headerName: string ]: string }) {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
+
+    _.forEach(headers, (value, headerName) => xhr.setRequestHeader(headerName, value));
+
     xhr.send(body || null);
 
     xhr.onload = () => {

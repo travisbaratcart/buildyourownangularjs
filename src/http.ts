@@ -26,6 +26,7 @@ interface IHttpResponse {
   data: any;
   statusText: string;
   config: IHttpRequestConfig;
+  headers?: { [ headerName: string ]: string};
 }
 
 export class $HttpService {
@@ -63,7 +64,7 @@ export class $HttpService {
       }
     }
 
-    this.$httpBackend.request(config.method, config.url, config.data, onDone);
+    this.$httpBackend.request(config.method, config.url, config.data, onDone, config.headers);
 
     return deferred.promise;
   }
