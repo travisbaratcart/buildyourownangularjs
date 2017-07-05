@@ -48,5 +48,23 @@ describe('$http', () => {
       expect(requests[0].async).toBe(true);
       expect(requests[0].requestBody).toBe('hello');
     });
+
+    it('resolves promise when XHR result is received', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then((response: any) => receivedResponse = response);
+
+      requests[0].respond(200, {}, 'Hello');
+
+      expect(receivedResponse).toBeDefined();
+      expect(receivedResponse.status).toBe(200);
+      expect(receivedResponse.statusText).toBe('OK');
+      expect(receivedResponse.data).toBe('Hello');
+      expect(receivedResponse.config.url).toBe('http://example.com');
+    });
   });
 });
