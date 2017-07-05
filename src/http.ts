@@ -40,7 +40,7 @@ export class $HttpService {
 
     const onDone = (statusCode: number, response: any, statusText: string) => {
       const httpResponse: IHttpResponse = {
-        status: statusCode,
+        status: Math.max(statusCode, 0),
         data: response,
         statusText,
         config

@@ -86,5 +86,24 @@ describe('$http', () => {
       expect(receivedResponse.data).toBe('Fail');
       expect(receivedResponse.config.url).toBe('http://example.com');
     });
+
+    it('rejects promise when XHR result errors/aborts', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .catch((error) => {
+          receivedResponse = error;
+        });
+
+      requests[0].onerror();
+
+      expect(receivedResponse).toBeDefined();
+      expect(receivedResponse.status).toBe(0);
+      expect(receivedResponse.data).toBe(null);
+      expect(receivedResponse.config.url).toEqual('http://example.com');
+    });
   });
 });

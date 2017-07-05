@@ -26,5 +26,9 @@ export class $HttpBackendService {
 
       cb(xhr.status, response, statusText);
     };
+
+    xhr.onerror = () => {
+      cb(-1, null, '');
+    }
   }
 }
