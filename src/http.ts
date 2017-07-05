@@ -37,6 +37,23 @@ export class $HttpService {
 
   }
 
+  public defaults: any = {
+    headers: {
+      common: {
+        Accept: 'application/json, text/plain, */*'
+      },
+      post: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      put: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      patch: {
+        'Content-Type': 'application/json;charset=utf-8'
+      }
+    }
+  }
+
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);
 
@@ -73,29 +90,15 @@ export class $HttpService {
   }
 
   private setDefaultHeadersIfNecessary(config: IHttpRequestConfig) {
-    const commonDefaultHeaders = {
-      Accept: 'application/json, text/plain, */*'
-    };
+    const commonDefaultHeaders = this.defaults.headers.common;
 
-    const methodSpecificDefaultHeaders: any = {
-      post: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      put: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      patch: {
-        'Content-Type': 'application/json;charset=utf-8'
-      }
-    }
-
-    const relevantMethodSpecificDefaultHeaders =
-      methodSpecificDefaultHeaders[config.method.toLowerCase()] || {};
+    const methodSpecificDefaultHeaders
+      = this.defaults.headers[config.method.toLowerCase()] || {};
 
     config.headers = _.extend(
       {},
       commonDefaultHeaders,
-      relevantMethodSpecificDefaultHeaders,
+      methodSpecificDefaultHeaders,
       config.headers);
   }
 
