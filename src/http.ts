@@ -114,6 +114,18 @@ export class $HttpService {
         config.headers[defaultHeaderName] = value;
       }
     });
+
+    this.removeContentTypeIfNecessary(config);
+  }
+
+  private removeContentTypeIfNecessary(config: IHttpRequestConfig) {
+    if (config.data === undefined) {
+      _.forEach(config.headers, (value, headerName) => {
+        if (headerName.toLowerCase() === 'content-type') {
+          delete config.headers[headerName];
+        }
+      });
+    }
   }
 
   private isSuccess(statusCode: number) {

@@ -198,5 +198,19 @@ describe('$http', () => {
         .toBe('text/plain;charset=utf-8');
       expect(requests[0].requestHeaders['Content-Type']).toBeUndefined();
     });
+
+    it('does not send content-type header when no data', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        }
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].requestHeaders['Content-Type'])
+        .not.toBe('application/json;charset=utf-8');
+    });
   });
 });
