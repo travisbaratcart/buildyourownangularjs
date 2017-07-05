@@ -105,5 +105,14 @@ describe('$http', () => {
       expect(receivedResponse.data).toBe(null);
       expect(receivedResponse.config.url).toEqual('http://example.com');
     });
+
+    it('uses GET method by default', () => {
+      $http.request({
+        url: 'http://example.com'
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].method).toBe('GET');
+    });
   });
 });

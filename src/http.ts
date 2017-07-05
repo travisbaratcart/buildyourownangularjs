@@ -3,6 +3,7 @@ import { IProvider } from './injector';
 import { $HttpBackendService } from './httpBackend';
 import { $QService, Promise } from './q';
 import { Scope } from './scope';
+import * as _ from 'lodash';
 
 export class $HttpProvider {
   public $get = ['$httpBackend', '$q', '$rootScope', function(
@@ -35,7 +36,14 @@ export class $HttpService {
 
   }
 
-  public request(config: IHttpRequestConfig): Promise {
+  private defaultConfig: IHttpRequestConfig = {
+    method: 'GET',
+    url: ''
+  };
+
+  public request(rawConfig: IHttpRequestConfig): Promise {
+    const config = _.extend(this.defaultConfig, rawConfig);
+
     const deferred = this.$q.defer();
 
     const onDone = (statusCode: number, response: any, statusText: string) => {
