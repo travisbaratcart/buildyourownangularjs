@@ -12,8 +12,27 @@ export class $HttpProvider {
     $rootScope: Scope) {
 
     return new $HttpService($httpBackend, $q, $rootScope);
-  }]
+  }];
+
+  public defaults = defaultConfig;
 }
+
+const defaultConfig: any = {
+  headers: {
+    common: {
+      Accept: 'application/json, text/plain, */*'
+    },
+    post: {
+      'Content-Type': 'application/json;charset=utf-8'
+    },
+    put: {
+      'Content-Type': 'application/json;charset=utf-8'
+    },
+    patch: {
+      'Content-Type': 'application/json;charset=utf-8'
+    }
+  }
+};
 
 interface IHttpRequestConfig {
   url: string;
@@ -37,22 +56,7 @@ export class $HttpService {
 
   }
 
-  public defaults: any = {
-    headers: {
-      common: {
-        Accept: 'application/json, text/plain, */*'
-      },
-      post: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      put: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      patch: {
-        'Content-Type': 'application/json;charset=utf-8'
-      }
-    }
-  }
+  public defaults = defaultConfig;
 
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);

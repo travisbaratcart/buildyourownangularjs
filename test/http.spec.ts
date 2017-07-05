@@ -1,5 +1,5 @@
 'use strict';
-import { $HttpService } from '../src/http';
+import { $HttpService, $HttpProvider } from '../src/http';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
 import * as sinon from 'sinon';
@@ -152,6 +152,25 @@ describe('$http', () => {
 
     it('exposes default headers for overriding', () => {
       $http.defaults.headers.post['Content-Type'] = 'text/plain;charset=utf-8';
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: '42'
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].requestHeaders['Content-Type'])
+        .toBe('text/plain;charset=utf-8');
+    });
+
+    it('exposes default headers through provider', () => {
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.defaults.headers.post['Content-Type']
+          = 'text/plain;charset=utf-8'
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
 
       $http.request({
         method: 'POST',
