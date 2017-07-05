@@ -94,16 +94,26 @@ export class $HttpService {
   }
 
   private setDefaultHeadersIfNecessary(config: IHttpRequestConfig) {
+    if (!config.headers) {
+      config.headers = {};
+    }
+
     const commonDefaultHeaders = this.defaults.headers.common;
 
     const methodSpecificDefaultHeaders
       = this.defaults.headers[config.method.toLowerCase()] || {};
 
-    config.headers = _.extend(
-      {},
-      commonDefaultHeaders,
-      methodSpecificDefaultHeaders,
-      config.headers);
+    const defaultHeaders = _.extend(commonDefaultHeaders, methodSpecificDefaultHeaders);
+
+    _.forEach(defaultHeaders, (value, defaultHeaderName) => {
+      const headerAlreadySet = _.some(config.headers, (value, configHeaderName) => {
+        return defaultHeaderName.toLowerCase() === configHeaderName.toLowerCase();
+      });
+
+      if (!headerAlreadySet) {
+        config.headers[defaultHeaderName] = value;
+      }
+    });
   }
 
   private isSuccess(statusCode: number) {

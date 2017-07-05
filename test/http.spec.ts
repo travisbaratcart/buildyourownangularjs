@@ -182,5 +182,21 @@ describe('$http', () => {
       expect(requests[0].requestHeaders['Content-Type'])
         .toBe('text/plain;charset=utf-8');
     });
+
+    it('merges default headers case-insensitively', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42,
+        headers: {
+          'content-type': 'text/plain;charset=utf-8'
+        }
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].requestHeaders['content-type'])
+        .toBe('text/plain;charset=utf-8');
+      expect(requests[0].requestHeaders['Content-Type']).toBeUndefined();
+    });
   });
 });
