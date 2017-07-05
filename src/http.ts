@@ -19,6 +19,7 @@ interface IHttpRequestConfig {
   url: string;
   method?: string;
   data?: any
+  headers?: { [ headerName: string ]: string};
 }
 
 interface IHttpResponse {
@@ -26,7 +27,6 @@ interface IHttpResponse {
   data: any;
   statusText: string;
   config: IHttpRequestConfig;
-  headers?: { [ headerName: string ]: string};
 }
 
 export class $HttpService {
@@ -37,13 +37,8 @@ export class $HttpService {
 
   }
 
-  private defaultConfig: IHttpRequestConfig = {
-    method: 'GET',
-    url: ''
-  };
-
-  public request(rawConfig: IHttpRequestConfig): Promise {
-    const config = _.extend(this.defaultConfig, rawConfig);
+  public request(config: IHttpRequestConfig): Promise {
+    this.setConfigDefaultsIfNecessary(config);
 
     const deferred = this.$q.defer();
 
@@ -67,6 +62,18 @@ export class $HttpService {
     this.$httpBackend.request(config.method, config.url, config.data, onDone, config.headers);
 
     return deferred.promise;
+  }
+
+  private setConfigDefaultsIfNecessary(config: IHttpRequestConfig) {
+    if (!config.method) {
+      config.method = 'GET';
+    }
+
+    const defaultHeaders = {
+      Accept: 'application/json, text/plain, */*'
+    };
+
+    config.headers = _.extend({}, defaultHeaders, config.headers);
   }
 
   private isSuccess(statusCode: number) {

@@ -127,6 +127,15 @@ describe('$http', () => {
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders.Accept).toBe('text/plain');
       expect(requests[0].requestHeaders['Cache-Control']).toBe('no-cache');
-    })
+    });
+
+    it('sets default headers on request', () => {
+      $http.request({
+        url: 'http://example.com'
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].requestHeaders.Accept).toBe('application/json, text/plain, */*');
+    });
   });
 });
