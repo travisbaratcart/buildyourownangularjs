@@ -14,6 +14,7 @@
     "typescript": "^2.3.2"
   },
   "dependencies": {
+    "@types/sinon": "^2.3.2",
     "grunt": "^1.0.1",
     "jquery": "^3.2.1",
     "lodash": "^4.17.4",

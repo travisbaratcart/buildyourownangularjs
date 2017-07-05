@@ -169,7 +169,7 @@ enum PromiseState {
   Rejected
 }
 
-abstract class Promise {
+export abstract class Promise {
   public $$onResolve: ((resolvedValue: any) => any)[] = [];
   public $$onReject: ((rejectedValue: any) => any)[] = [];
   public $$onNotify: ((progress: any) => any)[] = [];

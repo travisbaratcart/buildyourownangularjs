@@ -1,0 +1,52 @@
+'use strict';
+import { $HttpService } from '../src/http';
+import { publishExternalAPI } from '../src/angularPublic';
+import { createInjector } from '../src/injector';
+import * as sinon from 'sinon';
+
+describe('$http', () => {
+  let $http: $HttpService;
+  let xhr: sinon.SinonFakeXMLHttpRequest;
+  let requests: sinon.SinonFakeXMLHttpRequest[];
+
+  beforeEach(() => {
+    publishExternalAPI();
+    const injector = createInjector(['ng']);
+    $http = injector.get('$http');
+  });
+
+  beforeEach(() => {
+    xhr = sinon.useFakeXMLHttpRequest();
+    requests = [];
+
+    xhr.onCreate = (request: sinon.SinonFakeXMLHttpRequest) => {
+      requests.push(request);
+    };
+  });
+
+  afterEach(() => {
+    xhr.restore();
+  });
+
+  describe('request', () => {
+    it('returns a promise', () => {
+      const result = $http.request({ url: 'http://example.com' });
+      expect(result).toBeDefined();
+      expect(result.then).toBeDefined();
+    });
+
+    it('makes an XMLHttpRequest to a given url', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 'hello'
+      });
+
+      expect(requests.length).toBe(1);
+      expect(requests[0].method).toBe('POST');
+      expect(requests[0].url).toBe('http://example.com');
+      expect(requests[0].async).toBe(true);
+      expect(requests[0].requestBody).toBe('hello');
+    });
+  });
+});
