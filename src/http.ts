@@ -45,6 +45,7 @@ interface IHttpResponse {
   status: number;
   data: any;
   statusText: string;
+  headers: (headerName: string) => string;
   config: IHttpRequestConfig;
 }
 
@@ -53,7 +54,6 @@ export class $HttpService {
     private $httpBackend: $HttpBackendService,
     private $q: $QService,
     private $rootScope: Scope) {
-
   }
 
   public defaults = defaultConfig;
@@ -63,11 +63,12 @@ export class $HttpService {
 
     const deferred = this.$q.defer();
 
-    const onDone = (statusCode: number, response: any, statusText: string) => {
+    const onDone = (statusCode: number, response: any, headers: string, statusText: string) => {
       const httpResponse: IHttpResponse = {
         status: Math.max(statusCode, 0),
         data: response,
         statusText,
+        headers: this.getHeaderGetter(headers),
         config
       }
 
@@ -115,7 +116,9 @@ export class $HttpService {
           ? defaultHeaderValue(config)
           : defaultHeaderValue;
 
-        config.headers[defaultHeaderName] = headerValue;
+        if (headerValue !== null && headerValue !== undefined) {
+          config.headers[defaultHeaderName] = headerValue;
+        }
       }
     });
 
@@ -134,5 +137,29 @@ export class $HttpService {
 
   private isSuccess(statusCode: number) {
     return 200 <= statusCode && statusCode < 300;
+  }
+
+  private getHeaderGetter(headersString: string): (headerName: string) =>string {
+    let headers: { [ headerName: string ]: string };
+
+    return (headerName: string) => {
+      headers = headers || this.parseHeaders(headersString);
+
+      return headers[headerName.toLowerCase()];
+    }
+  }
+
+  private parseHeaders(headersString: string): { [ headerName: string ]: string} {
+    const headerLines = headersString.split('\n');
+
+    return <{ [ headerName: string ]: string}>_.transform(headerLines, (result, line) => {
+      const separatorIndex = line.indexOf(':');
+      const headerName = _.trim(line.substr(0, separatorIndex)).toLowerCase();
+      const headerValue = _.trim(line.substr(separatorIndex + 1));
+
+      if (headerName) {
+        result[headerName] = headerValue;
+      }
+    }, {});
   }
 }

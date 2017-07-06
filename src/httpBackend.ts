@@ -13,7 +13,7 @@ export class $HttpBackendService {
     method: string,
     url: string,
     body: any,
-    cb: (statusCode: number, response: any, statusText: string) => any,
+    cb: (statusCode: number, response: any, headers: string, statusText: string) => any,
     headers: { [ headerName: string ]: string }) {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
@@ -29,11 +29,11 @@ export class $HttpBackendService {
 
       const statusText = xhr.statusText || '';
 
-      cb(xhr.status, response, statusText);
+      cb(xhr.status, response, xhr.getAllResponseHeaders(), statusText);
     };
 
     xhr.onerror = () => {
-      cb(-1, null, '');
+      cb(-1, null, '',  '');
     }
   }
 }

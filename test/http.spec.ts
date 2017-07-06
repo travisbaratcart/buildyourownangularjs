@@ -237,5 +237,39 @@ describe('$http', () => {
       expect(requests[0].requestHeaders['Content-Type'])
         .toBe('text/plain;charset=utf-8');
     });
+
+    it('ignores header function value when null or undefined', () => {
+      const cacheControlSpy = jasmine.createSpy('cacheControl').and.returnValue(null);
+
+      $http.defaults.headers.post['Cache-Control'] = cacheControlSpy;
+
+      const requestConfig: IHttpRequestConfig = {
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      };
+
+      $http.request(requestConfig);
+
+      expect(cacheControlSpy).toHaveBeenCalledWith(requestConfig);
+      expect(requests[0].requestHeaders['Cache-Control']).toBeUndefined();
+    });
+
+    it('makes response headers available', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
+
+      expect(receivedResponse.headers).toBeDefined();
+      expect(typeof receivedResponse.headers).toBe('function');
+      expect(receivedResponse.headers('Content-Type')).toBe('text/plain');
+    });
   });
 });
