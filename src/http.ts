@@ -34,6 +34,8 @@ const defaultConfig: any = {
   }
 };
 
+type DataTransformFunction = (data: any) => any;
+
 interface IHeaderObject {
   [ headerName: string ]: string
 }
@@ -44,7 +46,7 @@ export interface IHttpRequestConfig {
   data?: any
   headers?: { [ headerName: string ]: string};
   withCredentials?: boolean;
-  transformRequest?: (data: any) => any;
+  transformRequest?: DataTransformFunction | DataTransformFunction[];
 }
 
 interface IHttpResponse {
@@ -185,9 +187,15 @@ export class $HttpService {
     }, {});
   }
 
-  private transformData(data: any, transform: (data: any) => any): any {
+  private transformData(
+    data: any,
+    transform: DataTransformFunction | DataTransformFunction[]): any {
     if (typeof transform === 'function') {
       return transform(data);
+    } else if (Array.isArray(transform)) {
+      return transform.reduce((data, transformFunction) => {
+        return transformFunction(data);
+      }, data)
     } else {
       return data;
     }

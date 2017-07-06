@@ -313,11 +313,26 @@ describe('$http', () => {
     it('allows transforming requests with functions', () => {
       $http.request({
         method: 'POST',
+        url: 'http://example.com',
         data: 42,
-        transformRequest: (data) => `*${data}*`;
+        transformRequest: (data: any) => `*${data}*`;
       });
 
       expect(requests[0].requestBody).toBe('*42*');
+    });
+
+    it('allows multiple request transform functions', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42,
+        transformRequest: [
+          (data: any) => `*${data}*`,
+          (data: any) => `-${data}-`
+        ]
+      });
+
+      expect(requests[0].requestBody).toBe('-*42*-');
     });
   });
 });
