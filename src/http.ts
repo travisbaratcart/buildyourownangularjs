@@ -43,6 +43,7 @@ export interface IHttpRequestConfig {
   method?: string;
   data?: any
   headers?: { [ headerName: string ]: string};
+  withCredentials?: boolean
 }
 
 interface IHttpResponse {
@@ -85,7 +86,13 @@ export class $HttpService {
       }
     }
 
-    this.$httpBackend.request(config.method, config.url, config.data, onDone, config.headers);
+    this.$httpBackend.request(
+      config.method,
+      config.url,
+      config.data,
+      onDone,
+      config.headers,
+      config.withCredentials);
 
     return deferred.promise;
   }

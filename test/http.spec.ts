@@ -286,5 +286,16 @@ describe('$http', () => {
 
       expect(receivedResponse.headers()).toEqual({ 'content-type': 'text/plain' });
     });
+
+    it('allows setting withCredentials', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42,
+        withCredentials: true
+      });
+
+      expect(requests[0].withCredentials).toBe(true);
+    });
   });
 });

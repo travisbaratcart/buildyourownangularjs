@@ -14,11 +14,16 @@ export class $HttpBackendService {
     url: string,
     body: any,
     cb: (statusCode: number, response: any, headers: string, statusText: string) => any,
-    headers: { [ headerName: string ]: string }) {
+    headers: { [ headerName: string ]: string },
+    withCredentials: boolean) {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
 
     _.forEach(headers, (value, headerName) => xhr.setRequestHeader(headerName, value));
+
+    if (withCredentials) {
+      xhr.withCredentials = true;
+    }
 
     xhr.send(body || null);
 
