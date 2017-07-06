@@ -34,7 +34,7 @@ const defaultConfig: any = {
   }
 };
 
-interface IHttpRequestConfig {
+export interface IHttpRequestConfig {
   url: string;
   method?: string;
   data?: any
@@ -105,13 +105,17 @@ export class $HttpService {
 
     const defaultHeaders = _.extend(commonDefaultHeaders, methodSpecificDefaultHeaders);
 
-    _.forEach(defaultHeaders, (value, defaultHeaderName) => {
+    _.forEach(defaultHeaders, (defaultHeaderValue, defaultHeaderName) => {
       const headerAlreadySet = _.some(config.headers, (value, configHeaderName) => {
         return defaultHeaderName.toLowerCase() === configHeaderName.toLowerCase();
       });
 
       if (!headerAlreadySet) {
-        config.headers[defaultHeaderName] = value;
+        const headerValue = typeof defaultHeaderValue === 'function'
+          ? defaultHeaderValue(config)
+          : defaultHeaderValue;
+
+        config.headers[defaultHeaderName] = headerValue;
       }
     });
 

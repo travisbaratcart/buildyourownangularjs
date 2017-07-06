@@ -1,5 +1,9 @@
 'use strict';
-import { $HttpService, $HttpProvider } from '../src/http';
+import {
+  $HttpService,
+  $HttpProvider,
+  IHttpRequestConfig
+} from '../src/http';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
 import * as sinon from 'sinon';
@@ -211,6 +215,27 @@ describe('$http', () => {
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['Content-Type'])
         .not.toBe('application/json;charset=utf-8');
+    });
+
+    it('supports functions as header values', () => {
+      const contentTypeSpy = jasmine
+        .createSpy('contentType')
+        .and
+        .returnValue('text/plain;charset=utf-8');
+
+      $http.defaults.headers.post['Content-Type'] = contentTypeSpy;
+
+      const requestConfig: IHttpRequestConfig = {
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      }
+
+      $http.request(requestConfig);
+
+      expect(contentTypeSpy).toHaveBeenCalledWith(requestConfig);
+      expect(requests[0].requestHeaders['Content-Type'])
+        .toBe('text/plain;charset=utf-8');
     });
   });
 });
