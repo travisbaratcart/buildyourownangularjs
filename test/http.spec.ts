@@ -346,5 +346,26 @@ describe('$http', () => {
 
       expect(requests[0].requestBody).toBe('*42*');
     })
+
+    it('passes request headers getter to transforms', () => {
+      $http.defaults.transformRequest = [(data: any, headers: (headerName: string) => string) => {
+        if (headers('Content-Type') === 'text/emphasized') {
+          return `*${data}*`;
+        } else {
+          return data;
+        }
+      }];
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42,
+        headers: {
+          'content-type': 'text/emphasized'
+        }
+      });
+
+      expect(requests[0].requestBody).toBe('*42*');
+    });
   });
 });

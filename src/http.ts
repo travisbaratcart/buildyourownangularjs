@@ -34,7 +34,7 @@ const defaultConfig: any = {
   }
 };
 
-type DataTransformFunction = (data: any) => any;
+type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject) => any;
 
 interface IHeaderObject {
   [ headerName: string ]: string
@@ -89,7 +89,10 @@ export class $HttpService {
       }
     }
 
-    const requestData = this.transformData(config.data, config.transformRequest);
+    const requestData = this.transformData(
+      config.data,
+      this.getHeaderGetter(config.headers),
+      config.transformRequest);
 
     this.$httpBackend.request(
       config.method,
@@ -163,40 +166,51 @@ export class $HttpService {
   }
 
   private getHeaderGetter(
-    headersString: string): (headerName: string) => string | IHeaderObject {
-    let headers: { [ headerName: string ]: string };
+    headers: any): (headerName: string) => string | IHeaderObject {
+
+    let headersObject: { [ headerName: string ]: string };
 
     return (headerName: string) => {
-      headers = headers || this.parseHeaders(headersString);
+      headersObject = headersObject || this.parseHeaders(headers);
 
       return headerName
-        ? headers[headerName.toLowerCase()]
-        : headers;
+        ? headersObject[headerName.toLowerCase()]
+        : headersObject;
     }
+
   }
 
-  private parseHeaders(headersString: string): { [ headerName: string ]: string} {
-    const headerLines = headersString.split('\n');
+  private parseHeaders(headers: any): { [ headerName: string ]: string} {
 
-    return <{ [ headerName: string ]: string}>_.transform(headerLines, (result, line) => {
-      const separatorIndex = line.indexOf(':');
-      const headerName = _.trim(line.substr(0, separatorIndex)).toLowerCase();
-      const headerValue = _.trim(line.substr(separatorIndex + 1));
+    if (_.isObject(headers)) {
+      return <IHeaderObject>_.transform(headers, (result: any, headerValue: string, headerName: string) => {
+        result[_.trim(headerName.toLowerCase())] = _.trim(headerValue);
+      });
+    } else {
+      const headerLines = headers.split('\n');
 
-      if (headerName) {
-        result[headerName] = headerValue;
-      }
-    }, {});
+      return <{ [ headerName: string ]: string}>_.transform(headerLines, (result: any, line: string) => {
+        const separatorIndex = line.indexOf(':');
+        const headerName = _.trim(line.substr(0, separatorIndex)).toLowerCase();
+        const headerValue = _.trim(line.substr(separatorIndex + 1));
+
+        if (headerName) {
+          result[headerName] = headerValue;
+        }
+      }, {});
+    }
+
   }
 
   private transformData(
     data: any,
+    headers: (headerName: string) => string | IHeaderObject,
     transform: DataTransformFunction | DataTransformFunction[]): any {
     if (typeof transform === 'function') {
-      return transform(data);
+      return transform(data, headers);
     } else if (Array.isArray(transform)) {
       return transform.reduce((data, transformFunction) => {
-        return transformFunction(data);
+        return transformFunction(data, headers);
       }, data)
     } else {
       return data;
