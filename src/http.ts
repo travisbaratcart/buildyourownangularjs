@@ -34,6 +34,10 @@ const defaultConfig: any = {
   }
 };
 
+interface IHeaderObject {
+  [ headerName: string ]: string
+}
+
 export interface IHttpRequestConfig {
   url: string;
   method?: string;
@@ -45,7 +49,7 @@ interface IHttpResponse {
   status: number;
   data: any;
   statusText: string;
-  headers: (headerName: string) => string;
+  headers: (headerName: string) => string | IHeaderObject;
   config: IHttpRequestConfig;
 }
 
@@ -139,13 +143,16 @@ export class $HttpService {
     return 200 <= statusCode && statusCode < 300;
   }
 
-  private getHeaderGetter(headersString: string): (headerName: string) =>string {
+  private getHeaderGetter(
+    headersString: string): (headerName: string) => string | IHeaderObject {
     let headers: { [ headerName: string ]: string };
 
     return (headerName: string) => {
       headers = headers || this.parseHeaders(headersString);
 
-      return headers[headerName.toLowerCase()];
+      return headerName
+        ? headers[headerName.toLowerCase()]
+        : headers;
     }
   }
 

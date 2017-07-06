@@ -271,5 +271,20 @@ describe('$http', () => {
       expect(typeof receivedResponse.headers).toBe('function');
       expect(receivedResponse.headers('Content-Type')).toBe('text/plain');
     });
+
+    it('can return all response headers', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
+
+      expect(receivedResponse.headers()).toEqual({ 'content-type': 'text/plain' });
+    });
   });
 });
