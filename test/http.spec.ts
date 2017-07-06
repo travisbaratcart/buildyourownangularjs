@@ -309,5 +309,15 @@ describe('$http', () => {
 
       expect(requests[0].withCredentials).toBe(true);
     });
+
+    it('allows transforming requests with functions', () => {
+      $http.request({
+        method: 'POST',
+        data: 42,
+        transformRequest: (data) => `*${data}*`;
+      });
+
+      expect(requests[0].requestBody).toBe('*42*');
+    });
   });
 });

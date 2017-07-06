@@ -43,7 +43,8 @@ export interface IHttpRequestConfig {
   method?: string;
   data?: any
   headers?: { [ headerName: string ]: string};
-  withCredentials?: boolean
+  withCredentials?: boolean;
+  transformRequest?: (data: any) => any;
 }
 
 interface IHttpResponse {
@@ -86,10 +87,12 @@ export class $HttpService {
       }
     }
 
+    const requestData = this.transformData(config.data, config.transformRequest);
+
     this.$httpBackend.request(
       config.method,
       config.url,
-      config.data,
+      requestData,
       onDone,
       config.headers,
       config.withCredentials);
@@ -180,5 +183,13 @@ export class $HttpService {
         result[headerName] = headerValue;
       }
     }, {});
+  }
+
+  private transformData(data: any, transform: (data: any) => any): any {
+    if (typeof transform === 'function') {
+      return transform(data);
+    } else {
+      return data;
+    }
   }
 }
