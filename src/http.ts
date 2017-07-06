@@ -113,6 +113,8 @@ export class $HttpService {
     }
 
     this.setDefaultHeadersIfNecessary(config);
+
+    this.setDefaultTransformsIfNecessary(config);
   }
 
   private setDefaultHeadersIfNecessary(config: IHttpRequestConfig) {
@@ -199,5 +201,30 @@ export class $HttpService {
     } else {
       return data;
     }
+  }
+
+  private setDefaultTransformsIfNecessary(config: IHttpRequestConfig) {
+    const configTransforms = config.transformRequest;
+    const defaultTransforms = this.defaults.transformRequest;
+
+    const mergedTransformFunctions: DataTransformFunction[] = [];
+
+    if (Array.isArray(configTransforms)) {
+      configTransforms.forEach(configTransform => {
+        mergedTransformFunctions.push(configTransform)
+      });
+    } else if (typeof configTransforms === 'function') {
+      mergedTransformFunctions.push(configTransforms);
+    }
+
+    if (Array.isArray(defaultTransforms)) {
+      defaultTransforms.forEach((defaultTransform: DataTransformFunction) => {
+        mergedTransformFunctions.push(defaultTransform)
+      });
+    } else if (typeof defaultTransforms === 'function') {
+      mergedTransformFunctions.push(defaultTransforms);
+    }
+
+    config.transformRequest = mergedTransformFunctions;
   }
 }

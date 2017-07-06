@@ -315,7 +315,7 @@ describe('$http', () => {
         method: 'POST',
         url: 'http://example.com',
         data: 42,
-        transformRequest: (data: any) => `*${data}*`;
+        transformRequest: (data: any) => `*${data}*`
       });
 
       expect(requests[0].requestBody).toBe('*42*');
@@ -334,5 +334,17 @@ describe('$http', () => {
 
       expect(requests[0].requestBody).toBe('-*42*-');
     });
+
+    it('allows setting transforms in defaults', () => {
+      $http.defaults.transformRequest = [(data: any) => `*${data}*`];
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      });
+
+      expect(requests[0].requestBody).toBe('*42*');
+    })
   });
 });
