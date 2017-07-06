@@ -297,5 +297,17 @@ describe('$http', () => {
 
       expect(requests[0].withCredentials).toBe(true);
     });
+
+    it('allows setting withCredentials from defaults', () => {
+      $http.defaults.withCredentials = true;
+
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: 42
+      });
+
+      expect(requests[0].withCredentials).toBe(true);
+    });
   });
 });

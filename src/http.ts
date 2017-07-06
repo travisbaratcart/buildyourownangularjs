@@ -102,6 +102,11 @@ export class $HttpService {
       config.method = 'GET';
     }
 
+    if (config.withCredentials === undefined
+      && this.defaults.withCredentials !== undefined) {
+      config.withCredentials = this.defaults.withCredentials;
+    }
+
     this.setDefaultHeadersIfNecessary(config);
   }
 
