@@ -28,7 +28,14 @@ export class $HttpProvider {
       patch: {
         'Content-Type': 'application/json;charset=utf-8'
       }
-    }
+    },
+    transformRequest: [(data: any) => {
+      if (_.isObject(data)) {
+        return JSON.stringify(data);
+      } else {
+        return data;
+      }
+    }]
   };
 }
 

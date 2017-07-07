@@ -451,5 +451,25 @@ describe('$http', () => {
 
       expect(receivedResponse.data).toBe('unauthorized');
     });
+
+    it('serializes object data to JSON for requests', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: { aKey: 42 }
+      });
+
+      expect(requests[0].requestBody).toBe('{"aKey":42}');
+    });
+
+    it('serializes array data to JSON for requests', () => {
+      $http.request({
+        method: 'POST',
+        url: 'http://example.com',
+        data: [1, 'two', 3]
+      });
+
+      expect(requests[0].requestBody).toBe('[1,"two",3]');
+    });
   });
 });
