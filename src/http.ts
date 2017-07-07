@@ -47,6 +47,7 @@ export interface IHttpRequestConfig {
   headers?: { [ headerName: string ]: string};
   withCredentials?: boolean;
   transformRequest?: DataTransformFunction | DataTransformFunction[];
+  transformResponse?: DataTransformFunction | DataTransformFunction[];
 }
 
 interface IHttpResponse {
@@ -69,6 +70,16 @@ export class $HttpService {
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);
 
+    const requestData = this.transformData(
+      config.data,
+      this.getHeaderGetter(config.headers),
+      config.transformRequest);
+
+    return this.sendRequest(config, requestData)
+      .then((response) => this.transformResponse(response, config));
+  }
+
+  private sendRequest(config: IHttpRequestConfig, data: any) {
     const deferred = this.$q.defer();
 
     const onDone = (statusCode: number, response: any, headers: string, statusText: string) => {
@@ -89,15 +100,10 @@ export class $HttpService {
       }
     }
 
-    const requestData = this.transformData(
-      config.data,
-      this.getHeaderGetter(config.headers),
-      config.transformRequest);
-
     this.$httpBackend.request(
       config.method,
       config.url,
-      requestData,
+      data,
       onDone,
       config.headers,
       config.withCredentials);
@@ -117,7 +123,8 @@ export class $HttpService {
 
     this.setDefaultHeadersIfNecessary(config);
 
-    this.setDefaultTransformsIfNecessary(config);
+    this.setDefaultTransformsIfNecessary(config, 'transformRequest');
+    this.setDefaultTransformsIfNecessary(config, 'transformResponse');
   }
 
   private setDefaultHeadersIfNecessary(config: IHttpRequestConfig) {
@@ -199,7 +206,14 @@ export class $HttpService {
         }
       }, {});
     }
+  }
 
+  private transformResponse(response: IHttpResponse, config: IHttpRequestConfig): IHttpResponse {
+    if (response.data) {
+      response.data = this.transformData(response.data, response.headers, config.transformResponse);
+    }
+
+    return response;
   }
 
   private transformData(
@@ -217,9 +231,9 @@ export class $HttpService {
     }
   }
 
-  private setDefaultTransformsIfNecessary(config: IHttpRequestConfig) {
-    const configTransforms = config.transformRequest;
-    const defaultTransforms = this.defaults.transformRequest;
+  private setDefaultTransformsIfNecessary(config: IHttpRequestConfig, transformKey: 'transformRequest' | 'transformResponse') {
+    const configTransforms = config[transformKey];
+    const defaultTransforms = this.defaults[transformKey];
 
     const mergedTransformFunctions: DataTransformFunction[] = [];
 
@@ -239,6 +253,6 @@ export class $HttpService {
       mergedTransformFunctions.push(defaultTransforms);
     }
 
-    config.transformRequest = mergedTransformFunctions;
+    config[transformKey] = mergedTransformFunctions;
   }
 }

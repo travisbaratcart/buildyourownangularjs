@@ -367,5 +367,54 @@ describe('$http', () => {
 
       expect(requests[0].requestBody).toBe('*42*');
     });
+
+    it('allows transforming responses with functions', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        url: 'http://example.com',
+        transformResponse: (data: any) => `*${data}*`
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
+
+      expect(receivedResponse.data).toEqual('*Hello*');
+    });
+
+    it('passes response headers to transform functions', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        url: 'http://example.com',
+        transformResponse: (data: any, headers: (headerName: string) => string) => {
+          if (headers('content-type') === 'text/decorated') {
+            return `*${data}*`;
+          } else {
+            return data;
+          }
+        }
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'text/decorated' }, 'Hello');
+
+      expect(receivedResponse.data).toEqual('*Hello*');
+    });
+
+    it('allows setting default response transforms', () => {
+      $http.defaults.transformResponse = [(data: any) => `*${data}*`];
+
+      let receivedResponse: any;
+
+      $http.request({
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
+
+      expect(receivedResponse.data).toEqual('*Hello*');
+    });
   });
 });
