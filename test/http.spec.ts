@@ -432,7 +432,6 @@ describe('$http', () => {
       expect(receivedResponse.data).toEqual('*Fail*');
     });
 
-    /*
     it('passes http status to response transformers', () => {
       let receivedResponse: any;
 
@@ -452,6 +451,5 @@ describe('$http', () => {
 
       expect(receivedResponse.data).toBe('unauthorized');
     });
-    */
   });
 });

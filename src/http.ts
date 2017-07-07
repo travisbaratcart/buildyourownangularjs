@@ -32,7 +32,7 @@ export class $HttpProvider {
   };
 }
 
-type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject) => any;
+type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;
 
 interface IHeaderObject {
   [ headerName: string ]: string
@@ -70,6 +70,7 @@ export class $HttpService {
     const requestData = this.transformData(
       config.data,
       this.getHeaderGetter(config.headers),
+      null,
       config.transformRequest);
 
     return this.sendRequest(config, requestData)
@@ -209,7 +210,7 @@ export class $HttpService {
 
   private transformResponse(response: IHttpResponse, config: IHttpRequestConfig): any {
     if (response.data) {
-      response.data = this.transformData(response.data, response.headers, config.transformResponse);
+      response.data = this.transformData(response.data, response.headers, response.status, config.transformResponse);
     }
 
     if (this.isSuccess(response.status)) {
@@ -222,12 +223,13 @@ export class $HttpService {
   private transformData(
     data: any,
     headers: (headerName: string) => string | IHeaderObject,
+    statusCode: number,
     transform: DataTransformFunction | DataTransformFunction[]): any {
     if (typeof transform === 'function') {
-      return transform(data, headers);
+      return transform(data, headers, statusCode);
     } else if (Array.isArray(transform)) {
       return transform.reduce((data, transformFunction) => {
-        return transformFunction(data, headers);
+        return transformFunction(data, headers, statusCode);
       }, data)
     } else {
       return data;
