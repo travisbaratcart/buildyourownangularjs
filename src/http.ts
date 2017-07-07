@@ -11,28 +11,26 @@ export class $HttpProvider {
     $q: $QService,
     $rootScope: Scope) {
 
-    return new $HttpService($httpBackend, $q, $rootScope);
+    return new $HttpService($httpBackend, $q, $rootScope, this.defaults);
   }];
 
-  public defaults = defaultConfig;
-}
-
-const defaultConfig: any = {
-  headers: {
-    common: {
-      Accept: 'application/json, text/plain, */*'
-    },
-    post: {
-      'Content-Type': 'application/json;charset=utf-8'
-    },
-    put: {
-      'Content-Type': 'application/json;charset=utf-8'
-    },
-    patch: {
-      'Content-Type': 'application/json;charset=utf-8'
+  public defaults: any = {
+    headers: {
+      common: {
+        Accept: 'application/json, text/plain, */*'
+      },
+      post: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      put: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      patch: {
+        'Content-Type': 'application/json;charset=utf-8'
+      }
     }
-  }
-};
+  };
+}
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject) => any;
 
@@ -62,10 +60,9 @@ export class $HttpService {
   constructor(
     private $httpBackend: $HttpBackendService,
     private $q: $QService,
-    private $rootScope: Scope) {
+    private $rootScope: Scope,
+    public defaults: any) {
   }
-
-  public defaults = defaultConfig;
 
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);
@@ -76,7 +73,9 @@ export class $HttpService {
       config.transformRequest);
 
     return this.sendRequest(config, requestData)
-      .then((response) => this.transformResponse(response, config));
+      .then(
+        (response) => this.transformResponse(response, config),
+        (response) => this.transformResponse(response, config));
   }
 
   private sendRequest(config: IHttpRequestConfig, data: any) {
@@ -208,12 +207,16 @@ export class $HttpService {
     }
   }
 
-  private transformResponse(response: IHttpResponse, config: IHttpRequestConfig): IHttpResponse {
+  private transformResponse(response: IHttpResponse, config: IHttpRequestConfig): any {
     if (response.data) {
       response.data = this.transformData(response.data, response.headers, config.transformResponse);
     }
 
-    return response;
+    if (this.isSuccess(response.status)) {
+      return response;
+    } else {
+      return this.$q.reject(response);
+    }
   }
 
   private transformData(

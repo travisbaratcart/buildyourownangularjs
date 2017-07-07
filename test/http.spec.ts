@@ -33,6 +33,7 @@ describe('$http', () => {
   });
 
   describe('request', () => {
+
     it('returns a promise', () => {
       const result = $http.request({ url: 'http://example.com' });
       expect(result).toBeDefined();
@@ -416,5 +417,41 @@ describe('$http', () => {
 
       expect(receivedResponse.data).toEqual('*Hello*');
     });
+
+    it('transforms error responses also', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        url: 'http://somethingawful.com',
+        transformResponse: (data) => `*${data}*`
+      })
+        .catch(error => receivedResponse = error);
+
+      requests[0].respond(401, { 'Content-Type': 'text/plain' }, 'Fail');
+
+      expect(receivedResponse.data).toEqual('*Fail*');
+    });
+
+    /*
+    it('passes http status to response transformers', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        url: 'http://example.com',
+        transformResponse: (data, headers, status) => {
+          if (status === 401) {
+            return 'unauthorized';
+          } else {
+            return data;
+          }
+        }
+      })
+        .catch(error => receivedResponse = error);
+
+      requests[0].respond(401, { 'Content-Type': 'text/plain' }, 'Fail');
+
+      expect(receivedResponse.data).toBe('unauthorized');
+    });
+    */
   });
 });
