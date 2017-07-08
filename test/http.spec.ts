@@ -684,5 +684,17 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com?a=42&b=43');
     });
+
+    it('uses square brackets in arrays', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: [42, 43]
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a%5B%5D=42&a%5B%5D=43');
+    });
   });
 });

@@ -355,14 +355,26 @@ export class $HttpParamSerializerProvider implements IProvider {
 
 export class $HttpParamSerializerJQLikeProvider implements IProvider {
   public $get() {
-    return (params: IParams) => {
-      const components: string[] = [];
+    return (params: IParams) => this.serializeParams(params);
+  }
 
-      _.forEach(params, (paramValue, paramName) => {
+  private serializeParams(params: IParams): string {
+    const components: string[] = [];
+
+    _.forEach(params, (paramValue, paramName) => {
+      if (paramValue === null || paramValue === undefined) {
+        return;
+      }
+
+      if (Array.isArray(paramValue)) {
+        paramValue.forEach(val => {
+          components.push(`${encodeURIComponent(paramName + '[]')}=${encodeURIComponent(val)}`);
+        });
+      } else {
         components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
-      });
+      }
+    });
 
-      return components.join('&');
-    };
+    return components.join('&');
   }
 }
