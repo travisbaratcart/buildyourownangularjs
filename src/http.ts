@@ -110,9 +110,24 @@ export class $HttpService {
   }
 
   public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'GET', config);
+  }
+
+  public head(url: string, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'HEAD', config);
+  }
+
+  public delete(url: string, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'DELETE', config);
+  }
+
+  private shortHandRequest(
+    url: string,
+    method: string,
+    config?: IShortHandHttpRequestConfig): Promise {
     const fullConfig = _.extend(config || {}, {
-      method: 'GET',
-      url: url
+      method,
+      url
     });
 
     return this.request(fullConfig);

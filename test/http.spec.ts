@@ -752,5 +752,23 @@ describe('$http', () => {
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('GET');
     });
+
+    it('supports a shorthand method for HEAD', () => {
+      $http.head('http://example.com', {
+        params: { q: 42 }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?q=42');
+      expect(requests[0].method).toBe('HEAD');
+    });
+
+    it('supports a shorthand method for DELETE', () => {
+      $http.delete('http://example.com', {
+        params: { q: 42 }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?q=42');
+      expect(requests[0].method).toBe('DELETE');
+    });
   });
 });
