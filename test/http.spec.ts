@@ -590,5 +590,16 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com');
     });
+
+    it('attaches multiple params for array inputs', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: [42, 43]
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=42&a=43');
+    });
   });
 });

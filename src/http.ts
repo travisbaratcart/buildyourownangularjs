@@ -307,10 +307,20 @@ export class $HttpService {
         return;
       }
 
-      components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
+      if (Array.isArray(paramValue)) {
+        paramValue.forEach(paramElement => {
+          components.push(this.getParamString(paramName, paramElement));
+        });
+      } else {
+        components.push(this.getParamString(paramName, paramValue));
+      }
     });
 
     return components.join('&');
+  }
+
+  private getParamString(paramName: string, paramValue: any) {
+    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
   }
 }
 
