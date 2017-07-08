@@ -362,28 +362,57 @@ export class $HttpParamSerializerJQLikeProvider implements IProvider {
     const components: string[] = [];
 
     _.forEach(params, (paramValue, paramName) => {
-      if (paramValue === null || paramValue === undefined) {
-        return;
-      }
+      const serializedParam = this.serializeParam(paramValue, paramName);
 
-      if (Array.isArray(paramValue)) {
-        paramValue.forEach(val => {
-          components.push(`${encodeURIComponent(paramName + '[]')}=${encodeURIComponent(val)}`);
-        });
-      } else if (paramValue instanceof Date) {
-
-      } else if (typeof paramValue === 'object') {
-        _.forEach(paramValue, (value, key) => {
-          components.push(
-            encodeURIComponent(`${paramName}[${key}]`)
-              + '='
-              + encodeURIComponent(value));
-        });
-      } else {
-        components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
+      if (serializedParam) {
+        components.push(serializedParam);
       }
     });
 
     return components.join('&');
+  }
+
+  private serializeParam(paramValue: any, paramName: string): string {
+    if (paramValue === null || paramValue === undefined) {
+        return;
+      }
+
+      if (Array.isArray(paramValue)) {
+        return this.serializeArray(paramValue, paramName);
+      } else if (typeof paramValue === 'object' && !(paramValue instanceof Date)) {
+        return this.serializeObject(paramValue, paramName);
+      } else {
+        return this.serializeRegularParam(paramValue, paramName);
+      }
+  }
+
+  private serializeArray(paramValue: any[], paramName: string): string {
+    return paramValue.map(val => {
+      return `${encodeURIComponent(paramName + '[]')}=${encodeURIComponent(val)}`;
+    }).join('&');
+  }
+
+  private serializeObject(paramValue: any, paramName: string, prefix?: string): string {
+    return _.map(paramValue, (value: any, key: string) => {
+      if (typeof value === 'object') {
+        const newPrefix = prefix
+          ? `${prefix}[${paramName}]`
+          : paramName
+
+        return this.serializeObject(value, key, newPrefix);
+      } else {
+        const paramNameString = prefix
+          ? `[${paramName}]`
+          : paramName
+
+        return encodeURIComponent(`${prefix || ''}${paramNameString}[${key}]`)
+        + '='
+        + encodeURIComponent(value);
+      }
+    }).join('&');
+  }
+
+  private serializeRegularParam(paramValue: any, paramName: string): string {
+    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`;
   }
 }

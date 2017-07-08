@@ -711,5 +711,21 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com?a%5Bb%5D=42&a%5Bc%5D=43');
     });
+
+    it('supports nesting in objects', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: {
+            b: {
+              c: 42
+            }
+          }
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a%5Bb%5D%5Bc%5D=42');
+    });
   });
 });
