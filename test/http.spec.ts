@@ -727,5 +727,19 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com?a%5Bb%5D%5Bc%5D=42');
     });
+
+    it('appends array indexes when items are objects', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: [{
+            b: 42
+          }]
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+
+      expect(requests[0].url).toEqual('http://example.com?a%5B0%5D%5Bb%5D=42')
+    });
   });
 });

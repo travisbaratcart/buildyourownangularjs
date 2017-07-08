@@ -387,27 +387,24 @@ export class $HttpParamSerializerJQLikeProvider implements IProvider {
   }
 
   private serializeArray(paramValue: any[], paramName: string): string {
-    return paramValue.map(val => {
-      return `${encodeURIComponent(paramName + '[]')}=${encodeURIComponent(val)}`;
+    return paramValue.map((val, index) => {
+      if (typeof val === 'object') {
+        return this.serializeObject(val, `${paramName}[${index}]`);
+      } else {
+        return this.serializeRegularParam(val, `${paramName}[]`);
+      }
     }).join('&');
   }
 
   private serializeObject(paramValue: any, paramName: string, prefix?: string): string {
     return _.map(paramValue, (value: any, key: string) => {
-      if (typeof value === 'object') {
-        const newPrefix = prefix
+      const newPrefix = prefix
           ? `${prefix}[${paramName}]`
-          : paramName
-
+          : paramName;
+      if (typeof value === 'object') {
         return this.serializeObject(value, key, newPrefix);
       } else {
-        const paramNameString = prefix
-          ? `[${paramName}]`
-          : paramName
-
-        return encodeURIComponent(`${prefix || ''}${paramNameString}[${key}]`)
-        + '='
-        + encodeURIComponent(value);
+        return this.serializeRegularParam(value, `${newPrefix}[${key}]`);
       }
     }).join('&');
   }
