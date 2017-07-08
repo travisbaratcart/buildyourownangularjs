@@ -1,17 +1,18 @@
 'use strict';
-import { IProvider } from './injector';
+import { IProvider, Injector } from './injector';
 import { $HttpBackendService } from './httpBackend';
 import { $QService, Promise } from './q';
 import { Scope } from './scope';
 import * as _ from 'lodash';
 
 export class $HttpProvider {
-  public $get = ['$httpBackend', '$q', '$rootScope', function(
+  public $get = ['$httpBackend', '$injector', '$q', '$rootScope', function(
     $httpBackend: $HttpBackendService,
+    $injector: Injector,
     $q: $QService,
     $rootScope: Scope) {
 
-    return new $HttpService($httpBackend, $q, $rootScope, this.defaults);
+    return new $HttpService($httpBackend, $injector, $q, $rootScope, this.defaults);
   }];
 
   public defaults: any = {
@@ -92,7 +93,7 @@ export interface IHttpRequestConfig {
   transformRequest?: DataTransformFunction | DataTransformFunction[];
   transformResponse?: DataTransformFunction | DataTransformFunction[];
   params?: IParams;
-  paramSerializer?: (params: IParams) => string;
+  paramSerializer?: ((params: IParams) => string) | string;
 }
 
 export interface IParams {
@@ -110,6 +111,7 @@ interface IHttpResponse {
 export class $HttpService {
   constructor(
     private $httpBackend: $HttpBackendService,
+    private $injector: Injector,
     private $q: $QService,
     private $rootScope: Scope,
     public defaults: any) {
@@ -313,7 +315,7 @@ export class $HttpService {
   }
 
   private buildUrl(config: IHttpRequestConfig): string {
-    const paramSerializer = config.paramSerializer || this.defaults.paramSerializer;
+    const paramSerializer = this.getParamSerializer(config);
 
     const serializedParams = paramSerializer(config.params);
 
@@ -327,6 +329,14 @@ export class $HttpService {
     }
 
     return newUrl;
+  }
+
+  private getParamSerializer(config: IHttpRequestConfig): (params: IParams) => string {
+    const paramSerializerOrName = config.paramSerializer || this.defaults.paramSerializer;
+
+    return typeof paramSerializerOrName === 'function'
+      ? paramSerializerOrName
+      : this.$injector.get(paramSerializerOrName);
   }
 }
 

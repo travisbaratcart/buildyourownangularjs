@@ -6,7 +6,10 @@ import {
   IParams
 } from '../src/http';
 import { publishExternalAPI } from '../src/angularPublic';
-import { createInjector } from '../src/injector';
+import {
+  createInjector,
+  IProvide
+} from '../src/injector';
 import * as sinon from 'sinon';
 import * as _ from 'lodash';
 
@@ -629,6 +632,29 @@ describe('$http', () => {
       });
 
       expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
+    });
+
+    it('allows substituting param serializer through DI', () => {
+      const injector = createInjector(['ng', function($provide: IProvide) {
+        $provide.factory('mySpecialSerializer', () => (params: IParams) => {
+          return _.map(params, (paramValue, paramName) => {
+            return `${paramName}=${paramValue}lol`
+          }).join('&');
+        });
+      }]);
+
+      injector.invoke(function($http: $HttpService) {
+        $http.request({
+          url: 'http://example.com',
+          params: {
+            a: 42,
+            b: 43
+          },
+          paramSerializer: 'mySpecialSerializer'
+        });
+
+        expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
+      });
     });
   });
 });
