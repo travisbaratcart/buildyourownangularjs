@@ -2,7 +2,8 @@
 import {
   $HttpService,
   $HttpProvider,
-  IHttpRequestConfig
+  IHttpRequestConfig,
+  IParams
 } from '../src/http';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
@@ -611,6 +612,23 @@ describe('$http', () => {
       });
 
       expect(requests[0].url).toBe('http://example.com?a=%7B%22b%22%3A42%7D');
+    });
+
+    it('allows substituting a param serializer', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: 42,
+          b: 43
+        },
+        paramSerializer: (params: IParams) => {
+          return _.map(params, (paramValue, paramName) => {
+            return `${paramName}=${paramValue}lol`;
+          }).join('&');
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
     });
   });
 });

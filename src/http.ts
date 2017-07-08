@@ -46,8 +46,35 @@ export class $HttpProvider {
       }
 
       return data;
-    }]
+    }],
+    paramSerializer: (params: IParams) => this.serializeParams(params)
   };
+
+  private serializeParams(params: IParams): string {
+    let components: string[] = [];
+
+    _.forEach(params, (paramValue, paramName) => {
+      if (paramValue === null || paramValue === undefined) {
+        return;
+      }
+
+      if (Array.isArray(paramValue)) {
+        paramValue.forEach(paramElement => {
+          components.push(this.getParamString(paramName, paramElement));
+        });
+      } else if (typeof paramValue === 'object') {
+        components.push(this.getParamString(paramName, JSON.stringify(paramValue)));
+      } else {
+        components.push(this.getParamString(paramName, paramValue));
+      }
+    });
+
+    return components.join('&');
+  }
+
+  private getParamString(paramName: string, paramValue: any) {
+    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
+  }
 }
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;
@@ -65,9 +92,10 @@ export interface IHttpRequestConfig {
   transformRequest?: DataTransformFunction | DataTransformFunction[];
   transformResponse?: DataTransformFunction | DataTransformFunction[];
   params?: IParams;
+  paramSerializer?: (params: IParams) => string;
 }
 
-interface IParams {
+export interface IParams {
   [name: string]: any;
 };
 
@@ -285,7 +313,9 @@ export class $HttpService {
   }
 
   private buildUrl(config: IHttpRequestConfig): string {
-    let serializedParams = this.serializeParams(config.params);
+    const paramSerializer = config.paramSerializer || this.defaults.paramSerializer;
+
+    const serializedParams = paramSerializer(config.params);
 
     let newUrl = config.url;
 
@@ -298,33 +328,8 @@ export class $HttpService {
 
     return newUrl;
   }
-
-  private serializeParams(params: IParams): string {
-    let components: string[] = [];
-
-    _.forEach(params, (paramValue, paramName) => {
-      if (paramValue === null || paramValue === undefined) {
-        return;
-      }
-
-      if (Array.isArray(paramValue)) {
-        paramValue.forEach(paramElement => {
-          components.push(this.getParamString(paramName, paramElement));
-        });
-      } else if (typeof paramValue === 'object') {
-        components.push(this.getParamString(paramName, JSON.stringify(paramValue)));
-      } else {
-        components.push(this.getParamString(paramName, paramValue));
-      }
-    });
-
-    return components.join('&');
-  }
-
-  private getParamString(paramName: string, paramValue: any) {
-    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
-  }
 }
+
 
 function looksLikeJson(str: string): boolean {
   const looksLikeObject = str.match(/^{(?!{)/) && str.match(/\}$/);
