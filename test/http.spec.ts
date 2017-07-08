@@ -517,5 +517,33 @@ describe('$http', () => {
       expect(_.isObject(receivedResponse.data)).toBe(true);
       expect(receivedResponse.data).toEqual([1, 2, 3]);
     });
+
+    it('does not choke on response resembling JSON but not valid', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, {}, '{1, 2, 3]');
+
+      expect(receivedResponse.data).toEqual('{1, 2, 3]');
+    });
+
+    it('does not try to parse interpolation expression as JSON', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, {}, '{{expr}}');
+
+      expect(receivedResponse.data).toEqual('{{expr}}');
+    });
   });
 });

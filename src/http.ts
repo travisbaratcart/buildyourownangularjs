@@ -281,5 +281,7 @@ export class $HttpService {
 }
 
 function looksLikeJson(str: string): boolean {
-  return !!str.match(/^\{/) || !!str.match(/^\[/);
+  const looksLikeObject = str.match(/^{(?!{)/) && str.match(/\}$/);
+  const looksLikeArray = str.match(/^\[/) && str.match(/\]$/)
+  return !!(looksLikeObject || looksLikeArray)
 }
