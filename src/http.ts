@@ -370,6 +370,15 @@ export class $HttpParamSerializerJQLikeProvider implements IProvider {
         paramValue.forEach(val => {
           components.push(`${encodeURIComponent(paramName + '[]')}=${encodeURIComponent(val)}`);
         });
+      } else if (paramValue instanceof Date) {
+
+      } else if (typeof paramValue === 'object') {
+        _.forEach(paramValue, (value, key) => {
+          components.push(
+            encodeURIComponent(`${paramName}[${key}]`)
+              + '='
+              + encodeURIComponent(value));
+        });
       } else {
         components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
       }
