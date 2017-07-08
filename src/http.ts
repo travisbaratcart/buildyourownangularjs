@@ -110,23 +110,37 @@ export class $HttpService {
   }
 
   public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
-    return this.shortHandRequest(url, 'GET', config);
+    return this.shortHandRequest(url, 'GET', undefined, config);
   }
 
   public head(url: string, config?: IShortHandHttpRequestConfig): Promise {
-    return this.shortHandRequest(url, 'HEAD', config);
+    return this.shortHandRequest(url, 'HEAD', undefined, config);
   }
 
   public delete(url: string, config?: IShortHandHttpRequestConfig): Promise {
-    return this.shortHandRequest(url, 'DELETE', config);
+    return this.shortHandRequest(url, 'DELETE', undefined, config);
+  }
+
+  public post(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'POST', data, config);
+  }
+
+  public put(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'PUT', data, config);
+  }
+
+  public patch(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+    return this.shortHandRequest(url, 'PATCH', data, config);
   }
 
   private shortHandRequest(
     url: string,
     method: string,
+    data?: any,
     config?: IShortHandHttpRequestConfig): Promise {
     const fullConfig = _.extend(config || {}, {
       method,
+      data,
       url
     });
 
