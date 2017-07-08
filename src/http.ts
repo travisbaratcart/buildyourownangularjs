@@ -352,3 +352,17 @@ export class $HttpParamSerializerProvider implements IProvider {
     return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
   }
 }
+
+export class $HttpParamSerializerJQLikeProvider implements IProvider {
+  public $get() {
+    return (params: IParams) => {
+      const components: string[] = [];
+
+      _.forEach(params, (paramValue, paramName) => {
+        components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
+      });
+
+      return components.join('&');
+    };
+  }
+}

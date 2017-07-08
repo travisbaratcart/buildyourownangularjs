@@ -670,4 +670,19 @@ describe('$http', () => {
       })
     });
   });
+
+  describe('JQ-Like param serialization', () => {
+    it('is possible', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: 42,
+          b: 43
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=42&b=43');
+    });
+  });
 });

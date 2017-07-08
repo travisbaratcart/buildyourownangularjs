@@ -5,7 +5,11 @@ import { $ParseProvider } from './parse';
 import { $RootScopeProvider } from './scope';
 import { $QProvider, $$QProvider } from './q';
 import { $HttpBackendProvider } from './httpBackend';
-import { $HttpProvider, $HttpParamSerializerProvider } from './http';
+import {
+  $HttpProvider,
+  $HttpParamSerializerProvider,
+  $HttpParamSerializerJQLikeProvider
+} from './http';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -20,4 +24,5 @@ export function publishExternalAPI(): void {
   ngModule.provider('$httpBackend', $HttpBackendProvider);
   ngModule.provider('$http', $HttpProvider);
   ngModule.provider('$httpParamSerializer', $HttpParamSerializerProvider);
+  ngModule.provider('$httpParamSerializerJQLike', $HttpParamSerializerJQLikeProvider);
 }
