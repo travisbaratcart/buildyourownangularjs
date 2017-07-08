@@ -58,9 +58,7 @@ interface IHeaderObject {
   [ headerName: string ]: string
 }
 
-export interface IHttpRequestConfig {
-  url: string;
-  method?: string;
+interface IShortHandHttpRequestConfig {
   data?: any
   headers?: { [ headerName: string ]: string};
   withCredentials?: boolean;
@@ -68,6 +66,11 @@ export interface IHttpRequestConfig {
   transformResponse?: DataTransformFunction | DataTransformFunction[];
   params?: IParams;
   paramSerializer?: ((params: IParams) => string) | string;
+}
+
+export interface IHttpRequestConfig extends IShortHandHttpRequestConfig {
+  url: string;
+  method?: string;
 }
 
 export interface IParams {
@@ -104,6 +107,15 @@ export class $HttpService {
       .then(
         (response) => this.transformResponse(response, config),
         (response) => this.transformResponse(response, config));
+  }
+
+  public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
+    const fullConfig = _.extend(config || {}, {
+      method: 'GET',
+      url: url
+    });
+
+    return this.request(fullConfig);
   }
 
   private sendRequest(config: IHttpRequestConfig, data: any) {

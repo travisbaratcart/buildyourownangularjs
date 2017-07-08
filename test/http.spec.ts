@@ -742,4 +742,15 @@ describe('$http', () => {
       expect(requests[0].url).toEqual('http://example.com?a%5B0%5D%5Bb%5D=42')
     });
   });
+
+  describe('shorthands', () => {
+    it('supports a shorthand method for GET', () => {
+      $http.get('http://example.com', {
+        params: { q: 42 }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?q=42');
+      expect(requests[0].method).toBe('GET');
+    });
+  });
 });
