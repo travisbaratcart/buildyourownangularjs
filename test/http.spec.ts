@@ -601,5 +601,16 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com?a=42&a=43');
     });
+
+    it('serializes objects to json', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: { b: 42 }
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=%7B%22b%22%3A42%7D');
+    });
   });
 });

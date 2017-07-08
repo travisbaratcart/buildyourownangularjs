@@ -311,6 +311,8 @@ export class $HttpService {
         paramValue.forEach(paramElement => {
           components.push(this.getParamString(paramName, paramElement));
         });
+      } else if (typeof paramValue === 'object') {
+        components.push(this.getParamString(paramName, JSON.stringify(paramValue)));
       } else {
         components.push(this.getParamString(paramName, paramValue));
       }
