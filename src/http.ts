@@ -12,8 +12,10 @@ export class $HttpProvider {
     $q: $QService,
     $rootScope: Scope) => {
 
-    const interceptors = this.interceptors.map(interceptorFactory => {
-      return $injector.invoke(interceptorFactory);
+    const interceptors = this.interceptors.map(interceptorNameOrFactory => {
+      return typeof interceptorNameOrFactory === 'string'
+        ? $injector.get(interceptorNameOrFactory)
+        : $injector.invoke(interceptorNameOrFactory);
     });
 
     return new $HttpService($httpBackend, $injector, $q, $rootScope, this.defaults);
@@ -55,7 +57,7 @@ export class $HttpProvider {
     paramSerializer: '$httpParamSerializer'
   };
 
-  public interceptors: Invokable[] = [];
+  public interceptors: (Invokable | string)[] = [];
 }
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;

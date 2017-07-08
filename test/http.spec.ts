@@ -822,5 +822,18 @@ describe('$http', () => {
         $httpProvider.interceptors.push(['$rootScope', interceptorFactorySpy]);
       }])
     });
+
+    it('allows referencing existing interceptor factories', () => {
+      const injectorFactorySpy = jasmine.createSpy('injectorFactory').and.returnValue({});
+
+      const injector = createInjector(['ng', function($provide: IProvide, $httpProvider: $HttpProvider) {
+        $provide.factory('myInterceptor', injectorFactorySpy);
+        $httpProvider.interceptors.push('myInterceptor');
+      }]);
+
+      $http = injector.get('$http');
+
+      expect(injectorFactorySpy).toHaveBeenCalled();
+    });
   });
 });
