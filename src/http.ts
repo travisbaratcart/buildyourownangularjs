@@ -40,7 +40,7 @@ export class $HttpProvider {
       if (typeof data === 'string') {
         const contentType = headers('Content-Type');
 
-        if (contentType === 'application/json') {
+        if (contentType === 'application/json' || looksLikeJson(data)) {
           return JSON.parse(data)
         }
       }
@@ -278,4 +278,8 @@ export class $HttpService {
 
     config[transformKey] = mergedTransformFunctions;
   }
+}
+
+function looksLikeJson(str: string): boolean {
+  return !!str.match(/^\{/) || !!str.match(/^\[/);
 }

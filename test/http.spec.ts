@@ -487,5 +487,35 @@ describe('$http', () => {
       expect(_.isObject(receivedResponse.data)).toBe(true);
       expect(receivedResponse.data.message).toBe('hello');
     });
+
+    it('parses a JSON object response without content type', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, {}, '{ "message": "hello"}');
+
+      expect(_.isObject(receivedResponse.data)).toBe(true);
+      expect(receivedResponse.data.message).toBe('hello');
+    });
+
+    it('parses a JSON array response without content type', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, {}, '[1, 2, 3]');
+
+      expect(_.isObject(receivedResponse.data)).toBe(true);
+      expect(receivedResponse.data).toEqual([1, 2, 3]);
+    });
   });
 });
