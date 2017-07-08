@@ -35,6 +35,17 @@ export class $HttpProvider {
       } else {
         return data;
       }
+    }],
+    transformResponse: [(data: any, headers: (headerName: string) => string) => {
+      if (typeof data === 'string') {
+        const contentType = headers('Content-Type');
+
+        if (contentType === 'application/json') {
+          return JSON.parse(data)
+        }
+      }
+
+      return data;
     }]
   };
 }

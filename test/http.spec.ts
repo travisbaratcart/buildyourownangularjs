@@ -7,6 +7,7 @@ import {
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector } from '../src/injector';
 import * as sinon from 'sinon';
+import * as _ from 'lodash';
 
 describe('$http', () => {
   let $http: $HttpService;
@@ -470,6 +471,21 @@ describe('$http', () => {
       });
 
       expect(requests[0].requestBody).toBe('[1,"two",3]');
+    });
+
+    it('parses JSON data for JSON responses', () => {
+      let receivedResponse: any;
+
+      $http.request({
+        method: 'GET',
+        url: 'http://example.com'
+      })
+        .then(response => receivedResponse = response);
+
+      requests[0].respond(200, { 'Content-Type': 'application/json'}, '{ "message": "hello"}');
+
+      expect(_.isObject(receivedResponse.data)).toBe(true);
+      expect(receivedResponse.data.message).toBe('hello');
     });
   });
 });
