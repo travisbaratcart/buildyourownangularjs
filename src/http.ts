@@ -303,6 +303,10 @@ export class $HttpService {
     let components: string[] = [];
 
     _.forEach(params, (paramValue, paramName) => {
+      if (paramValue === null || paramValue === undefined) {
+        return;
+      }
+
       components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
     });
 
