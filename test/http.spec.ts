@@ -545,5 +545,27 @@ describe('$http', () => {
 
       expect(receivedResponse.data).toEqual('{{expr}}');
     });
+
+    it('adds params to url', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          a: 42
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=42');
+    });
+
+    it('adds additional params to url', () => {
+      $http.request({
+        url: 'http://example.com?a=42',
+        params: {
+          b: 42
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?a=42&b=42');
+    });
   });
 });

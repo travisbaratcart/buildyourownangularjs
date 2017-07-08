@@ -64,7 +64,12 @@ export interface IHttpRequestConfig {
   withCredentials?: boolean;
   transformRequest?: DataTransformFunction | DataTransformFunction[];
   transformResponse?: DataTransformFunction | DataTransformFunction[];
+  params?: IParams;
 }
+
+interface IParams {
+  [name: string]: string
+};
 
 interface IHttpResponse {
   status: number;
@@ -120,7 +125,7 @@ export class $HttpService {
 
     this.$httpBackend.request(
       config.method,
-      config.url,
+      this.buildUrl(config),
       data,
       onDone,
       config.headers,
@@ -277,6 +282,31 @@ export class $HttpService {
     }
 
     config[transformKey] = mergedTransformFunctions;
+  }
+
+  private buildUrl(config: IHttpRequestConfig): string {
+    let serializedParams = this.serializeParams(config.params);
+
+    let newUrl = config.url;
+
+    if (serializedParams) {
+      const urlAlreadyHasParams = config.url.indexOf('?') > -1;
+
+      newUrl += (urlAlreadyHasParams ? '&' : '?');
+      newUrl += serializedParams;
+    }
+
+    return newUrl;
+  }
+
+  private serializeParams(params: IParams): string {
+    let components: string[] = [];
+
+    _.forEach(params, (paramValue, paramName) => {
+      components.push(`${paramName}=${paramValue}`);
+    });
+
+    return components.join('&');
   }
 }
 
