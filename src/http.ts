@@ -1,16 +1,20 @@
 'use strict';
-import { IProvider, Injector } from './injector';
+import { IProvider, Injector, Invokable } from './injector';
 import { $HttpBackendService } from './httpBackend';
 import { $QService, Promise } from './q';
 import { Scope } from './scope';
 import * as _ from 'lodash';
 
 export class $HttpProvider {
-  public $get = ['$httpBackend', '$injector', '$q', '$rootScope', function(
+  public $get = ['$httpBackend', '$injector', '$q', '$rootScope', (
     $httpBackend: $HttpBackendService,
     $injector: Injector,
     $q: $QService,
-    $rootScope: Scope) {
+    $rootScope: Scope) => {
+
+    const interceptors = this.interceptors.map(interceptorFactory => {
+      return $injector.invoke(interceptorFactory);
+    });
 
     return new $HttpService($httpBackend, $injector, $q, $rootScope, this.defaults);
   }];
@@ -50,6 +54,8 @@ export class $HttpProvider {
     }],
     paramSerializer: '$httpParamSerializer'
   };
+
+  public interceptors: Invokable[] = [];
 }
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;

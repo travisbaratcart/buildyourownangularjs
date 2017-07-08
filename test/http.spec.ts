@@ -801,4 +801,26 @@ describe('$http', () => {
       expect(requests[0].requestBody).toBe('data');
     });
   });
+
+  describe('interceptors', () => {
+    it('allows attaching interceptor factories', () => {
+      const interceptorFactorySpy = jasmine.createSpy('interceptorFactory');
+
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(interceptorFactorySpy);
+      }]);
+
+      $http = injector.get('$http');
+
+      expect(interceptorFactorySpy).toHaveBeenCalled();
+    });
+
+    it('uses DI to instantiate interceptors', () => {
+      const interceptorFactorySpy = jasmine.createSpy('interceptorFactory');
+
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(['$rootScope', interceptorFactorySpy]);
+      }])
+    });
+  });
 });
