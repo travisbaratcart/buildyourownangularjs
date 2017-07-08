@@ -68,7 +68,7 @@ export interface IHttpRequestConfig {
 }
 
 interface IParams {
-  [name: string]: string
+  [name: string]: any;
 };
 
 interface IHttpResponse {
@@ -303,7 +303,7 @@ export class $HttpService {
     let components: string[] = [];
 
     _.forEach(params, (paramValue, paramName) => {
-      components.push(`${paramName}=${paramValue}`);
+      components.push(`${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`);
     });
 
     return components.join('&');

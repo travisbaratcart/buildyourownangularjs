@@ -567,5 +567,16 @@ describe('$http', () => {
 
       expect(requests[0].url).toBe('http://example.com?a=42&b=42');
     });
+
+    it('escapes url characters in params', () => {
+      $http.request({
+        url: 'http://example.com',
+        params: {
+          '==': '&&'
+        }
+      });
+
+      expect(requests[0].url).toBe('http://example.com?%3D%3D=%26%26');
+    });
   });
 });
