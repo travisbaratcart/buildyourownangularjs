@@ -656,5 +656,18 @@ describe('$http', () => {
         expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
       });
     });
+
+    it('makes default param serializer available through DI', () => {
+      const injector = createInjector(['ng']);
+
+      injector.invoke(function($httpParamSerializer: (params: IParams) => string) {
+        const result = $httpParamSerializer({
+          a: 42,
+          b: 43
+        });
+
+        expect(result).toBe('a=42&b=43');
+      })
+    });
   });
 });

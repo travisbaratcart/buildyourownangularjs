@@ -48,34 +48,8 @@ export class $HttpProvider {
 
       return data;
     }],
-    paramSerializer: (params: IParams) => this.serializeParams(params)
+    paramSerializer: '$httpParamSerializer'
   };
-
-  private serializeParams(params: IParams): string {
-    let components: string[] = [];
-
-    _.forEach(params, (paramValue, paramName) => {
-      if (paramValue === null || paramValue === undefined) {
-        return;
-      }
-
-      if (Array.isArray(paramValue)) {
-        paramValue.forEach(paramElement => {
-          components.push(this.getParamString(paramName, paramElement));
-        });
-      } else if (typeof paramValue === 'object') {
-        components.push(this.getParamString(paramName, JSON.stringify(paramValue)));
-      } else {
-        components.push(this.getParamString(paramName, paramValue));
-      }
-    });
-
-    return components.join('&');
-  }
-
-  private getParamString(paramName: string, paramValue: any) {
-    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
-  }
 }
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;
@@ -345,4 +319,36 @@ function looksLikeJson(str: string): boolean {
   const looksLikeObject = str.match(/^{(?!{)/) && str.match(/\}$/);
   const looksLikeArray = str.match(/^\[/) && str.match(/\]$/)
   return !!(looksLikeObject || looksLikeArray)
+}
+
+export class $HttpParamSerializerProvider implements IProvider {
+  public $get() {
+    return (params: IParams) => this.serializeParams(params);
+  }
+
+  private serializeParams(params: IParams): string {
+    let components: string[] = [];
+
+    _.forEach(params, (paramValue, paramName) => {
+      if (paramValue === null || paramValue === undefined) {
+        return;
+      }
+
+      if (Array.isArray(paramValue)) {
+        paramValue.forEach(paramElement => {
+          components.push(this.getParamString(paramName, paramElement));
+        });
+      } else if (typeof paramValue === 'object') {
+        components.push(this.getParamString(paramName, JSON.stringify(paramValue)));
+      } else {
+        components.push(this.getParamString(paramName, paramValue));
+      }
+    });
+
+    return components.join('&');
+  }
+
+  private getParamString(paramName: string, paramValue: any) {
+    return `${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
+  }
 }
