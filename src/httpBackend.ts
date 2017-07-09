@@ -28,7 +28,19 @@ export class $HttpBackendService {
 
     xhr.send(body || null);
 
+    let timeoutId: number;
+
+    if (typeof timeout === 'number') {
+      timeoutId = setTimeout(() => xhr.abort(), timeout);
+    } else if (timeout && timeout.then) {
+      timeout.then(() => xhr.abort());
+    }
+
     xhr.onload = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
       const response = ('response' in xhr)
         ? xhr.response
         : xhr.responseText;
@@ -39,11 +51,13 @@ export class $HttpBackendService {
     };
 
     xhr.onerror = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
       cb(-1, null, '',  '');
     }
 
-    if (timeout) {
-      timeout.then(() => xhr.abort());
-    }
+
   }
 }

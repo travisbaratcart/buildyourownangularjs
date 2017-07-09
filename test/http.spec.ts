@@ -1135,6 +1135,14 @@ describe('$http', () => {
   });
 
   describe('request timeouts', () => {
+    beforeEach(() => {
+      jasmine.clock().install();
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    });
+
     it('allows aborting a request with a promise', () => {
       const timeout = $q.defer();
 
@@ -1147,6 +1155,17 @@ describe('$http', () => {
       timeout.resolve(true);
       $rootScope.$apply();
 
+      expect((<any>requests[0]).aborted).toBe(true);
+    });
+
+    it('allows aborting a request after a timeout', () => {
+      $http.get('http://example.com', {
+        timeout: 5000
+      });
+
+      $rootScope.$apply();
+
+      jasmine.clock().tick(5001);
       expect((<any>requests[0]).aborted).toBe(true);
     });
   });
