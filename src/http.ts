@@ -92,6 +92,7 @@ interface IShortHandHttpRequestConfig {
   transformResponse?: DataTransformFunction | DataTransformFunction[];
   params?: IParams;
   paramSerializer?: ((params: IParams) => string) | string;
+  timeout?: Promise;
 }
 
 export interface IHttpRequestConfig extends IShortHandHttpRequestConfig {
@@ -224,6 +225,7 @@ export class $HttpService {
       data,
       onDone,
       config.headers,
+      config.timeout,
       config.withCredentials);
 
     return deferred.promise;

@@ -22,12 +22,14 @@ describe('$http', () => {
   let $rootScope: Scope
   let xhr: sinon.SinonFakeXMLHttpRequest;
   let requests: sinon.SinonFakeXMLHttpRequest[];
+  let $q: $QService;
 
   beforeEach(() => {
     publishExternalAPI();
     const injector = createInjector(['ng']);
     $http = injector.get('$http');
     $rootScope = injector.get('$rootScope');
+    $q = injector.get('$q');
   });
 
   beforeEach(() => {
@@ -1129,6 +1131,23 @@ describe('$http', () => {
         expect(receivedStatus).toBe(401);
         expect(receivedHeaders('Cache-Control')).toBe('no-cache');
         expect(receivedConfig.method).toBe('GET');
+    });
+  });
+
+  describe('request timeouts', () => {
+    it('allows aborting a request with a promise', () => {
+      const timeout = $q.defer();
+
+      $http.get('http://example.com', {
+        timeout: timeout.promise
+      });
+
+      $rootScope.$apply();
+
+      timeout.resolve(true);
+      $rootScope.$apply();
+
+      expect((<any>requests[0]).aborted).toBe(true);
     });
   });
 });

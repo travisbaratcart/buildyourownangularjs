@@ -15,6 +15,7 @@ export class $HttpBackendService {
     body: any,
     cb: (statusCode: number, response: any, headers: string, statusText: string) => any,
     headers: { [ headerName: string ]: string },
+    timeout: Promise<any>,
     withCredentials: boolean) {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
@@ -39,6 +40,10 @@ export class $HttpBackendService {
 
     xhr.onerror = () => {
       cb(-1, null, '',  '');
+    }
+
+    if (timeout) {
+      timeout.then(() => xhr.abort());
     }
   }
 }
