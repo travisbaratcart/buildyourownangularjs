@@ -9,6 +9,7 @@ interface IInterceptor {
   request?: (config: IHttpRequestConfig) => IHttpRequestConfig;
   response?: (config: IHttpResponse) => IHttpResponse;
   requestError?: (error: any) => any;
+  responseError?: (error: any) => any;
 }
 
 export class $HttpProvider {
@@ -236,9 +237,19 @@ export class $HttpService {
     const initialPromise = this.$q.when(response);
 
     const result = this.interceptors.reduceRight((result: Promise, interceptor: IInterceptor) => {
-      return interceptor.response
-        ? result.then((response: IHttpResponse) => interceptor.response(response))
-        : result;
+      let newPromise = result;
+
+      if (interceptor.response) {
+        newPromise = newPromise
+          .then((response: IHttpResponse) => interceptor.response(response));
+      }
+
+      if (interceptor.responseError) {
+        newPromise = newPromise
+          .catch((error: any) => interceptor.responseError(error));
+      }
+
+      return newPromise
     }, initialPromise);
 
     return result;

@@ -1045,5 +1045,35 @@ describe('$http', () => {
       expect(requests.length).toBe(0);
       expect(requestErrorSpy).toHaveBeenCalledWith('fail');
     });
+
+    it('allows intercepting response errors', () => {
+      const responseErrorSpy = jasmine.createSpy('responseError');
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(() => {
+          return {
+            responseError: responseErrorSpy
+          }
+        });
+
+        $httpProvider.interceptors.push(() => {
+          return {
+            response: () => {
+              throw 'fail';
+            }
+          }
+        });
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
+      const $rootScope: Scope = injector.get('$rootScope');
+
+      $http.get('http://example.com');
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'Hello');
+      $rootScope.$apply();
+
+      expect(responseErrorSpy).toHaveBeenCalledWith('fail');
+    });
   });
 });
