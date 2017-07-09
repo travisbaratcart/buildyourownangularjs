@@ -2,7 +2,7 @@
 import { Angular } from './loader';
 import { HashMap } from './hash';
 import { IFilter, $FilterProvider } from './filter';
-import { $CompileProvider, IDirective } from './compile';
+import { $CompileProvider, IDirective, IDirectiveFactoryObject } from './compile';
 
 export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -220,9 +220,9 @@ export class Injector {
       .register(filterName, filterFactory);
   }
 
-  private provideDirective = (directiveName: string, directiveFactory: () => IDirective) => {
+  private provideDirective = (directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: () => IDirective) => {
     (<$CompileProvider>this.providerInjector.get('$compileProvider'))
-      .directive(directiveName, directiveFactory);
+      .directive(directiveNameOrObject, directiveFactory);
   }
 
   private keyProvider(key: string): string {
@@ -239,7 +239,9 @@ export class Injector {
       provider: this.provideProvider,
       factory: this.provideFactory,
       service: this.provideService,
-      decorator: this.provideDecorator
+      decorator: this.provideDecorator,
+      filter: this.provideFilter,
+      directive: this.provideDirective
     };
 
     this.providerCache.$provide = $provide;

@@ -41,4 +41,20 @@ describe('$compile', () => {
     expect(result[0].d).toEqual('one');
     expect(result[1].d).toEqual('two');
   });
+
+  it('allows creating directives with object notation', () => {
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive({
+      a: () => { return {}; },
+      b: () => { return {}; },
+      c: () => { return {}; }
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    expect(injector.has('aDirective')).toBe(true);
+    expect(injector.has('bDirective')).toBe(true);
+    expect(injector.has('cDirective')).toBe(true);
+  });
 });

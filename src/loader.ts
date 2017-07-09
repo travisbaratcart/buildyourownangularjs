@@ -1,6 +1,6 @@
 'use strict';
 import { IFilter } from './filter';
-import { IDirective } from './compile';
+import { IDirective, IDirectiveFactoryObject } from './compile';
 
 export function setupModuleLoader(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
@@ -65,8 +65,8 @@ class Module {
     this.registerItem(filterName, filterFactory, this.$$filterRegistrations);
   }
 
-  public directive(directiveName: string, directiveFactory: () => IDirective) {
-    this.registerItem(directiveName, directiveFactory, this.$$directiveRegistrations);
+  public directive(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: () => IDirective) {
+    this.registerItem(directiveNameOrObject, directiveFactory, this.$$directiveRegistrations);
   }
 
   public run(onRun: (...args: any[]) => any): void {
@@ -77,7 +77,7 @@ class Module {
     this.$$configRegistrations.push(configFunction);
   }
 
-  private registerItem(key: string, value: any, registrations: any[]): void {
+  private registerItem(key: any, value: any, registrations: any[]): void {
     const newRegistration: IRegisterItem = { key, value };
     registrations.push(newRegistration);
   }
