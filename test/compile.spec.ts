@@ -19,4 +19,26 @@ describe('$compile', () => {
     const injector = createInjector(['ng', 'myModule']);
     expect(injector.has('testingDirective')).toBe(true);
   });
+
+  it('allows creating many directives with the same name', () => {
+    const myModule = angular.module('myModule', []);
+    myModule.directive('testing', () => {
+      return {
+        d: 'one'
+      };
+    });
+
+    myModule.directive('testing', () => {
+      return {
+        d: 'two'
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+    const result = injector.get('testingDirective');
+
+    expect(result.length).toBe(2);
+    expect(result[0].d).toEqual('one');
+    expect(result[1].d).toEqual('two');
+  });
 });
