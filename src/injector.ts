@@ -1,7 +1,8 @@
 'use strict';
 import { Angular } from './loader';
 import { HashMap } from './hash';
-import { IFilter, $FilterProvider } from '../src/filter';
+import { IFilter, $FilterProvider } from './filter';
+import { $CompileProvider, IDirective } from './compile';
 
 export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -113,6 +114,10 @@ export class Injector {
       this.provideFilter(registerItem.key, registerItem.value);
     });
 
+    module.$$directiveRegistrations.forEach(registerItem => {
+      this.provideDirective(registerItem.key, registerItem.value);
+    });
+
     module.$$configRegistrations.forEach(configFunc => {
       this.providerInjector.invoke(configFunc)
     });
@@ -213,6 +218,11 @@ export class Injector {
   private provideFilter = (filterName: string, filterFactory: () => IFilter) => {
     (<$FilterProvider>this.providerInjector.get('$filterProvider'))
       .register(filterName, filterFactory);
+  }
+
+  private provideDirective = (directiveName: string, directiveFactory: () => IDirective) => {
+    (<$CompileProvider>this.providerInjector.get('$compileProvider'))
+      .directive(directiveName, directiveFactory);
   }
 
   private keyProvider(key: string): string {
