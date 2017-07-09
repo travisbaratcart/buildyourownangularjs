@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 
 interface IInterceptor {
   request?: (config: IHttpRequestConfig) => IHttpRequestConfig;
+  response?: (config: IHttpResponse) => IHttpResponse;
 }
 
 export class $HttpProvider {
@@ -95,7 +96,7 @@ export interface IParams {
   [name: string]: any;
 };
 
-interface IHttpResponse {
+export interface IHttpResponse {
   status: number;
   data: any;
   statusText: string;
@@ -120,7 +121,8 @@ export class $HttpService {
 
     return promise
       .then((config: IHttpRequestConfig) => this.applyRequestInterceptors(config))
-      .then((config: IHttpRequestConfig) => this.serverRequest(config));
+      .then((config: IHttpRequestConfig) => this.serverRequest(config))
+      .then((response: IHttpResponse) => this.applyResponseInterceptors(response));
   }
 
   public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
@@ -210,7 +212,21 @@ export class $HttpService {
     const initialPromise = this.$q.when(config);
 
     const result = this.interceptors.reduce((result: Promise, interceptor: IInterceptor) => {
-      return result.then((config: IHttpRequestConfig) => interceptor.request(config));
+      return interceptor.request
+        ? result.then((config: IHttpRequestConfig) => interceptor.request(config))
+        : result;
+    }, initialPromise);
+
+    return result;
+  }
+
+  private applyResponseInterceptors(response: IHttpResponse): Promise {
+    const initialPromise = this.$q.when(response);
+
+    const result = this.interceptors.reduceRight((result: Promise, interceptor: IInterceptor) => {
+      return interceptor.response
+        ? result.then((response: IHttpResponse) => interceptor.response(response))
+        : result;
     }, initialPromise);
 
     return result;

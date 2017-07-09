@@ -2,6 +2,7 @@
 import {
   $HttpService,
   $HttpProvider,
+  IHttpResponse,
   IHttpRequestConfig,
   IParams
 } from '../src/http';
@@ -987,6 +988,33 @@ describe('$http', () => {
 
       $rootScope.$apply();
       expect(requests[0].url).toBe('http://example.com?intercepted=true');
+    });
+
+    it('allows intercepting responses', () => {
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(() => {
+          return {
+            response: (response: IHttpResponse) => {
+              (<any>response).intercepted = true;
+              return response;
+            }
+          }
+        });
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
+      const $rootScope: Scope = injector.get('$rootScope');
+
+      let receivedResponse: any;
+
+      $http.get('http://example.com')
+        .then(response => receivedResponse = response);
+
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'Hello');
+
+      expect(receivedResponse.intercepted).toBe(true);
     });
   });
 });
