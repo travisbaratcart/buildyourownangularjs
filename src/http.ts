@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 interface IInterceptor {
   request?: (config: IHttpRequestConfig) => IHttpRequestConfig;
   response?: (config: IHttpResponse) => IHttpResponse;
+  requestError?: (error: any) => any;
 }
 
 export class $HttpProvider {
@@ -212,9 +213,20 @@ export class $HttpService {
     const initialPromise = this.$q.when(config);
 
     const result = this.interceptors.reduce((result: Promise, interceptor: IInterceptor) => {
-      return interceptor.request
-        ? result.then((config: IHttpRequestConfig) => interceptor.request(config))
-        : result;
+      let newPromise = result;
+
+      if (interceptor.request) {
+        newPromise = newPromise
+          .then((config: IHttpRequestConfig) => interceptor.request(config))
+      }
+
+      if (interceptor.requestError) {
+        newPromise = newPromise
+          .catch((error: any) => interceptor.requestError(error));
+      }
+
+      return newPromise;
+
     }, initialPromise);
 
     return result;

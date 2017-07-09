@@ -1016,5 +1016,34 @@ describe('$http', () => {
 
       expect(receivedResponse.intercepted).toBe(true);
     });
+
+    it('allows intercepting request errors', () => {
+      const requestErrorSpy = jasmine.createSpy('requestError');
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(() => {
+          return {
+            request: (config: IHttpRequestConfig) => {
+              throw 'fail';
+            }
+          }
+        });
+
+        $httpProvider.interceptors.push(() => {
+          return {
+            requestError: requestErrorSpy
+          }
+        });
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
+      const $rootScope: Scope = injector.get('$rootScope');
+
+      $http.get('http://example.com');
+
+      $rootScope.$apply();
+
+      expect(requests.length).toBe(0);
+      expect(requestErrorSpy).toHaveBeenCalledWith('fail');
+    });
   });
 });
