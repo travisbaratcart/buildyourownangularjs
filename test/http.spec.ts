@@ -1191,4 +1191,52 @@ describe('$http', () => {
       expect($http.pendingRequests.length).toBe(0);
     });
   });
+
+  describe('useApplyAsync', () => {
+    let $http: $HttpService;
+    let $rootScope: Scope;
+
+    beforeEach(() => {
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.useApplyAsync(true);
+      }]);
+
+      $http = injector.get('$http');
+      $rootScope = injector.get('$rootScope');
+    });
+
+    beforeEach(() => {
+      jasmine.clock().install();
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    });
+
+    it('does not resolve promises immediately when enabled', () => {
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      $http.get('http://example.com')
+        .then(resolveSpy);
+
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'OK');
+      expect(resolveSpy).not.toHaveBeenCalled();
+    });
+
+    it('resolves promise later when enbaled', () => {
+      const resolveSpy = jasmine.createSpy('resolved');
+
+      $http.get('http://example.com')
+        .then(resolveSpy);
+
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'OK');
+      jasmine.clock().tick(100);
+
+      expect(resolveSpy).toHaveBeenCalled();
+    });
+  });
 });

@@ -20,6 +20,8 @@ interface IHttpResponsePromise extends Promise {
 }
 
 export class $HttpProvider {
+  private applyAsync = false;
+
   public $get = ['$httpBackend', '$injector', '$q', '$rootScope', (
     $httpBackend: $HttpBackendService,
     $injector: Injector,
@@ -38,7 +40,8 @@ export class $HttpProvider {
       $q,
       $rootScope,
       this.defaults,
-      interceptors);
+      interceptors,
+      this.applyAsync);
   }];
 
   public defaults: any = {
@@ -78,6 +81,14 @@ export class $HttpProvider {
   };
 
   public interceptors: (Invokable | string)[] = [];
+
+  public useApplyAsync(value?: boolean): boolean {
+    if (value !== undefined) {
+      this.applyAsync = !!value;
+    }
+
+    return this.applyAsync;
+  }
 }
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;
@@ -121,7 +132,8 @@ export class $HttpService {
     private $q: $QService,
     private $rootScope: Scope,
     public defaults: any,
-    private interceptors: IInterceptor[]) {
+    private interceptors: IInterceptor[],
+    private applyAsync: boolean) {
   }
 
   public pendingRequests: IHttpRequestConfig[] = [];
@@ -212,12 +224,20 @@ export class $HttpService {
         config
       }
 
-      this.isSuccess(statusCode)
-        ? deferred.resolve(httpResponse)
-        : deferred.reject(httpResponse);
+      const fulfillPromise = () => {
+        this.isSuccess(statusCode)
+          ? deferred.resolve(httpResponse)
+          : deferred.reject(httpResponse);
+      }
 
-      if (!this.$rootScope.$$phase) {
-        this.$rootScope.$apply();
+      if (this.applyAsync) {
+        this.$rootScope.$applyAsync(fulfillPromise);
+      } else {
+        fulfillPromise();
+
+        if (!this.$rootScope.$$phase) {
+          this.$rootScope.$apply();
+        }
       }
     }
 
