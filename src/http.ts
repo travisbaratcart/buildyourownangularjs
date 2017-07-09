@@ -5,6 +5,10 @@ import { $QService, Promise } from './q';
 import { Scope } from './scope';
 import * as _ from 'lodash';
 
+interface IInterceptor {
+  request?: (config: IHttpRequestConfig) => IHttpRequestConfig;
+}
+
 export class $HttpProvider {
   public $get = ['$httpBackend', '$injector', '$q', '$rootScope', (
     $httpBackend: $HttpBackendService,
@@ -18,7 +22,13 @@ export class $HttpProvider {
         : $injector.invoke(interceptorNameOrFactory);
     });
 
-    return new $HttpService($httpBackend, $injector, $q, $rootScope, this.defaults);
+    return new $HttpService(
+      $httpBackend,
+      $injector,
+      $q,
+      $rootScope,
+      this.defaults,
+      interceptors);
   }];
 
   public defaults: any = {
@@ -99,14 +109,18 @@ export class $HttpService {
     private $injector: Injector,
     private $q: $QService,
     private $rootScope: Scope,
-    public defaults: any) {
+    public defaults: any,
+    private interceptors: IInterceptor[]) {
   }
 
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);
 
     const promise = this.$q.when(config);
-    return promise.then((config: IHttpRequestConfig) => this.serverRequest(config));
+
+    return promise
+      .then((config: IHttpRequestConfig) => this.applyRequestInterceptors(config))
+      .then((config: IHttpRequestConfig) => this.serverRequest(config));
   }
 
   public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
@@ -190,6 +204,16 @@ export class $HttpService {
       config.withCredentials);
 
     return deferred.promise;
+  }
+
+  private applyRequestInterceptors(config: IHttpRequestConfig): Promise {
+    const initialPromise = this.$q.when(config);
+
+    const result = this.interceptors.reduce((result: Promise, interceptor: IInterceptor) => {
+      return result.then((config: IHttpRequestConfig) => interceptor.request(config));
+    }, initialPromise);
+
+    return result;
   }
 
   private setConfigDefaultsIfNecessary(config: IHttpRequestConfig) {

@@ -10,6 +10,7 @@ import {
   createInjector,
   IProvide
 } from '../src/injector';
+import { $QService } from '../src/q';
 import { Scope } from '../src/scope';
 import * as sinon from 'sinon';
 import * as _ from 'lodash';
@@ -944,6 +945,48 @@ describe('$http', () => {
       $http = injector.get('$http');
 
       expect(injectorFactorySpy).toHaveBeenCalled();
+    });
+
+    it('allows intercepting requests', () => {
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(function() {
+          return {
+            request: function(config: IHttpRequestConfig) {
+              config.params.intercepted = true;
+              return config;
+            }
+          };
+        });
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
+      const $rootScope: Scope = injector.get('$rootScope');
+
+      $http.get('http://example.com', { params: {} });
+      $rootScope.$apply();
+
+      expect(requests[0].url).toBe('http://example.com?intercepted=true');
+    });
+
+    it('allows returning promises from request interceptors', () => {
+      const injector = createInjector(['ng', function($httpProvider: $HttpProvider) {
+        $httpProvider.interceptors.push(function($q: $QService) {
+          return {
+            request: function(config: IHttpRequestConfig) {
+              config.params.intercepted = true;
+              return $q.when(config);
+            }
+          };
+        });
+      }]);
+
+      const $http: $HttpService = injector.get('$http');
+      const $rootScope: Scope = injector.get('$rootScope');
+
+      $http.get('http://example.com', { params: {} });
+
+      $rootScope.$apply();
+      expect(requests[0].url).toBe('http://example.com?intercepted=true');
     });
   });
 });
