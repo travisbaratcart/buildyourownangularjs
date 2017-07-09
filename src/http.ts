@@ -105,16 +105,8 @@ export class $HttpService {
   public request(config: IHttpRequestConfig): Promise {
     this.setConfigDefaultsIfNecessary(config);
 
-    const requestData = this.transformData(
-      config.data,
-      this.getHeaderGetter(config.headers),
-      null,
-      config.transformRequest);
-
-    return this.sendRequest(config, requestData)
-      .then(
-        (response) => this.transformResponse(response, config),
-        (response) => this.transformResponse(response, config));
+    const promise = this.$q.when(config);
+    return promise.then((config: IHttpRequestConfig) => this.serverRequest(config));
   }
 
   public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
@@ -155,9 +147,20 @@ export class $HttpService {
     return this.request(fullConfig);
   }
 
-  private sendRequest(config: IHttpRequestConfig, data: any) {
-    const deferred = this.$q.defer();
+  private serverRequest(config: IHttpRequestConfig): Promise {
+    const requestData = this.transformData(
+      config.data,
+      this.getHeaderGetter(config.headers),
+      null,
+      config.transformRequest);
 
+    return this.sendServerRequest(config, requestData)
+      .then(
+        (response) => this.transformResponse(response, config),
+        (response) => this.transformResponse(response, config));
+  }
+
+  private sendServerRequest(config: IHttpRequestConfig, data: any): Promise {
     const onDone = (statusCode: number, response: any, headers: string, statusText: string) => {
       const httpResponse: IHttpResponse = {
         status: Math.max(statusCode, 0),
@@ -175,6 +178,8 @@ export class $HttpService {
         this.$rootScope.$apply();
       }
     }
+
+    const deferred = this.$q.defer();
 
     this.$httpBackend.request(
       config.method,

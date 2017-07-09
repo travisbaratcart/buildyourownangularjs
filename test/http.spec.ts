@@ -10,11 +10,13 @@ import {
   createInjector,
   IProvide
 } from '../src/injector';
+import { Scope } from '../src/scope';
 import * as sinon from 'sinon';
 import * as _ from 'lodash';
 
 describe('$http', () => {
   let $http: $HttpService;
+  let $rootScope: Scope
   let xhr: sinon.SinonFakeXMLHttpRequest;
   let requests: sinon.SinonFakeXMLHttpRequest[];
 
@@ -22,6 +24,7 @@ describe('$http', () => {
     publishExternalAPI();
     const injector = createInjector(['ng']);
     $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
   });
 
   beforeEach(() => {
@@ -52,6 +55,8 @@ describe('$http', () => {
         data: 'hello'
       });
 
+      $rootScope.$apply();
+
       expect(requests.length).toBe(1);
       expect(requests[0].method).toBe('POST');
       expect(requests[0].url).toBe('http://example.com');
@@ -67,6 +72,8 @@ describe('$http', () => {
         url: 'http://example.com'
       })
         .then((response: any) => receivedResponse = response);
+
+      $rootScope.$apply();
 
       requests[0].respond(200, {}, 'Hello');
 
@@ -88,6 +95,8 @@ describe('$http', () => {
           receivedResponse = error;
         });
 
+      $rootScope.$apply();
+
       requests[0].respond(401, {}, 'Fail');
 
       expect(receivedResponse).toBeDefined();
@@ -108,6 +117,8 @@ describe('$http', () => {
           receivedResponse = error;
         });
 
+      $rootScope.$apply();
+
       requests[0].onerror();
 
       expect(receivedResponse).toBeDefined();
@@ -120,6 +131,8 @@ describe('$http', () => {
       $http.request({
         url: 'http://example.com'
       });
+
+      $rootScope.$apply();
 
       expect(requests.length).toBe(1);
       expect(requests[0].method).toBe('GET');
@@ -134,6 +147,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders.Accept).toBe('text/plain');
       expect(requests[0].requestHeaders['Cache-Control']).toBe('no-cache');
@@ -143,6 +158,8 @@ describe('$http', () => {
       $http.request({
         url: 'http://example.com'
       });
+
+      $rootScope.$apply();
 
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders.Accept).toBe('application/json, text/plain, */*');
@@ -154,6 +171,8 @@ describe('$http', () => {
         url: 'http://example.com',
         data: '42'
       });
+
+      $rootScope.$apply();
 
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['Content-Type'])
@@ -168,6 +187,8 @@ describe('$http', () => {
         url: 'http://example.com',
         data: '42'
       });
+
+      $rootScope.$apply();
 
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['Content-Type'])
@@ -188,6 +209,9 @@ describe('$http', () => {
         data: '42'
       });
 
+      const $rootScope: Scope = injector.get('$rootScope');
+      $rootScope.$apply();
+
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['Content-Type'])
         .toBe('text/plain;charset=utf-8');
@@ -203,6 +227,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['content-type'])
         .toBe('text/plain;charset=utf-8');
@@ -217,6 +243,8 @@ describe('$http', () => {
           'Content-Type': 'application/json;charset=utf-8'
         }
       });
+
+      $rootScope.$apply();
 
       expect(requests.length).toBe(1);
       expect(requests[0].requestHeaders['Content-Type'])
@@ -239,6 +267,8 @@ describe('$http', () => {
 
       $http.request(requestConfig);
 
+      $rootScope.$apply();
+
       expect(contentTypeSpy).toHaveBeenCalledWith(requestConfig);
       expect(requests[0].requestHeaders['Content-Type'])
         .toBe('text/plain;charset=utf-8');
@@ -257,6 +287,8 @@ describe('$http', () => {
 
       $http.request(requestConfig);
 
+      $rootScope.$apply();
+
       expect(cacheControlSpy).toHaveBeenCalledWith(requestConfig);
       expect(requests[0].requestHeaders['Cache-Control']).toBeUndefined();
     });
@@ -270,6 +302,8 @@ describe('$http', () => {
         data: 42
       })
         .then(response => receivedResponse = response);
+
+      $rootScope.$apply();
 
       requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
 
@@ -288,6 +322,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
 
       expect(receivedResponse.headers()).toEqual({ 'content-type': 'text/plain' });
@@ -301,6 +337,8 @@ describe('$http', () => {
         withCredentials: true
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].withCredentials).toBe(true);
     });
 
@@ -313,6 +351,8 @@ describe('$http', () => {
         data: 42
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].withCredentials).toBe(true);
     });
 
@@ -323,6 +363,8 @@ describe('$http', () => {
         data: 42,
         transformRequest: (data: any) => `*${data}*`
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].requestBody).toBe('*42*');
     });
@@ -338,6 +380,8 @@ describe('$http', () => {
         ]
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].requestBody).toBe('-*42*-');
     });
 
@@ -349,6 +393,8 @@ describe('$http', () => {
         url: 'http://example.com',
         data: 42
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].requestBody).toBe('*42*');
     })
@@ -371,6 +417,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].requestBody).toBe('*42*');
     });
 
@@ -382,6 +430,8 @@ describe('$http', () => {
         transformResponse: (data: any) => `*${data}*`
       })
         .then(response => receivedResponse = response);
+
+      $rootScope.$apply();
 
       requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
 
@@ -403,6 +453,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, { 'Content-Type': 'text/decorated' }, 'Hello');
 
       expect(receivedResponse.data).toEqual('*Hello*');
@@ -418,6 +470,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'Hello');
 
       expect(receivedResponse.data).toEqual('*Hello*');
@@ -431,6 +485,8 @@ describe('$http', () => {
         transformResponse: (data) => `*${data}*`
       })
         .catch(error => receivedResponse = error);
+
+      $rootScope.$apply();
 
       requests[0].respond(401, { 'Content-Type': 'text/plain' }, 'Fail');
 
@@ -452,6 +508,8 @@ describe('$http', () => {
       })
         .catch(error => receivedResponse = error);
 
+      $rootScope.$apply();
+
       requests[0].respond(401, { 'Content-Type': 'text/plain' }, 'Fail');
 
       expect(receivedResponse.data).toBe('unauthorized');
@@ -464,6 +522,8 @@ describe('$http', () => {
         data: { aKey: 42 }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].requestBody).toBe('{"aKey":42}');
     });
 
@@ -473,6 +533,8 @@ describe('$http', () => {
         url: 'http://example.com',
         data: [1, 'two', 3]
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].requestBody).toBe('[1,"two",3]');
     });
@@ -485,6 +547,8 @@ describe('$http', () => {
         url: 'http://example.com'
       })
         .then(response => receivedResponse = response);
+
+      $rootScope.$apply();
 
       requests[0].respond(200, { 'Content-Type': 'application/json'}, '{ "message": "hello"}');
 
@@ -501,6 +565,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, {}, '{ "message": "hello"}');
 
       expect(_.isObject(receivedResponse.data)).toBe(true);
@@ -515,6 +581,8 @@ describe('$http', () => {
         url: 'http://example.com'
       })
         .then(response => receivedResponse = response);
+
+      $rootScope.$apply();
 
       requests[0].respond(200, {}, '[1, 2, 3]');
 
@@ -531,6 +599,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, {}, '{1, 2, 3]');
 
       expect(receivedResponse.data).toEqual('{1, 2, 3]');
@@ -545,6 +615,8 @@ describe('$http', () => {
       })
         .then(response => receivedResponse = response);
 
+      $rootScope.$apply();
+
       requests[0].respond(200, {}, '{{expr}}');
 
       expect(receivedResponse.data).toEqual('{{expr}}');
@@ -558,6 +630,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a=42');
     });
 
@@ -569,6 +643,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a=42&b=42');
     });
 
@@ -579,6 +655,8 @@ describe('$http', () => {
           '==': '&&'
         }
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?%3D%3D=%26%26');
     });
@@ -592,6 +670,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com');
     });
 
@@ -603,6 +683,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a=42&a=43');
     });
 
@@ -613,6 +695,8 @@ describe('$http', () => {
           a: { b: 42 }
         }
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?a=%7B%22b%22%3A42%7D');
     });
@@ -631,6 +715,8 @@ describe('$http', () => {
         }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
     });
 
@@ -643,7 +729,7 @@ describe('$http', () => {
         });
       }]);
 
-      injector.invoke(function($http: $HttpService) {
+      injector.invoke(function($http: $HttpService, $rootScope: Scope) {
         $http.request({
           url: 'http://example.com',
           params: {
@@ -652,6 +738,8 @@ describe('$http', () => {
           },
           paramSerializer: 'mySpecialSerializer'
         });
+
+        $rootScope.$apply();
 
         expect(requests[0].url).toBe('http://example.com?a=42lol&b=43lol');
       });
@@ -682,6 +770,8 @@ describe('$http', () => {
         paramSerializer: '$httpParamSerializerJQLike'
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a=42&b=43');
     });
 
@@ -693,6 +783,8 @@ describe('$http', () => {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?a%5B%5D=42&a%5B%5D=43');
     });
@@ -708,6 +800,8 @@ describe('$http', () => {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?a%5Bb%5D=42&a%5Bc%5D=43');
     });
@@ -725,6 +819,8 @@ describe('$http', () => {
         paramSerializer: '$httpParamSerializerJQLike'
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?a%5Bb%5D%5Bc%5D=42');
     });
 
@@ -739,6 +835,8 @@ describe('$http', () => {
         paramSerializer: '$httpParamSerializerJQLike'
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toEqual('http://example.com?a%5B0%5D%5Bb%5D=42')
     });
   });
@@ -749,6 +847,8 @@ describe('$http', () => {
         params: { q: 42 }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('GET');
     });
@@ -757,6 +857,8 @@ describe('$http', () => {
       $http.head('http://example.com', {
         params: { q: 42 }
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('HEAD');
@@ -767,6 +869,8 @@ describe('$http', () => {
         params: { q: 42 }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('DELETE');
     });
@@ -775,6 +879,8 @@ describe('$http', () => {
       $http.post('http://example.com', 'data', {
         params: { q: 42 }
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('POST');
@@ -786,6 +892,8 @@ describe('$http', () => {
         params: { q: 42 }
       });
 
+      $rootScope.$apply();
+
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('PUT');
       expect(requests[0].requestBody).toBe('data');
@@ -795,6 +903,8 @@ describe('$http', () => {
       $http.patch('http://example.com', 'data', {
         params: { q: 42 }
       });
+
+      $rootScope.$apply();
 
       expect(requests[0].url).toBe('http://example.com?q=42');
       expect(requests[0].method).toBe('PATCH');
