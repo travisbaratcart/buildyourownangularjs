@@ -4,7 +4,8 @@ import {
   $HttpProvider,
   IHttpResponse,
   IHttpRequestConfig,
-  IParams
+  IParams,
+  IHeaderObject
 } from '../src/http';
 import { publishExternalAPI } from '../src/angularPublic';
 import {
@@ -1074,6 +1075,60 @@ describe('$http', () => {
       $rootScope.$apply();
 
       expect(responseErrorSpy).toHaveBeenCalledWith('fail');
+    });
+  });
+
+  describe('promise extensions', () => {
+    it('allows attaching success handlers', () => {
+      let receivedData: any;
+      let receivedStatus: number;
+      let receivedHeaders: (headerName: string) => string | IHeaderObject;
+      let receivedConfig: IHttpRequestConfig;
+
+      $http.get('http://example.com')
+        .success((data, status, headers, config) => {
+          receivedData = data;
+          receivedStatus = status;
+          receivedHeaders = headers;
+          receivedConfig = config;
+        });
+
+        $rootScope.$apply();
+
+        requests[0].respond(200, { 'Cache-Control': 'no-cache'}, 'Hello');
+
+        $rootScope.$apply();
+
+        expect(receivedData).toBe('Hello');
+        expect(receivedStatus).toBe(200);
+        expect(receivedHeaders('Cache-Control')).toBe('no-cache');
+        expect(receivedConfig.method).toBe('GET');
+    });
+
+    it('allows attaching error handlers', () => {
+      let receivedData: any;
+      let receivedStatus: number;
+      let receivedHeaders: (headerName: string) => string | IHeaderObject;
+      let receivedConfig: IHttpRequestConfig;
+
+      $http.get('http://example.com')
+        .error((data, status, headers, config) => {
+          receivedData = data;
+          receivedStatus = status;
+          receivedHeaders = headers;
+          receivedConfig = config;
+        });
+
+        $rootScope.$apply();
+
+        requests[0].respond(401, { 'Cache-Control': 'no-cache'}, 'Fail');
+
+        $rootScope.$apply();
+
+        expect(receivedData).toBe('Fail');
+        expect(receivedStatus).toBe(401);
+        expect(receivedHeaders('Cache-Control')).toBe('no-cache');
+        expect(receivedConfig.method).toBe('GET');
     });
   });
 });

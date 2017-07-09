@@ -12,6 +12,11 @@ interface IInterceptor {
   responseError?: (error: any) => any;
 }
 
+interface IHttpResponsePromise extends Promise {
+  success: (cb: (data: any, statusCode: number, headers: (headerName: string) => string | IHeaderObject, config: IHttpRequestConfig) => any) => void;
+  error: (cb: (data: any, statusCode: number, headers: (headerName: string) => string | IHeaderObject, config: IHttpRequestConfig) => any) => void;
+}
+
 export class $HttpProvider {
   public $get = ['$httpBackend', '$injector', '$q', '$rootScope', (
     $httpBackend: $HttpBackendService,
@@ -75,7 +80,7 @@ export class $HttpProvider {
 
 type DataTransformFunction = (data: any, headers?: (headerName: string) => string | IHeaderObject, statusCode?: number) => any;
 
-interface IHeaderObject {
+export interface IHeaderObject {
   [ headerName: string ]: string
 }
 
@@ -116,38 +121,52 @@ export class $HttpService {
     private interceptors: IInterceptor[]) {
   }
 
-  public request(config: IHttpRequestConfig): Promise {
+  public request(config: IHttpRequestConfig): IHttpResponsePromise {
     this.setConfigDefaultsIfNecessary(config);
 
-    const promise = this.$q.when(config);
+    const initialPromise = this.$q.when(config);
 
-    return promise
+    const returnPromise = <IHttpResponsePromise>initialPromise
       .then((config: IHttpRequestConfig) => this.applyRequestInterceptors(config))
       .then((config: IHttpRequestConfig) => this.serverRequest(config))
       .then((response: IHttpResponse) => this.applyResponseInterceptors(response));
+
+    returnPromise.success = (cb) => {
+      returnPromise.then((response: IHttpResponse) => {
+        cb(response.data, response.status, response.headers, config);
+      });
+    }
+
+    returnPromise.error = (cb) => {
+      returnPromise.catch((response: IHttpResponse) => {
+        cb(response.data, response.status, response.headers, config);
+      });
+    }
+
+    return returnPromise;
   }
 
-  public get(url: string, config?: IShortHandHttpRequestConfig): Promise {
+  public get(url: string, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'GET', undefined, config);
   }
 
-  public head(url: string, config?: IShortHandHttpRequestConfig): Promise {
+  public head(url: string, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'HEAD', undefined, config);
   }
 
-  public delete(url: string, config?: IShortHandHttpRequestConfig): Promise {
+  public delete(url: string, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'DELETE', undefined, config);
   }
 
-  public post(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+  public post(url: string, data?: any, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'POST', data, config);
   }
 
-  public put(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+  public put(url: string, data?: any, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'PUT', data, config);
   }
 
-  public patch(url: string, data?: any, config?: IShortHandHttpRequestConfig): Promise {
+  public patch(url: string, data?: any, config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     return this.shortHandRequest(url, 'PATCH', data, config);
   }
 
@@ -155,7 +174,7 @@ export class $HttpService {
     url: string,
     method: string,
     data?: any,
-    config?: IShortHandHttpRequestConfig): Promise {
+    config?: IShortHandHttpRequestConfig): IHttpResponsePromise {
     const fullConfig = _.extend(config || {}, {
       method,
       data,
