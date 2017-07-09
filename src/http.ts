@@ -12,6 +12,8 @@ interface IInterceptor {
   responseError?: (error: any) => any;
 }
 
+export type TimeoutConfig = Promise | number;
+
 interface IHttpResponsePromise extends Promise {
   success: (cb: (data: any, statusCode: number, headers: (headerName: string) => string | IHeaderObject, config: IHttpRequestConfig) => any) => void;
   error: (cb: (data: any, statusCode: number, headers: (headerName: string) => string | IHeaderObject, config: IHttpRequestConfig) => any) => void;
@@ -92,7 +94,7 @@ interface IShortHandHttpRequestConfig {
   transformResponse?: DataTransformFunction | DataTransformFunction[];
   params?: IParams;
   paramSerializer?: ((params: IParams) => string) | string;
-  timeout?: Promise;
+  timeout?: TimeoutConfig;
 }
 
 export interface IHttpRequestConfig extends IShortHandHttpRequestConfig {
@@ -121,6 +123,8 @@ export class $HttpService {
     public defaults: any,
     private interceptors: IInterceptor[]) {
   }
+
+  public pendingRequests: IHttpRequestConfig[] = [];
 
   public request(config: IHttpRequestConfig): IHttpResponsePromise {
     this.setConfigDefaultsIfNecessary(config);
@@ -219,6 +223,8 @@ export class $HttpService {
 
     const deferred = this.$q.defer();
 
+    this.trackPendingRequest(deferred.promise, config);
+
     this.$httpBackend.request(
       config.method,
       this.buildUrl(config),
@@ -229,6 +235,15 @@ export class $HttpService {
       config.withCredentials);
 
     return deferred.promise;
+  }
+
+  private trackPendingRequest(requestPromise: Promise, config: IHttpRequestConfig): void {
+    this.pendingRequests.push(config);
+
+    requestPromise.then(
+      () => _.remove(this.pendingRequests, config),
+      () => _.remove(this.pendingRequests, config)
+    );
   }
 
   private applyRequestInterceptors(config: IHttpRequestConfig): Promise {

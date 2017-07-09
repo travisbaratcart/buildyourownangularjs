@@ -1169,4 +1169,26 @@ describe('$http', () => {
       expect((<any>requests[0]).aborted).toBe(true);
     });
   });
+
+  describe('pending requests', () => {
+    it('is in the collection while pending', () => {
+      $http.get('http://example.com');
+
+      $rootScope.$apply();
+
+      expect($http.pendingRequests).toBeDefined();
+      expect($http.pendingRequests.length).toBe(1);
+      expect($http.pendingRequests[0].url).toBe('http://example.com');
+    });
+
+    it('is also cleared on failure', () => {
+      $http.get('http://example.com');
+      $rootScope.$apply();
+
+      requests[0].respond(404, {}, 'Not found');
+      $rootScope.$apply();
+
+      expect($http.pendingRequests.length).toBe(0);
+    });
+  });
 });

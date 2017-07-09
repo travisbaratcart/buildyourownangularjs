@@ -1,5 +1,6 @@
 'use strict';
 import { IProvider } from './injector';
+import { TimeoutConfig } from './http';
 import * as _ from 'lodash';
 
 export class $HttpBackendProvider implements IProvider {
@@ -15,7 +16,7 @@ export class $HttpBackendService {
     body: any,
     cb: (statusCode: number, response: any, headers: string, statusText: string) => any,
     headers: { [ headerName: string ]: string },
-    timeout: Promise<any>,
+    timeout: TimeoutConfig,
     withCredentials: boolean) {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url, true);
