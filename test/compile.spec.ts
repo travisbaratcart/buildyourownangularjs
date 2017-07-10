@@ -97,6 +97,45 @@ describe('$compile', () => {
       expect(el.eq(1).data('directiveNumber')).toBe(2);
     });
   });
+
+  it('compiles element directives from child elements', () => {
+    let directiveNumber = 1;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element: JQuery) => {
+          element.data('hasCompiled', directiveNumber++);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div><my-directive></my-directive></div>');
+      $compile.compile(el);
+      expect(el.data('hasCompiled')).toBeUndefined();
+      expect(el.find('> my-directive').data('hasCompiled')).toBe(1);
+    });
+  });
+
+  it('compiles nested directives', () => {
+    let directiveNumber = 1;
+
+    const injector = makeInjectorWithDirectives('myDir', () => {
+      return {
+        compile: (element: JQuery) => {
+          element.data('hasCompiled', directiveNumber++);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<my-dir><my-dir><my-dir></my-dir></my-dir></my-dir>');
+      $compile.compile(el);
+      expect(el.data('hasCompiled')).toBe(1);
+      expect(el.find('> my-dir').data('hasCompiled')).toBe(2);
+      expect(el.find('> my-dir > my-dir').data('hasCompiled')).toBe(3);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveName: string, directiveFactory: DirectiveFactory) {

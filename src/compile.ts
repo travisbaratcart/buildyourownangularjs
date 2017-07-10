@@ -69,6 +69,12 @@ export class $CompileService {
     _.forEach($compileNodes, (node) => {
       const nodeDirectives = this.getDirectives(node);
       this.applyDirectivesToNode(nodeDirectives, node);
+
+      if (node.childNodes && node.childNodes.length) {
+        _.forEach(node.childNodes, (node) => {
+          this.compile($(node));
+        });
+      }
     });
   }
 
