@@ -79,7 +79,7 @@ export class $CompileService {
   }
 
   private getDirectives(node: HTMLElement): IDirectiveDefinitionObject[] {
-    const normalizedNodeName = _.camelCase(this.nodeName(node).toLowerCase());
+    const normalizedNodeName = this.normalizeNodeName(this.nodeName(node));
 
     return this.registeredDirectivesFactories[normalizedNodeName]
       ? this.$injector.get(`${normalizedNodeName}Directive`)
@@ -94,6 +94,11 @@ export class $CompileService {
         directive.compile($compileNode);
       }
     });
+  }
+
+  private normalizeNodeName(name: string): string {
+    const PREFIX_REGEX = /(x[\:\-_]|data[\:\-_])/i;
+    return _.camelCase(name.toLowerCase().replace(PREFIX_REGEX, ''));
   }
 
   private nodeName(node: HTMLElement): string {

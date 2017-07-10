@@ -3,6 +3,7 @@ import { publishExternalAPI } from '../src/angularPublic';
 import { Angular } from '../src/loader';
 import { createInjector } from '../src/injector';
 import { $CompileProvider, $CompileService, DirectiveFactory } from '../src/compile';
+import * as _ from 'lodash';
 
 describe('$compile', () => {
   let angular: Angular;
@@ -134,6 +135,26 @@ describe('$compile', () => {
       expect(el.data('hasCompiled')).toBe(1);
       expect(el.find('> my-dir').data('hasCompiled')).toBe(2);
       expect(el.find('> my-dir > my-dir').data('hasCompiled')).toBe(3);
+    });
+  });
+
+  _.forEach(['x', 'data'], (prefix) => {
+    _.forEach([':', '-', '-'], delimeter => {
+      it(`compiles element directives with ${prefix} prefix and ${delimeter} delimeter`, () => {
+        const injector = makeInjectorWithDirectives('myDir', () => {
+          return {
+            compile: (element) => element.data('hasCompiled', true);
+          };
+        });
+
+        injector.invoke(function($compile: $CompileService) {
+          const el = $(`<${prefix}${delimeter}my-dir></${prefix}${delimeter}my-dir>`);
+
+          $compile.compile(el);
+
+          expect(el.data('hasCompiled')).toBe(true);
+        });
+      });
     });
   });
 });
