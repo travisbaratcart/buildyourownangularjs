@@ -2,6 +2,7 @@
 import { publishExternalAPI } from '../src/angularPublic';
 import { Angular } from '../src/loader';
 import { createInjector } from '../src/injector';
+import { $CompileProvider, $CompileService, DirectiveFactory } from '../src/compile';
 
 describe('$compile', () => {
   let angular: Angular;
@@ -57,4 +58,49 @@ describe('$compile', () => {
     expect(injector.has('bDirective')).toBe(true);
     expect(injector.has('cDirective')).toBe(true);
   });
+
+  it('compiles element directives from a single element', () => {
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          element.data('hasCompiled', true);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<my-directive></my-directive>');
+
+      $compile.compile(el);
+
+      expect(el.data('hasCompiled')).toBe(true);
+    });
+  });
+
+  it('compiles element directives found from several elements', () => {
+    let directiveNumber = 1;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          element.data('directiveNumber', directiveNumber++);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<my-directive></my-directive><my-directive></my-directive>');
+
+      $compile.compile(el);
+
+      expect(el.eq(0).data('directiveNumber')).toBe(1);
+      expect(el.eq(1).data('directiveNumber')).toBe(2);
+    });
+  });
 });
+
+function makeInjectorWithDirectives(directiveName: string, directiveFactory: DirectiveFactory) {
+  return createInjector(['ng', function($compileProvider: $CompileProvider) {
+    $compileProvider.directive(directiveName, directiveFactory);
+  }]);
+}

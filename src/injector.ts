@@ -2,7 +2,12 @@
 import { Angular } from './loader';
 import { HashMap } from './hash';
 import { IFilter, $FilterProvider } from './filter';
-import { $CompileProvider, IDirective, IDirectiveFactoryObject } from './compile';
+import {
+  $CompileProvider,
+  IDirectiveDefinitionObject,
+  IDirectiveFactoryObject,
+  DirectiveFactory
+} from './compile';
 
 export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -220,7 +225,7 @@ export class Injector {
       .register(filterName, filterFactory);
   }
 
-  private provideDirective = (directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: () => IDirective) => {
+  private provideDirective = (directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) => {
     (<$CompileProvider>this.providerInjector.get('$compileProvider'))
       .directive(directiveNameOrObject, directiveFactory);
   }

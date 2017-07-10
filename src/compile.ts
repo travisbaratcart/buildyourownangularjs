@@ -3,11 +3,11 @@ import { IProvider, IProvide } from './injector';
 import { Injector } from './injector';
 import * as _ from 'lodash';
 
-export interface IDirective {
-
+export interface IDirectiveDefinitionObject {
+  compile?: (element?: JQuery) => any;
 }
 
-type DirectiveFactory = () => IDirective;
+export type DirectiveFactory = () => IDirectiveDefinitionObject;
 
 export interface IDirectiveFactoryObject {
   [directiveName: string]: DirectiveFactory
@@ -15,7 +15,8 @@ export interface IDirectiveFactoryObject {
 
 export class $CompileProvider implements IProvider {
   public $inject = [
-    '$provide'
+    '$provide',
+    '$injector'
   ];
 
   constructor(
@@ -23,9 +24,11 @@ export class $CompileProvider implements IProvider {
 
   }
 
-  public $get() {
-
-  }
+  public $get = ['$injector', function($injector: Injector) {
+    return new $CompileService(
+      $injector,
+      this.registeredDirectivesFactories);
+  }];
 
   private registeredDirectivesFactories: { [directiveName: string]: DirectiveFactory[] } = {};
 
@@ -51,5 +54,43 @@ export class $CompileProvider implements IProvider {
 
       return directiveFactories.map(factory => $injector.invoke(factory));
     }]);
+  }
+}
+
+export class $CompileService {
+
+  constructor(
+    private $injector: Injector,
+    private registeredDirectivesFactories: { [directiveName: string]: DirectiveFactory[] }) {
+
+  }
+
+  public compile($compileNodes: JQuery) {
+    _.forEach($compileNodes, (node) => {
+      const nodeDirectives = this.getDirectives(node);
+      this.applyDirectivesToNode(nodeDirectives, node);
+    });
+  }
+
+  private getDirectives(node: HTMLElement): IDirectiveDefinitionObject[] {
+    const normalizedNodeName = _.camelCase(this.nodeName(node).toLowerCase());
+
+    return this.registeredDirectivesFactories[normalizedNodeName]
+      ? this.$injector.get(`${normalizedNodeName}Directive`)
+      : <IDirectiveDefinitionObject[]>[];
+  }
+
+  private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
+    const $compileNode = $(compileNode);
+
+    nodeDirectives.forEach(directive => {
+      if (directive.compile) {
+        directive.compile($compileNode);
+      }
+    });
+  }
+
+  private nodeName(node: HTMLElement): string {
+    return node.nodeName
   }
 }
