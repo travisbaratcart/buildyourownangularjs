@@ -67,7 +67,7 @@ export class $CompileService {
 
   public compile($compileNodes: JQuery) {
     _.forEach($compileNodes, (node) => {
-      const nodeDirectives = this.getDirectives(node);
+      const nodeDirectives = this.getDirectivesForNode(node);
       this.applyDirectivesToNode(nodeDirectives, node);
 
       if (node.childNodes && node.childNodes.length) {
@@ -78,11 +78,23 @@ export class $CompileService {
     });
   }
 
-  private getDirectives(node: HTMLElement): IDirectiveDefinitionObject[] {
-    const normalizedNodeName = this.normalizeNodeName(this.nodeName(node));
+  private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
+    let directives: IDirectiveDefinitionObject[] = [];
 
-    return this.registeredDirectivesFactories[normalizedNodeName]
-      ? this.$injector.get(`${normalizedNodeName}Directive`)
+    const normalizedNodeName = this.normalizeName(this.nodeName(node));
+    directives = directives.concat(this.getDirectivesByName(normalizedNodeName));
+
+    _.forEach(node.attributes, (attr) => {
+      const normalizedAttributeName = this.normalizeName(attr.name);
+      directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
+    });
+
+    return directives;
+  }
+
+  private getDirectivesByName(directiveName: string): IDirectiveDefinitionObject[] {
+    return this.registeredDirectivesFactories[directiveName]
+      ? this.$injector.get(`${directiveName}Directive`)
       : <IDirectiveDefinitionObject[]>[];
   }
 
@@ -96,7 +108,7 @@ export class $CompileService {
     });
   }
 
-  private normalizeNodeName(name: string): string {
+  private normalizeName(name: string): string {
     const PREFIX_REGEX = /(x[\:\-_]|data[\:\-_])/i;
     return _.camelCase(name.toLowerCase().replace(PREFIX_REGEX, ''));
   }
