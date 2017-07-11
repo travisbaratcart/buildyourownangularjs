@@ -95,6 +95,11 @@ export class $CompileService {
       directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
     });
 
+    _.forEach(node.classList, (nodeClass) => {
+      const normalizedClassName = this.normalizeName(nodeClass);
+      directives = directives.concat(this.getDirectivesByName(normalizedClassName));
+    });
+
     return directives;
   }
 
