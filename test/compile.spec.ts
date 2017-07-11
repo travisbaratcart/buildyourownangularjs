@@ -22,7 +22,9 @@ describe('$compile', () => {
 
   it('allows creating directives', () => {
     const myModule = angular.module('myModule', []);
-    myModule.directive('testing', function() { return {}; });
+    myModule.directive('testing', function() { return {
+      restrict: 'EACM'
+    }; });
     const injector = createInjector(['ng', 'myModule']);
     expect(injector.has('testingDirective')).toBe(true);
   });
@@ -31,13 +33,15 @@ describe('$compile', () => {
     const myModule = angular.module('myModule', []);
     myModule.directive('testing', () => {
       return {
-        d: 'one'
+        d: 'one',
+        restrict: 'EACM'
       };
     });
 
     myModule.directive('testing', () => {
       return {
-        d: 'two'
+        d: 'two',
+        restrict: 'EACM'
       };
     });
 
@@ -53,9 +57,15 @@ describe('$compile', () => {
     const myModule = angular.module('myModule', []);
 
     myModule.directive({
-      a: () => { return {}; },
-      b: () => { return {}; },
-      c: () => { return {}; }
+      a: () => { return {
+        restrict: 'EACM'
+      }; },
+      b: () => { return {
+        restrict: 'EACM'
+      }; },
+      c: () => { return {
+        restrict: 'EACM'
+      }; }
     });
 
     const injector = createInjector(['ng', 'myModule']);
@@ -70,7 +80,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -90,7 +101,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('directiveNumber', directiveNumber++);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -111,7 +123,8 @@ describe('$compile', () => {
       return {
         compile: (element: JQuery) => {
           element.data('hasCompiled', directiveNumber++);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -130,7 +143,8 @@ describe('$compile', () => {
       return {
         compile: (element: JQuery) => {
           element.data('hasCompiled', directiveNumber++);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -148,7 +162,8 @@ describe('$compile', () => {
       it(`compiles element directives with ${prefix} prefix and ${delimeter} delimeter`, () => {
         const injector = makeInjectorWithDirectives('myDir', () => {
           return {
-            compile: (element) => element.data('hasCompiled', true)
+            compile: (element) => element.data('hasCompiled', true),
+            restrict: 'EACM'
           };
         });
 
@@ -168,7 +183,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -184,7 +200,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       }
     });
 
@@ -199,12 +216,14 @@ describe('$compile', () => {
     const injector = makeInjectorWithDirectives({
       myDirective: () => {
         return {
-          compile: (element) => element.data('hasCompiled', true)
+          compile: (element) => element.data('hasCompiled', true),
+          restrict: 'EACM'
         };
       },
       mySecondDirective: () => {
         return {
-          compile: (element) => element.data('secondCompiled', true)
+          compile: (element) => element.data('secondCompiled', true),
+          restrict: 'EACM'
         }
       }
     });
@@ -225,14 +244,16 @@ describe('$compile', () => {
         return {
           compile: (element) => {
             element.data('hasCompiled', true);
-          }
+          },
+          restrict: 'EACM'
         };
       },
       mySecondDirective: () => {
         return {
           compile: (element) => {
             element.data('secondCompiled', true);
-          }
+          },
+          restrict: 'EACM'
         }
       }
     });
@@ -250,7 +271,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -266,7 +288,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -282,7 +305,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -299,14 +323,16 @@ describe('$compile', () => {
         return {
           compile: (element) => {
             element.data('hasCompiled', true);
-          }
+          },
+          restrict: 'EACM'
         };
       },
       mySecondDirective: () => {
         return {
           compile: (element) => {
             element.data('secondCompiled', true);
-          }
+          },
+          restrict: 'EACM'
         }
       }
     });
@@ -324,7 +350,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           element.data('hasCompiled', true);
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -342,7 +369,8 @@ describe('$compile', () => {
       return {
         compile: (element) => {
           hasCompiled = true;
-        }
+        },
+        restrict: 'EACM'
       };
     });
 
@@ -354,6 +382,47 @@ describe('$compile', () => {
       expect(hasCompiled).toBe(true);
     });
   });
+
+  _.forEach({
+    E: { element: true, attribute: false, class: false, comment: false },
+    A: { element: false, attribute: true, class: false, comment: false },
+    C: { element: false, attribute: false, class: true, comment: false },
+    M: { element: false, attribute: false, class: false, comment: true },
+    EA: { element: true, attribute: true, class: false, comment: false },
+    AC: { element: false, attribute: true, class: true, comment: false },
+    EAM: { element: true, attribute: true, class: false, comment: true },
+    EACM: { element: true, attribute: true, class: true, comment: true },
+  }, (expected, restrict) => {
+    describe(`restricted to ${restrict}`, () => {
+      _.forEach({
+        element: '<my-directive></my-directive>',
+        attribute: '<div my-directive></div>',
+        class: '<div class="my-directive"></div>',
+        comment: '<!-- directive: my-directive -->'
+      }, (node, type) => {
+        it(`${(<any>expected)[type] ? 'matches': 'does not match'} on ${type}`, () => {
+          let hasCompiled = false;
+
+          const injector = makeInjectorWithDirectives('myDirective', () => {
+            return {
+              restrict: restrict,
+              compile: (element) => {
+                hasCompiled = true;
+              }
+            };
+          });
+
+          injector.invoke(function($compile: $CompileService) {
+            const el = $(node);
+
+            $compile.compile(el);
+
+            expect(hasCompiled).toBe((<any>expected)[type]);
+          });
+        });
+      });
+    });
+  })
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

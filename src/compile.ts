@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery) => any;
+  restrict: string;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -83,7 +84,7 @@ export class $CompileService {
 
     if (node.nodeType === Node.ELEMENT_NODE) {
       const normalizedNodeName = this.normalizeName(this.nodeName(node));
-      directives = directives.concat(this.getDirectivesByName(normalizedNodeName));
+      directives = directives.concat(this.getDirectivesByName(normalizedNodeName, 'E'));
 
       _.forEach(node.attributes, (attr) => {
         let normalizedAttributeName = this.normalizeName(attr.name);
@@ -93,29 +94,33 @@ export class $CompileService {
           + normalizedAttributeName.substring(7);
         }
 
-        directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
+        directives = directives.concat(this.getDirectivesByName(normalizedAttributeName, 'A'));
       });
 
       _.forEach(node.classList, (nodeClass) => {
         const normalizedClassName = this.normalizeName(nodeClass);
-        directives = directives.concat(this.getDirectivesByName(normalizedClassName));
+        directives = directives.concat(this.getDirectivesByName(normalizedClassName, 'C'));
       });
     } else if (node.nodeType === Node.COMMENT_NODE) {
       const match = /^\s*directive\:\s*([\d\w\-_]+)/.exec(node.nodeValue);
 
       if (match) {
         const normalizedMatch = this.normalizeName(match[1]);
-        directives = directives.concat(this.getDirectivesByName(normalizedMatch));
+        directives = directives.concat(this.getDirectivesByName(normalizedMatch, 'M'));
       }
     }
 
     return directives;
   }
 
-  private getDirectivesByName(directiveName: string): IDirectiveDefinitionObject[] {
-    return this.registeredDirectivesFactories[directiveName]
+  private getDirectivesByName(directiveName: string, nodeType: string): IDirectiveDefinitionObject[] {
+    const foundDirectives: IDirectiveDefinitionObject[] = this.registeredDirectivesFactories[directiveName]
       ? this.$injector.get(`${directiveName}Directive`)
       : <IDirectiveDefinitionObject[]>[];
+
+    const applicableDirectives = foundDirectives.filter(directive => directive.restrict.indexOf(nodeType) > -1);
+
+    return applicableDirectives;
   }
 
   private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
