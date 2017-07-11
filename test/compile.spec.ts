@@ -334,6 +334,26 @@ describe('$compile', () => {
       expect(el.data('hasCompiled')).toBe(true);
     });
   });
+
+  it('compiles comment directives', () => {
+    let hasCompiled = false;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          hasCompiled = true;
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<!-- directive: my-directive -->');
+
+      $compile.compile(el);
+
+      expect(hasCompiled).toBe(true);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

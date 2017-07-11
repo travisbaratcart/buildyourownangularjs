@@ -81,24 +81,33 @@ export class $CompileService {
   private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
     let directives: IDirectiveDefinitionObject[] = [];
 
-    const normalizedNodeName = this.normalizeName(this.nodeName(node));
-    directives = directives.concat(this.getDirectivesByName(normalizedNodeName));
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const normalizedNodeName = this.normalizeName(this.nodeName(node));
+      directives = directives.concat(this.getDirectivesByName(normalizedNodeName));
 
-    _.forEach(node.attributes, (attr) => {
-      let normalizedAttributeName = this.normalizeName(attr.name);
+      _.forEach(node.attributes, (attr) => {
+        let normalizedAttributeName = this.normalizeName(attr.name);
 
-      if (/^ngAttr[A-Z]/.test(normalizedAttributeName)) {
-        normalizedAttributeName = normalizedAttributeName[6].toLowerCase()
+        if (/^ngAttr[A-Z]/.test(normalizedAttributeName)) {
+          normalizedAttributeName = normalizedAttributeName[6].toLowerCase()
           + normalizedAttributeName.substring(7);
+        }
+
+        directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
+      });
+
+      _.forEach(node.classList, (nodeClass) => {
+        const normalizedClassName = this.normalizeName(nodeClass);
+        directives = directives.concat(this.getDirectivesByName(normalizedClassName));
+      });
+    } else if (node.nodeType === Node.COMMENT_NODE) {
+      const match = /^\s*directive\:\s*([\d\w\-_]+)/.exec(node.nodeValue);
+
+      if (match) {
+        const normalizedMatch = this.normalizeName(match[1]);
+        directives = directives.concat(this.getDirectivesByName(normalizedMatch));
       }
-
-      directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
-    });
-
-    _.forEach(node.classList, (nodeClass) => {
-      const normalizedClassName = this.normalizeName(nodeClass);
-      directives = directives.concat(this.getDirectivesByName(normalizedClassName));
-    });
+    }
 
     return directives;
   }
