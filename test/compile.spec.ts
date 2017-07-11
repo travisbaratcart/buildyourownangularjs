@@ -477,6 +477,101 @@ describe('$compile', () => {
       expect(hasCompiled).toBe(false);
     });
   });
+
+  it('applies in priority order', () => {
+    const compilations: string[] = [];
+
+    const injector = makeInjectorWithDirectives({
+      lowerDirective: () => {
+        return {
+          priority: 1,
+          compile: (element) => {
+            compilations.push('lower');
+          }
+        }
+      },
+      higherDirective: () => {
+        return {
+          priority: 2,
+          compile: (element) => {
+            compilations.push('higher');
+          }
+        }
+      }
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div lower-directive higher-directive></div>');
+      $compile.compile(el);
+
+      expect(compilations).toEqual(['higher', 'lower']);
+    });
+  });
+
+  it('applies in name order when priorities are the same', () => {
+    const compilations: string[] = [];
+
+    const injector = makeInjectorWithDirectives({
+      firstDirective: () => {
+        return {
+          priority: 1,
+          compile: (element) => {
+            compilations.push('first');
+          }
+        };
+      },
+      secondDirective: () => {
+        return {
+          priority: 1,
+          compile: (element) => {
+            compilations.push('second');
+          }
+        };
+      }
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div second-directive first-directive></div>');
+
+      $compile.compile(el);
+
+      expect(compilations).toEqual(['first', 'second']);
+    });
+  });
+
+  it('applies in registration order when names and priorities are the same', () => {
+    const compilations: string[] = [];
+
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive('aDirective', () => {
+      return {
+        priority: 1,
+        compile: (element) => {
+          compilations.push('first');
+        }
+      };
+    });
+
+    myModule.directive('aDirective', () => {
+      return {
+        priority: 1,
+        compile: (element) => {
+          compilations.push('second');
+        }
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div a-directive></div>');
+
+      $compile.compile(el);
+
+      expect(compilations).toEqual(['first', 'second']);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

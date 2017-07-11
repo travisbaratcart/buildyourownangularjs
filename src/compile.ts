@@ -6,6 +6,9 @@ import * as _ from 'lodash';
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery) => any;
   restrict?: string;
+  priority?: number;
+  name?: string;
+  index?: number;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -53,10 +56,12 @@ export class $CompileProvider implements IProvider {
     this.$provide.factory(`${directiveName}Directive`, ['$injector', ($injector: Injector) => {
       const directiveFactories = this.registeredDirectivesFactories[directiveName];
 
-      return directiveFactories.map(factory => {
+      return directiveFactories.map((factory, index) => {
         const directive = $injector.invoke(factory);
 
         directive.restrict = directive.restrict || 'EA';
+        directive.name = directive.name || directiveName;
+        directive.index = index;
 
         return directive;
       });
@@ -116,6 +121,9 @@ export class $CompileService {
       }
     }
 
+    directives
+      .sort(this.directivePriority);
+
     return directives;
   }
 
@@ -127,6 +135,23 @@ export class $CompileService {
     const applicableDirectives = foundDirectives.filter(directive => directive.restrict.indexOf(nodeType) > -1);
 
     return applicableDirectives;
+  }
+
+  private directivePriority(
+    directiveA: IDirectiveDefinitionObject,
+    directiveB: IDirectiveDefinitionObject): number {
+
+    const priorityDifference = directiveB.priority - directiveA.priority;
+
+    if (priorityDifference) {
+      return priorityDifference;
+    }
+
+    if (directiveA.name !== directiveB.name) {
+      return (directiveA.name < directiveB.name ? -1 : 1);
+    }
+
+    return directiveA.index - directiveB.index;
   }
 
   private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
