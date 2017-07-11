@@ -422,7 +422,61 @@ describe('$compile', () => {
         });
       });
     });
-  })
+  });
+
+  it('applies to attributes when no restrict given', () => {
+    let hasCompiled = false;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          hasCompiled = true;
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el);
+      expect(hasCompiled).toBe(true);
+    });
+  });
+
+  it('applies to elements when no restrict given', () => {
+    let hasCompiled = false;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          hasCompiled = true;
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<my-directive></my-directive>');
+      $compile.compile(el);
+      expect(hasCompiled).toBe(true);
+    });
+  });
+
+  it('does not apply to classes when no restrict given', () => {
+    let hasCompiled = false;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          hasCompiled = true;
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div class="my-directive"></div>');
+      $compile.compile(el);
+      expect(hasCompiled).toBe(false);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

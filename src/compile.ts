@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery) => any;
-  restrict: string;
+  restrict?: string;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -53,7 +53,13 @@ export class $CompileProvider implements IProvider {
     this.$provide.factory(`${directiveName}Directive`, ['$injector', ($injector: Injector) => {
       const directiveFactories = this.registeredDirectivesFactories[directiveName];
 
-      return directiveFactories.map(factory => $injector.invoke(factory));
+      return directiveFactories.map(factory => {
+        const directive = $injector.invoke(factory);
+
+        directive.restrict = directive.restrict || 'EA';
+
+        return directive;
+      });
     }]);
   }
 }
