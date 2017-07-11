@@ -85,7 +85,13 @@ export class $CompileService {
     directives = directives.concat(this.getDirectivesByName(normalizedNodeName));
 
     _.forEach(node.attributes, (attr) => {
-      const normalizedAttributeName = this.normalizeName(attr.name);
+      let normalizedAttributeName = this.normalizeName(attr.name);
+
+      if (/^ngAttr[A-Z]/.test(normalizedAttributeName)) {
+        normalizedAttributeName = normalizedAttributeName[6].toLowerCase()
+          + normalizedAttributeName.substring(7);
+      }
+
       directives = directives.concat(this.getDirectivesByName(normalizedAttributeName));
     });
 

@@ -244,6 +244,38 @@ describe('$compile', () => {
       expect(element.data('secondCompiled')).toBe(true);
     });
   });
+
+  it('compiles attribute directives with ng-attr prefix', () => {
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          element.data('hasCompiled', true);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div ng-attr-my-directive></div>');
+      $compile.compile(el);
+      expect(el.data('hasCompiled')).toBe(true);
+    });
+  });
+
+  it('compiles attribute directives with data:ng-attr prefix', () => {
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: (element) => {
+          element.data('hasCompiled', true);
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div data:ng-attr-my-directive></div>');
+      $compile.compile(el);
+      expect(el.data('hasCompiled')).toBe(true);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
