@@ -9,6 +9,7 @@ export interface IDirectiveDefinitionObject {
   priority?: number;
   name?: string;
   index?: number;
+  terminal?: boolean;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -60,6 +61,7 @@ export class $CompileProvider implements IProvider {
         const directive = $injector.invoke(factory);
 
         directive.restrict = directive.restrict || 'EA';
+        directive.priority = directive.priority || 0;
         directive.name = directive.name || directiveName;
         directive.index = index;
 
@@ -82,7 +84,9 @@ export class $CompileService {
       const nodeDirectives = this.getDirectivesForNode(node);
       this.applyDirectivesToNode(nodeDirectives, node);
 
-      if (node.childNodes && node.childNodes.length) {
+      const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
+
+      if (node.childNodes && node.childNodes.length && !hasTerminalDirective) {
         _.forEach(node.childNodes, (node) => {
           this.compile($(node));
         });
@@ -157,7 +161,17 @@ export class $CompileService {
   private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
     const $compileNode = $(compileNode);
 
+    let terminalPriority = -1;
+
     nodeDirectives.forEach(directive => {
+      if (directive.priority < terminalPriority) {
+        return;
+      }
+
+      if (directive.terminal && directive.priority > terminalPriority) {
+        terminalPriority = directive.priority;
+      }
+
       if (directive.compile) {
         directive.compile($compileNode);
       }

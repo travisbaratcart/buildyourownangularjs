@@ -572,6 +572,138 @@ describe('$compile', () => {
       expect(compilations).toEqual(['first', 'second']);
     });
   });
+
+  it('uses default priority when not given', () => {
+    const compilations: string[] = [];
+
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive('firstDirective', () => {
+      return {
+        priority: 1,
+        compile: (element) => {
+          compilations.push('first');
+        }
+      };
+    });
+
+    myModule.directive('secondDirective', () => {
+      return {
+        compile: (element) => {
+          compilations.push('second');
+        }
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div second-directive first-directive></div>');
+
+      $compile.compile(el);
+
+      expect(compilations).toEqual(['first', 'second']);
+    });
+  });
+
+  it('stops compiling at a terminal directive', () => {
+    const compilations: string[] = [];
+
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive('firstDirective', () => {
+      return {
+        priority: 1,
+        terminal: true,
+        compile: (element) => {
+          compilations.push('first');
+        }
+      };
+    });
+
+    myModule.directive('secondDirective', () => {
+      return {
+        priority: 0,
+        compile: (element) => {
+          compilations.push('second');
+        }
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    injector.instantiate(function($compile: $CompileService) {
+      const el = $('<div first-directive second-directive></div>');
+      $compile.compile(el);
+      expect(compilations).toEqual(['first']);
+    });
+  });
+
+  it('still compiles directives with same priority after terminal', () => {
+    const compilations: string[] = [];
+
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive('firstDirective', () => {
+      return {
+        priority: 1,
+        terminal: true,
+        compile: (element) => {
+          compilations.push('first');
+        }
+      };
+    });
+
+    myModule.directive('secondDirective', () => {
+      return {
+        priority: 1,
+        compile: (element) => {
+          compilations.push('second');
+        }
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div first-directive second-directive></div>');
+      $compile.compile(el);
+      expect(compilations).toEqual(['first', 'second']);
+    });
+  });
+
+  it('stops child compilation after a terminal directive', ()=> {
+    const compilations: string[] = [];
+
+    const myModule = angular.module('myModule', []);
+
+    myModule.directive('parentDirective', () => {
+      return {
+        terminal: true,
+        compile: (element) => {
+          compilations.push('parent');
+        }
+      };
+    });
+
+    myModule.directive('childDirective', () => {
+      return {
+        compile: (element) => {
+          compilations.push('child')
+        }
+      };
+    });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div parent-directive><div child-directive></div></div>');
+
+      $compile.compile(el);
+
+      expect(compilations).toEqual(['parent']);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
