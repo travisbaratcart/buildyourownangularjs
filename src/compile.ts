@@ -10,6 +10,7 @@ export interface IDirectiveDefinitionObject {
   name?: string;
   index?: number;
   terminal?: boolean;
+  multiElement?: boolean;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -102,7 +103,9 @@ export class $CompileService {
       directives = directives.concat(this.getDirectivesByName(normalizedNodeName, 'E'));
 
       _.forEach(node.attributes, (attr) => {
-        let normalizedAttributeName = this.normalizeName(attr.name);
+        let normalizedAttributeName = this
+          .normalizeName(attr.name)
+          .replace(/(Start|End)$/, '');
 
         if (/^ngAttr[A-Z]/.test(normalizedAttributeName)) {
           normalizedAttributeName = normalizedAttributeName[6].toLowerCase()
@@ -159,8 +162,6 @@ export class $CompileService {
   }
 
   private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
-    const $compileNode = $(compileNode);
-
     let terminalPriority = -1;
 
     nodeDirectives.forEach(directive => {
@@ -173,9 +174,49 @@ export class $CompileService {
       }
 
       if (directive.compile) {
-        directive.compile($compileNode);
+        this.compileNode(directive, compileNode);
       }
     });
+  }
+
+  private compileNode(directive: IDirectiveDefinitionObject, node: HTMLElement) {
+    if (directive.multiElement) {
+      const nodes = this.getMultiElementNodes(directive, node);
+
+      if (nodes) {
+        directive.compile(nodes);
+      }
+    } else {
+      directive.compile($(node));
+    }
+  }
+
+  private getMultiElementNodes(directive: IDirectiveDefinitionObject, startNode: HTMLElement): JQuery {
+    const nodes = [];
+    const startAttributeName = _.kebabCase(`${directive.name}Start`);
+    const endAttributeName = _.kebabCase(`${directive.name}End`);
+
+    if (!startNode.hasAttribute(startAttributeName)) {
+      return;
+    }
+
+    let depth = 0;
+    let searchNode = startNode;
+
+    do {
+      if (searchNode.nodeType === Node.ELEMENT_NODE) {
+        if (searchNode.hasAttribute(startAttributeName)) {
+          depth++;
+        } else if (searchNode.hasAttribute(endAttributeName)) {
+          depth--;
+        }
+      }
+
+      nodes.push(searchNode);
+      searchNode = <HTMLElement>searchNode.nextSibling;
+    } while (depth > 0);
+
+    return $(nodes);
   }
 
   private normalizeName(name: string): string {

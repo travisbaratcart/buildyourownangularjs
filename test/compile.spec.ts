@@ -704,6 +704,25 @@ describe('$compile', () => {
       expect(compilations).toEqual(['parent']);
     });
   });
+
+  it('allows applying a directive to multiple elements', () => {
+    let compileEl: JQuery = null;
+
+    const injector = makeInjectorWithDirectives('myDir', () => {
+      return {
+        multiElement: true,
+        compile: (element) => {
+          compileEl = element;
+        }
+      };
+    });
+
+    injector.invoke(function($compile: $CompileService) {
+      const el = $('<div my-dir-start></div><span></span><div my-dir-end></div>');
+      $compile.compile(el);
+      expect(compileEl.length).toBe(3);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
