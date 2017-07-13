@@ -744,6 +744,24 @@ describe('$compile', () => {
           expect(givenAttrs.myAttr).toBe('val');
         });
     });
+
+    it('sets the value of boolean attributes to true', () => {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive disabled>',
+        (element, attrs) => {
+          expect(attrs.disabled).toBe(true);
+        })
+    });
+
+    it('does not set the value of custom boolean attributes to true', () => {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive somethingelse>',
+        (element, attrs) => {
+          expect(attrs.somethingelse).toBe('');
+        })
+    });
   });
 });
 

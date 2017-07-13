@@ -3,6 +3,26 @@ import { IProvider, IProvide } from './injector';
 import { Injector } from './injector';
 import * as _ from 'lodash';
 
+const BOOLEAN_ATTRS: any = {
+  multiple: true,
+  selected: true,
+  checked: true,
+  disabled: true,
+  readOnly: true,
+  required: true,
+  open: true
+};
+
+const BOOLEAN_ELEMENTS: any {
+  INPUT: true,
+  SELECT: true,
+  OPTION: true,
+  TEXTAREA: true,
+  BUTTON: true,
+  FORM: true,
+  DETAILS: true
+};
+
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery, attrs?: IAttrObject) => any;
   restrict?: string;
@@ -146,10 +166,18 @@ export class $CompileService {
       let normalizedAttributeName = this
         .normalizeName(attr.name);
 
-      attrs[normalizedAttributeName] = attr.value.trim();
+      attrs[normalizedAttributeName] = this.getAttrValue(attr, node);
     });
 
     return attrs;
+  }
+
+  private getAttrValue(attr: Attr, node: HTMLElement): any {
+    const isBooleanAttribute = BOOLEAN_ELEMENTS[node.nodeName] && BOOLEAN_ATTRS[attr.name];
+
+    return isBooleanAttribute
+      ? true
+      : attr.value.trim();
   }
 
   private getDirectivesByName(directiveName: string, nodeType: string): IDirectiveDefinitionObject[] {
