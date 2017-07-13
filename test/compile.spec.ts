@@ -723,6 +723,46 @@ describe('$compile', () => {
       expect(compileEl.length).toBe(3);
     });
   });
+
+  describe('attributes', () => {
+    it('passes the element attributes to the compile function', () => {
+      const injector = makeInjectorWithDirectives('myDirective', () => {
+        return {
+          restrict: 'E',
+          compile: (element, attrs) => {
+            element.data('givenAttrs', attrs);
+          }
+        };
+      });
+
+      injector.invoke(function($compile: $CompileService) {
+        const el = $('<my-directive my-attr="1" my-other-attr="two"></my-directive>');
+
+        $compile.compile(el);
+
+        expect(el.data('givenAttrs').myAttr).toBe('1');
+        expect(el.data('givenAttrs').myOtherAttr).toBe('two');
+      });
+    });
+
+    it('trims attribute values', () => {
+      const injector = makeInjectorWithDirectives('myDirective', () => {
+        return {
+          restrict: 'E',
+          compile: (element, attrs) => {
+            element.data('givenAttrs', attrs);
+          }
+        };
+      });
+
+      injector.invoke(function($compile: $CompileService) {
+        const el = $('<my-directive my-attr=" val "></my-directive>');
+        $compile.compile(el);
+
+        expect(el.data('givenAttrs').myAttr).toBe('val');
+      });
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

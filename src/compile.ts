@@ -4,7 +4,7 @@ import { Injector } from './injector';
 import * as _ from 'lodash';
 
 export interface IDirectiveDefinitionObject {
-  compile?: (element?: JQuery) => any;
+  compile?: (element?: JQuery, attrs?: IAttrObject) => any;
   restrict?: string;
   priority?: number;
   name?: string;
@@ -17,6 +17,10 @@ export type DirectiveFactory = () => IDirectiveDefinitionObject;
 
 export interface IDirectiveFactoryObject {
   [directiveName: string]: DirectiveFactory
+}
+
+interface IAttrObject {
+  [attrName: string]: string;
 }
 
 export class $CompileProvider implements IProvider {
@@ -83,7 +87,8 @@ export class $CompileService {
   public compile($compileNodes: JQuery) {
     _.forEach($compileNodes, (node) => {
       const nodeDirectives = this.getDirectivesForNode(node);
-      this.applyDirectivesToNode(nodeDirectives, node);
+      const nodeAttrs = this.getAttrsForNode(node);
+      this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 
@@ -134,6 +139,19 @@ export class $CompileService {
     return directives;
   }
 
+  private getAttrsForNode(node: HTMLElement): IAttrObject {
+    const attrs: IAttrObject = {};
+
+    _.forEach(node.attributes, (attr) => {
+      let normalizedAttributeName = this
+        .normalizeName(attr.name);
+
+      attrs[normalizedAttributeName] = attr.value.trim();
+    });
+
+    return attrs;
+  }
+
   private getDirectivesByName(directiveName: string, nodeType: string): IDirectiveDefinitionObject[] {
     const foundDirectives: IDirectiveDefinitionObject[] = this.registeredDirectivesFactories[directiveName]
       ? this.$injector.get(`${directiveName}Directive`)
@@ -161,7 +179,7 @@ export class $CompileService {
     return directiveA.index - directiveB.index;
   }
 
-  private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement) {
+  private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement, attrs: IAttrObject) {
     let terminalPriority = -1;
 
     nodeDirectives.forEach(directive => {
@@ -174,20 +192,20 @@ export class $CompileService {
       }
 
       if (directive.compile) {
-        this.compileNode(directive, compileNode);
+        this.compileNode(directive, compileNode, attrs);
       }
     });
   }
 
-  private compileNode(directive: IDirectiveDefinitionObject, node: HTMLElement) {
+  private compileNode(directive: IDirectiveDefinitionObject, node: HTMLElement, attrs: IAttrObject) {
     if (directive.multiElement) {
       const nodes = this.getMultiElementNodes(directive, node);
 
       if (nodes) {
-        directive.compile(nodes);
+        directive.compile(nodes, attrs);
       }
     } else {
-      directive.compile($(node));
+      directive.compile($(node), attrs);
     }
   }
 
