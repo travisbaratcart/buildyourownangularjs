@@ -6,7 +6,8 @@ import {
   $CompileProvider,
   $CompileService,
   DirectiveFactory,
-  IDirectiveFactoryObject
+  IDirectiveFactoryObject,
+  IAttrObject
 } from '../src/compile';
 import * as _ from 'lodash';
 
@@ -726,41 +727,22 @@ describe('$compile', () => {
 
   describe('attributes', () => {
     it('passes the element attributes to the compile function', () => {
-      const injector = makeInjectorWithDirectives('myDirective', () => {
-        return {
-          restrict: 'E',
-          compile: (element, attrs) => {
-            element.data('givenAttrs', attrs);
-          }
-        };
-      });
-
-      injector.invoke(function($compile: $CompileService) {
-        const el = $('<my-directive my-attr="1" my-other-attr="two"></my-directive>');
-
-        $compile.compile(el);
-
-        expect(el.data('givenAttrs').myAttr).toBe('1');
-        expect(el.data('givenAttrs').myOtherAttr).toBe('two');
-      });
+      registerAndCompile(
+        'myDirective',
+        '<my-directive my-attr="1" my-other-attr="two"></my-directive>',
+        (element, givenAttrs) => {
+          expect(givenAttrs.myAttr).toBe('1');
+          expect(givenAttrs.myOtherAttr).toBe('two');
+        });
     });
 
     it('trims attribute values', () => {
-      const injector = makeInjectorWithDirectives('myDirective', () => {
-        return {
-          restrict: 'E',
-          compile: (element, attrs) => {
-            element.data('givenAttrs', attrs);
-          }
-        };
-      });
-
-      injector.invoke(function($compile: $CompileService) {
-        const el = $('<my-directive my-attr=" val "></my-directive>');
-        $compile.compile(el);
-
-        expect(el.data('givenAttrs').myAttr).toBe('val');
-      });
+      registerAndCompile(
+        'myDirective',
+        '<my-directive my-attr=" val "></my-directive>',
+        (element, givenAttrs) => {
+          expect(givenAttrs.myAttr).toBe('val');
+        });
     });
   });
 });
@@ -769,4 +751,26 @@ function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFa
   return createInjector(['ng', function($compileProvider: $CompileProvider) {
     $compileProvider.directive(directiveNameOrObject, directiveFactory);
   }]);
+}
+
+function registerAndCompile(
+  direName: string,
+  domString: string,
+  cb: (element: JQuery, givenAttrs: IAttrObject) => any) {
+
+  let givenAttrs: IAttrObject;
+  const injector = makeInjectorWithDirectives(direName, function() {
+    return {
+      restrict: 'EACM',
+      compile: (element, attrs) => {
+        givenAttrs = attrs;
+      }
+    }
+  });
+
+  injector.invoke(function($compile: $CompileService) {
+    const el = $(domString);
+    $compile.compile(el);
+    cb(el, givenAttrs);
+  });;
 }

@@ -19,7 +19,7 @@ export interface IDirectiveFactoryObject {
   [directiveName: string]: DirectiveFactory
 }
 
-interface IAttrObject {
+export interface IAttrObject {
   [attrName: string]: string;
 }
 
