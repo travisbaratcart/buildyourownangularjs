@@ -1,6 +1,7 @@
 'use strict';
 import { publishExternalAPI } from '../src/angularPublic';
 import { Angular } from '../src/loader';
+import { Scope } from '../src/scope';
 import { createInjector } from '../src/injector';
 import {
   $CompileProvider,
@@ -912,6 +913,20 @@ describe('$compile', () => {
           expect(gotValue).toBe(43);
         });
     });
+
+    it('calls observer on next $digest after registration', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        (element, attrs, $rootScope) => {
+          let gotValue: any;
+          attrs.$observe('someAttribute', (value: any) => gotValue = value);
+
+          $rootScope.$digest();
+
+          expect(gotValue).toBe('42');
+        });
+    });
   });
 });
 
@@ -924,7 +939,7 @@ function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFa
 function registerAndCompile(
   direName: string,
   domString: string,
-  cb: (element: JQuery, givenAttrs: Attributes) => any) {
+  cb: (element: JQuery, attrs: Attributes, $rootScope: Scope) => any) {
 
   let givenAttrs: Attributes;
   const injector = makeInjectorWithDirectives(direName, function() {
@@ -936,9 +951,9 @@ function registerAndCompile(
     }
   });
 
-  injector.invoke(function($compile: $CompileService) {
+  injector.invoke(function($compile: $CompileService, $rootScope: Scope) {
     const el = $(domString);
     $compile.compile(el);
-    cb(el, givenAttrs);
+    cb(el, givenAttrs, $rootScope);
   });;
 }

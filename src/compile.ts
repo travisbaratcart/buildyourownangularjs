@@ -1,5 +1,6 @@
 'use strict';
 import { IProvider, IProvide } from './injector';
+import { Scope } from '../src/scope';
 import { Injector } from './injector';
 import * as _ from 'lodash';
 
@@ -54,11 +55,16 @@ export class $CompileProvider implements IProvider {
 
   }
 
-  public $get = ['$injector', function($injector: Injector) {
-    return new $CompileService(
-      $injector,
-      this.registeredDirectivesFactories);
-  }];
+  public $get = [
+    '$injector',
+    '$rootScope',
+    function($injector: Injector, $rootScope: Scope) {
+      return new $CompileService(
+        $injector,
+        $rootScope,
+        this.registeredDirectivesFactories);
+    }
+  ];
 
   private registeredDirectivesFactories: { [directiveName: string]: DirectiveFactory[] } = {};
 
@@ -100,6 +106,7 @@ export class $CompileService {
 
   constructor(
     private $injector: Injector,
+    private $rootScope: Scope,
     private registeredDirectivesFactories: { [directiveName: string]: DirectiveFactory[] }) {
 
   }
@@ -153,7 +160,7 @@ export class $CompileService {
   }
 
   private getAttrsForNode(node: HTMLElement): Attributes {
-    const attrs = new Attributes($(node));
+    const attrs = new Attributes($(node), this.$rootScope);
 
     _.forEach(node.attributes, (attr) => {
       const normalizedAttributeName = this
@@ -309,7 +316,7 @@ export class Attributes {
   public $$attrNameMap: { [normalizedAttributeName: string]: string } = {};
   private $$observers: { [attr: string]: ((value: any) => any)[] } = {};
 
-  constructor(private $element: JQuery) {
+  constructor(private $element: JQuery, private $rootScope: Scope) {
   }
 
   public $set(
@@ -344,6 +351,8 @@ export class Attributes {
     }
 
     this.$$observers[key].push(cb);
+
+    this.$rootScope.$evalAsync(() => cb((<any>this)[key]));
   }
 
   private callAttrObservers(key: string, value: any) {
