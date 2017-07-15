@@ -885,6 +885,19 @@ describe('$compile', () => {
           expect(element.attr('some-attribute')).toEqual('43');
         });
     });
+
+    it('uses new attribute name after once given', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive x-some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('someAttribute', 43, true, 'some-attribute');
+          attrs.$set('someAttribute', 44);
+
+          expect(element.attr('some-attribute')).toBe('44');
+          expect(element.attr('x-some-attribute')).toBe('42');
+        });
+    });
   });
 });
 

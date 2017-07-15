@@ -322,6 +322,10 @@ export class Attributes {
       this.$element.prop(key, value);
     }
 
+    if (overrideAttrName) {
+      this.$$attrNameMap[key] = overrideAttrName;
+    }
+
     let attributeName = overrideAttrName
       || this.$$attrNameMap[key]
       || (this.$$attrNameMap[key] = _.kebabCase(key));
