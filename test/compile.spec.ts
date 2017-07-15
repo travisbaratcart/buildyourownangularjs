@@ -801,6 +801,50 @@ describe('$compile', () => {
           expect(element.attr('attr')).toBe('true');
         })
     });
+
+    it('shares attributes between directives', () => {
+      let attrs1: Attributes;
+      let attrs2: Attributes;
+
+      const injector = makeInjectorWithDirectives({
+        myDir: () => {
+          return {
+            compile: (element, attrs) => attrs1 = attrs
+          }
+        },
+        myOtherDir: () => {
+          return {
+            compile: (element, attrs) => attrs2 = attrs
+          }
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-dir my-other-dir></div>');
+        $compile.compile(el);
+        expect(attrs1).toBe(attrs2);
+      });
+    });
+
+    it('sets prop for boolean attributes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive>',
+        (element, attrs) => {
+          attrs.$set('disabled', true);
+          expect(element.prop('disabled')).toBe(true);
+        });
+    });
+
+    it('sets prop for boolean attributes even when not flushing', () => {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive>',
+        (element, attrs) => {
+          attrs.$set('disabled', true, false);
+          expect(element.prop('disabled')).toBe(true);
+        });
+    });
   });
 });
 

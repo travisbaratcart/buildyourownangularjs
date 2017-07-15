@@ -23,6 +23,10 @@ const BOOLEAN_ELEMENTS: any = {
   DETAILS: true
 };
 
+const isBooleanAttribute = (nodeName: string, attributeName: string) => {
+  return BOOLEAN_ELEMENTS[nodeName] && BOOLEAN_ATTRS[attributeName];
+};
+
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery, attrs?: Attributes) => any;
   restrict?: string;
@@ -166,9 +170,7 @@ export class $CompileService {
   }
 
   private getAttrValue(attr: Attr, node: HTMLElement): any {
-    const isBooleanAttribute = BOOLEAN_ELEMENTS[node.nodeName] && BOOLEAN_ATTRS[attr.name];
-
-    return isBooleanAttribute
+    return isBooleanAttribute(node.nodeName, attr.name)
       ? true
       : attr.value.trim();
   }
@@ -305,6 +307,10 @@ export class Attributes {
 
   public $set(key: string, value: any, writeToDom = true) {
     (<any>this)[key] = value;
+
+    if (isBooleanAttribute(this.$element.prop('tagName'), key)) {
+      this.$element.prop(key, value);
+    }
 
     if (writeToDom) {
       this.$element.attr(key, value);
