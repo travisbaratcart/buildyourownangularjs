@@ -947,6 +947,24 @@ describe('$compile', () => {
           expect(gotValue).toBe('43');
         });
     });
+
+    it('adds an attribute from a class directive', () => {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive"></div>',
+        (element, attrs) => {
+          expect(attrs.hasOwnProperty('myDirective')).toBe(true);
+        });
+    });
+
+    it('does not add attribute for class without a directive', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="some-class"></my-directive>',
+        (element, attrs) => {
+          expect(attrs.hasOwnProperty('someClass')).toBe(false);
+        });
+    });
   });
 });
 

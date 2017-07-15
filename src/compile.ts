@@ -177,6 +177,14 @@ export class $CompileService {
       }
     });
 
+    _.forEach(node.classList, (cls) => {
+      const normalizedClassName = this.normalizeName(cls);
+
+      if (this.getDirectivesByName(normalizedClassName, 'C').length) {
+        (<any>attrs)[normalizedClassName] = undefined;
+      }
+    });
+
     return attrs;
   }
 
