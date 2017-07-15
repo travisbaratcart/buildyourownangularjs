@@ -303,8 +303,11 @@ export class Attributes {
   constructor(private $element: JQuery) {
   }
 
-  public $set(key: string, value: any) {
+  public $set(key: string, value: any, writeToDom = true) {
     (<any>this)[key] = value;
-    this.$element.attr(key, value);
+
+    if (writeToDom) {
+      this.$element.attr(key, value);
+    }
   }
 }
