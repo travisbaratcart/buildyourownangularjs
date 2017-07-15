@@ -898,6 +898,20 @@ describe('$compile', () => {
           expect(element.attr('x-some-attribute')).toBe('42');
         });
     });
+
+    it('calls observer immediately when attribute is $set', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          let gotValue: any;
+          attrs.$observe('someAttribute', (value: any) => gotValue = value);
+
+          attrs.$set('someAttribute', 43);
+
+          expect(gotValue).toBe(43);
+        });
+    });
   });
 });
 

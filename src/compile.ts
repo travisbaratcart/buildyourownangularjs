@@ -307,6 +307,7 @@ export class $CompileService {
 
 export class Attributes {
   public $$attrNameMap: { [normalizedAttributeName: string]: string } = {};
+  private $$observers: { [attr: string]: ((value: any) => any)[] } = {};
 
   constructor(private $element: JQuery) {
   }
@@ -332,6 +333,26 @@ export class Attributes {
 
     if (writeToDom) {
       this.$element.attr(overrideAttrName || attributeName, value);
+    }
+
+    this.callAttrObservers(key, value);
+  }
+
+  public $observe(key: string, cb: (value: any) => any): void {
+    if (!this.$$observers[key]) {
+      this.$$observers[key] = [];
+    }
+
+    this.$$observers[key].push(cb);
+  }
+
+  private callAttrObservers(key: string, value: any) {
+    if (this.$$observers[key]) {
+      try {
+        this.$$observers[key].forEach(observer => observer(value));
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 }
