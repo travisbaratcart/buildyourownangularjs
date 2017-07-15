@@ -305,7 +305,11 @@ export class Attributes {
   constructor(private $element: JQuery) {
   }
 
-  public $set(key: string, value: any, writeToDom = true) {
+  public $set(
+    key: string,
+    value: any,
+    writeToDom = true,
+    overrideAttrName: string = null) {
     (<any>this)[key] = value;
 
     if (isBooleanAttribute(this.$element.prop('tagName'), key)) {
@@ -313,7 +317,7 @@ export class Attributes {
     }
 
     if (writeToDom) {
-      this.$element.attr(key, value);
+      this.$element.attr(overrideAttrName || key, value);
     }
   }
 }
