@@ -7,7 +7,7 @@ import {
   $CompileService,
   DirectiveFactory,
   IDirectiveFactoryObject,
-  IAttrObject
+  Attributes
 } from '../src/compile';
 import * as _ from 'lodash';
 
@@ -731,8 +731,8 @@ describe('$compile', () => {
         'myDirective',
         '<my-directive my-attr="1" my-other-attr="two"></my-directive>',
         (element, givenAttrs) => {
-          expect(givenAttrs.myAttr).toBe('1');
-          expect(givenAttrs.myOtherAttr).toBe('two');
+          expect((<any>givenAttrs).myAttr).toBe('1');
+          expect((<any>givenAttrs).myOtherAttr).toBe('two');
         });
     });
 
@@ -741,7 +741,7 @@ describe('$compile', () => {
         'myDirective',
         '<my-directive my-attr=" val "></my-directive>',
         (element, givenAttrs) => {
-          expect(givenAttrs.myAttr).toBe('val');
+          expect((<any>givenAttrs).myAttr).toBe('val');
         });
     });
 
@@ -759,7 +759,7 @@ describe('$compile', () => {
         'myDirective',
         '<input my-directive somethingelse>',
         (element, attrs) => {
-          expect(attrs.somethingelse).toBe('');
+          expect((<any>attrs).somethingelse).toBe('');
         })
     });
 
@@ -768,8 +768,18 @@ describe('$compile', () => {
         'myDirective',
         '<input my-directive ng-attr-whatever="42" whatever="41">',
         (element, attrs) => {
-          expect(attrs.whatever).toBe('42');
+          expect((<any>attrs).whatever).toBe('42');
         });
+    });
+
+    it('allows setting attributes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive attr="true"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('attr', 'false');
+          expect((<any>attrs).attr).toEqual('false');
+        })
     });
   });
 });
@@ -783,9 +793,9 @@ function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFa
 function registerAndCompile(
   direName: string,
   domString: string,
-  cb: (element: JQuery, givenAttrs: IAttrObject) => any) {
+  cb: (element: JQuery, givenAttrs: Attributes) => any) {
 
-  let givenAttrs: IAttrObject;
+  let givenAttrs: Attributes;
   const injector = makeInjectorWithDirectives(direName, function() {
     return {
       restrict: 'EACM',

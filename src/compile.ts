@@ -24,7 +24,7 @@ const BOOLEAN_ELEMENTS: any = {
 };
 
 export interface IDirectiveDefinitionObject {
-  compile?: (element?: JQuery, attrs?: IAttrObject) => any;
+  compile?: (element?: JQuery, attrs?: Attributes) => any;
   restrict?: string;
   priority?: number;
   name?: string;
@@ -37,10 +37,6 @@ export type DirectiveFactory = () => IDirectiveDefinitionObject;
 
 export interface IDirectiveFactoryObject {
   [directiveName: string]: DirectiveFactory
-}
-
-export interface IAttrObject {
-  [attrName: string]: string;
 }
 
 export class $CompileProvider implements IProvider {
@@ -152,8 +148,8 @@ export class $CompileService {
     return directives;
   }
 
-  private getAttrsForNode(node: HTMLElement): IAttrObject {
-    const attrs: IAttrObject = {};
+  private getAttrsForNode(node: HTMLElement): Attributes {
+    const attrs = new Attributes($(node));
 
     _.forEach(node.attributes, (attr) => {
       const normalizedAttributeName = this
@@ -162,7 +158,7 @@ export class $CompileService {
       const isNgAttr = this.isNgAttr(attr.name);
 
       if (isNgAttr || !attrs.hasOwnProperty(normalizedAttributeName)) {
-        attrs[normalizedAttributeName] = this.getAttrValue(attr, node);
+        (<any>attrs)[normalizedAttributeName] = this.getAttrValue(attr, node);
       }
     });
 
@@ -204,7 +200,10 @@ export class $CompileService {
     return directiveA.index - directiveB.index;
   }
 
-  private applyDirectivesToNode(nodeDirectives: IDirectiveDefinitionObject[], compileNode: HTMLElement, attrs: IAttrObject) {
+  private applyDirectivesToNode(
+    nodeDirectives: IDirectiveDefinitionObject[],
+    compileNode: HTMLElement,
+    attrs: Attributes) {
     let terminalPriority = -1;
 
     nodeDirectives.forEach(directive => {
@@ -222,7 +221,10 @@ export class $CompileService {
     });
   }
 
-  private compileNode(directive: IDirectiveDefinitionObject, node: HTMLElement, attrs: IAttrObject) {
+  private compileNode(
+    directive: IDirectiveDefinitionObject,
+    node: HTMLElement,
+    attrs: Attributes) {
     if (directive.multiElement) {
       const nodes = this.getMultiElementNodes(directive, node);
 
@@ -294,5 +296,14 @@ export class $CompileService {
 
     return normalizedAttributeName[6].toLowerCase()
       + normalizedAttributeName.substring(7);
+  }
+}
+
+export class Attributes {
+  constructor(private $element: JQuery) {
+  }
+
+  public $set(key: string, value: any) {
+    (<any>this)[key] = value;
   }
 }
