@@ -13,7 +13,7 @@ const BOOLEAN_ATTRS: any = {
   open: true
 };
 
-const BOOLEAN_ELEMENTS: any {
+const BOOLEAN_ELEMENTS: any = {
   INPUT: true,
   SELECT: true,
   OPTION: true,
@@ -128,14 +128,7 @@ export class $CompileService {
       directives = directives.concat(this.getDirectivesByName(normalizedNodeName, 'E'));
 
       _.forEach(node.attributes, (attr) => {
-        let normalizedAttributeName = this
-          .normalizeName(attr.name)
-          .replace(/(Start|End)$/, '');
-
-        if (/^ngAttr[A-Z]/.test(normalizedAttributeName)) {
-          normalizedAttributeName = normalizedAttributeName[6].toLowerCase()
-          + normalizedAttributeName.substring(7);
-        }
+        let normalizedAttributeName = this.normalizeAttributeName(attr.name);
 
         directives = directives.concat(this.getDirectivesByName(normalizedAttributeName, 'A'));
       });
@@ -163,10 +156,14 @@ export class $CompileService {
     const attrs: IAttrObject = {};
 
     _.forEach(node.attributes, (attr) => {
-      let normalizedAttributeName = this
-        .normalizeName(attr.name);
+      const normalizedAttributeName = this
+        .normalizeAttributeName(attr.name);
 
-      attrs[normalizedAttributeName] = this.getAttrValue(attr, node);
+      const isNgAttr = this.isNgAttr(attr.name);
+
+      if (isNgAttr || !attrs.hasOwnProperty(normalizedAttributeName)) {
+        attrs[normalizedAttributeName] = this.getAttrValue(attr, node);
+      }
     });
 
     return attrs;
@@ -270,7 +267,32 @@ export class $CompileService {
     return _.camelCase(name.toLowerCase().replace(PREFIX_REGEX, ''));
   }
 
+  private normalizeAttributeName(attrName: string): string {
+    let normalizedAttributeName = this
+      .normalizeName(attrName)
+      .replace(/(Start|End)$/, '');
+
+    const isNgAttr = this.isNgAttr(normalizedAttributeName);
+
+    return isNgAttr
+      ? normalizedAttributeName[6].toLowerCase()
+        + normalizedAttributeName.substring(7)
+      : normalizedAttributeName;
+  }
+
+  private isNgAttr(attrName: string) {
+    return /^ngAttr[A-Z]/.test(attrName)
+      || /^ng-attr[A-Z]/.test(attrName);
+  }
+
   private nodeName(node: HTMLElement): string {
     return node.nodeName
+  }
+
+  private stripNgAttr(normalizedAttributeName: string): string {
+    const isNgAttr = /^ngAttr[A-Z]/.test(normalizedAttributeName);
+
+    return normalizedAttributeName[6].toLowerCase()
+      + normalizedAttributeName.substring(7);
   }
 }

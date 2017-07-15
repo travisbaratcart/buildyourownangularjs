@@ -750,7 +750,7 @@ describe('$compile', () => {
         'myDirective',
         '<input my-directive disabled>',
         (element, attrs) => {
-          expect(attrs.disabled).toBe(true);
+          expect((<any>attrs).disabled).toBe(true);
         })
     });
 
@@ -761,6 +761,15 @@ describe('$compile', () => {
         (element, attrs) => {
           expect(attrs.somethingelse).toBe('');
         })
+    });
+
+    it('overrides attributes with ng-attr- versions', () => {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive ng-attr-whatever="42" whatever="41">',
+        (element, attrs) => {
+          expect(attrs.whatever).toBe('42');
+        });
     });
   });
 });
