@@ -305,5 +305,6 @@ export class Attributes {
 
   public $set(key: string, value: any) {
     (<any>this)[key] = value;
+    this.$element.attr(key, value);
   }
 }

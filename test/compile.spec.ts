@@ -779,7 +779,17 @@ describe('$compile', () => {
         (element, attrs) => {
           attrs.$set('attr', 'false');
           expect((<any>attrs).attr).toEqual('false');
-        })
+        });
+    });
+
+    it('sets attributes to the DOM', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive attr="true"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('attr', 'false');
+          expect(element.attr('attr')).toBe('false');
+        });
     });
   });
 });
