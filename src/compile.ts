@@ -345,7 +345,7 @@ export class Attributes {
     this.callAttrObservers(key, value);
   }
 
-  public $observe(key: string, cb: (value: any) => any): void {
+  public $observe(key: string, cb: (value: any) => any): Function {
     if (!this.$$observers[key]) {
       this.$$observers[key] = [];
     }
@@ -353,6 +353,13 @@ export class Attributes {
     this.$$observers[key].push(cb);
 
     this.$rootScope.$evalAsync(() => cb((<any>this)[key]));
+
+    return () => {
+      const observerIndex = this.$$observers[key].indexOf(cb);
+      if (observerIndex > -1) {
+        this.$$observers[key].splice(observerIndex, 1);
+      }
+    };
   }
 
   private callAttrObservers(key: string, value: any) {

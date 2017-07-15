@@ -927,6 +927,26 @@ describe('$compile', () => {
           expect(gotValue).toBe('42');
         });
     });
+
+    it('lets observers be deregistered', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          let gotValue: any;
+
+          const remove = attrs.$observe('someAttribute', (value) => {
+            gotValue = value
+          });
+
+          attrs.$set('someAttribute', '43');
+          expect(gotValue).toBe('43');
+
+          remove();
+          attrs.$set('someAttribute', '44');
+          expect(gotValue).toBe('43');
+        });
+    });
   });
 });
 
