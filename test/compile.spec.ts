@@ -855,6 +855,36 @@ describe('$compile', () => {
           expect(element.attr('some-attribute')).toEqual('43');
         })
     });
+
+    it('denormalizes attribute by snake-casing', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('someAttribute', 43);
+          expect(element.attr('some-attribute')).toBe('43');
+        })
+    });
+
+    it('denormalizes attribute by using original attribute name', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive x-some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('someAttribute', '43');
+          expect(element.attr('x-some-attribute')).toBe('43');
+        });
+    });
+
+    it('does not use ng-attr- prefix in denormalized names', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive ng-attr-some-attribute="42"></my-directive>',
+        (element, attrs) => {
+          attrs.$set('someAttribute', 43);
+          expect(element.attr('some-attribute')).toEqual('43');
+        });
+    });
   });
 });
 

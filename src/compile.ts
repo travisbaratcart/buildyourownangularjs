@@ -162,6 +162,10 @@ export class $CompileService {
       const isNgAttr = this.isNgAttr(attr.name);
 
       if (isNgAttr || !attrs.hasOwnProperty(normalizedAttributeName)) {
+        if (!isNgAttr) {
+          attrs.$$attrNameMap[normalizedAttributeName] = attr.name;
+        }
+
         (<any>attrs)[normalizedAttributeName] = this.getAttrValue(attr, node);
       }
     });
@@ -286,7 +290,7 @@ export class $CompileService {
 
   private isNgAttr(attrName: string) {
     return /^ngAttr[A-Z]/.test(attrName)
-      || /^ng-attr[A-Z]/.test(attrName);
+      || /^ng\-attr\-[A-z]/.test(attrName);
   }
 
   private nodeName(node: HTMLElement): string {
@@ -302,6 +306,8 @@ export class $CompileService {
 }
 
 export class Attributes {
+  public $$attrNameMap: { [normalizedAttributeName: string]: string } = {};
+
   constructor(private $element: JQuery) {
   }
 
@@ -316,8 +322,12 @@ export class Attributes {
       this.$element.prop(key, value);
     }
 
+    let attributeName = overrideAttrName
+      || this.$$attrNameMap[key]
+      || (this.$$attrNameMap[key] = _.kebabCase(key));
+
     if (writeToDom) {
-      this.$element.attr(overrideAttrName || key, value);
+      this.$element.attr(overrideAttrName || attributeName, value);
     }
   }
 }
