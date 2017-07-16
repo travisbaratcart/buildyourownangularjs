@@ -399,6 +399,14 @@ export class Attributes {
     };
   }
 
+  public $addClass(className: string) {
+    this.$element.addClass(className);
+  }
+
+  public $removeClass(className: string) {
+    this.$element.removeClass(className);
+  }
+
   private callAttrObservers(key: string, value: any) {
     if (this.$$observers[key]) {
       try {

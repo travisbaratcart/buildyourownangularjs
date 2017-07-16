@@ -993,6 +993,26 @@ describe('$compile', () => {
           expect((<any>attrs).myDirective).toEqual('and the attribute value');
         });
     });
+
+    it('allows adding classes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive></my-directive>',
+        (element, attrs) => {
+          attrs.$addClass('some-class');
+          expect(element.hasClass('some-class')).toBe(true);
+        });
+    });
+
+    it('allows removing classes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="some-class"></my-directive>',
+        (element, attrs) => {
+          attrs.$removeClass('some-class');
+          expect(element.hasClass('some-class')).toBe(false);
+        });
+    });
   });
 });
 
