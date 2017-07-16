@@ -1052,6 +1052,32 @@ describe('$compile', () => {
       expect(typeof linkFn === 'function').toBe(true);
     });
   });
+
+  it('supports link function in DDO', () => {
+    let givenScope: Scope;
+    let givenElement: JQuery;
+    let givenAttrs: Attributes;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: (scope: Scope, element: JQuery, attrs: Attributes) => {
+          givenScope = scope;
+          givenElement = element;
+          givenAttrs = attrs;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+
+      expect(givenScope).toBe($rootScope);
+      expect(givenElement[0]).toBe(el[0]);
+      expect(givenAttrs).toBeDefined();
+      expect((<any>givenAttrs).myDirective).toBeDefined();
+    });
+  });
 });
 
 describe('linking', () => {

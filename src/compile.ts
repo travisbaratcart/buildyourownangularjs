@@ -32,6 +32,10 @@ const isBooleanAttribute = (nodeName: string, attributeName: string) => {
 
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery, attrs?: Attributes) => (LinkFunction | void);
+  link?: (
+    scope: Scope,
+    element?: JQuery,
+    attrs?: Attributes) => void;
   restrict?: string;
   priority?: number;
   name?: string;
@@ -292,6 +296,8 @@ export class $CompileService {
         if (directiveLinkFunction) {
           directiveLinkFunctions.push(directiveLinkFunction);
         }
+      } else if (directive.link) {
+        directiveLinkFunctions.push(directive.link);
       }
     });
 
