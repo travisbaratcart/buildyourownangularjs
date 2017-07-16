@@ -965,6 +965,24 @@ describe('$compile', () => {
           expect(attrs.hasOwnProperty('someClass')).toBe(false);
         });
     });
+
+    it('supports values for class directive attributes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive: my attribute value"></div>',
+        (element, attrs) => {
+          expect((<any>attrs).myDirective).toBe('my attribute value');
+        });
+    });
+
+    it('terminates class directive attribute value at semicolon', () => {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive: my attribute value; some-other-class"></div',
+        (element, attrs) => {
+          expect((<any>attrs).myDirective).toEqual('my attribute value');
+        });
+    });
   });
 });
 

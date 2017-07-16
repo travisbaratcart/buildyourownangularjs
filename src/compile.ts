@@ -140,8 +140,7 @@ export class $CompileService {
         directives = directives.concat(this.getDirectivesByName(normalizedAttributeName, 'A'));
       });
 
-      _.forEach(node.classList, (nodeClass) => {
-        const normalizedClassName = this.normalizeName(nodeClass);
+      _.forEach(this.getNodeClasses(node), (attrValue, normalizedClassName) => {
         directives = directives.concat(this.getDirectivesByName(normalizedClassName, 'C'));
       });
     } else if (node.nodeType === Node.COMMENT_NODE) {
@@ -157,6 +156,26 @@ export class $CompileService {
       .sort(this.directivePriority);
 
     return directives;
+  }
+
+  private getNodeClasses(node: HTMLElement) {
+    const classMap: { [className: string ]: string} = {};
+    let classString = node.className;
+
+    if (typeof classString === 'string' && classString !== '') {
+      let match: RegExpExecArray;
+      while ((match = /([\d\w\-_]+)(?:\:([^;]+))?;?/.exec(classString))) {
+        const normalizedClassName = this.normalizeName(match[1]);
+        const attributeValue = match[2] ? match[2].trim() : undefined;
+
+        classMap[normalizedClassName] = attributeValue;
+
+        // Get rid of this match from full string to prevent infinite loop
+        classString = classString.substr(match.index + match[0].length);
+      }
+    }
+
+    return classMap;
   }
 
   private getAttrsForNode(node: HTMLElement): Attributes {
@@ -177,11 +196,11 @@ export class $CompileService {
       }
     });
 
-    _.forEach(node.classList, (cls) => {
-      const normalizedClassName = this.normalizeName(cls);
 
+
+    _.forEach(this.getNodeClasses(node), (attrValue, normalizedClassName) => {
       if (this.getDirectivesByName(normalizedClassName, 'C').length) {
-        (<any>attrs)[normalizedClassName] = undefined;
+        (<any>attrs)[normalizedClassName] = attrValue;
       }
     });
 
