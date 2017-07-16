@@ -164,7 +164,9 @@ describe('$compile', () => {
       it(`compiles element directives with ${prefix} prefix and ${delimeter} delimeter`, () => {
         const injector = makeInjectorWithDirectives('myDir', () => {
           return {
-            compile: (element) => element.data('hasCompiled', true),
+            compile: (element) => {
+              element.data('hasCompiled', true)
+            },
             restrict: 'EACM'
           };
         });
@@ -218,13 +220,17 @@ describe('$compile', () => {
     const injector = makeInjectorWithDirectives({
       myDirective: () => {
         return {
-          compile: (element) => element.data('hasCompiled', true),
+          compile: (element) => {
+            element.data('hasCompiled', true)
+          },
           restrict: 'EACM'
         };
       },
       mySecondDirective: () => {
         return {
-          compile: (element) => element.data('secondCompiled', true),
+          compile: (element) => {
+            element.data('secondCompiled', true)
+          },
           restrict: 'EACM'
         }
       }
@@ -810,12 +816,16 @@ describe('$compile', () => {
       const injector = makeInjectorWithDirectives({
         myDir: () => {
           return {
-            compile: (element, attrs) => attrs1 = attrs
+            compile: (element, attrs) => {
+              attrs1 = attrs;
+            }
           }
         },
         myOtherDir: () => {
           return {
-            compile: (element, attrs) => attrs2 = attrs
+            compile: (element, attrs) => {
+              attrs2 = attrs;
+            }
           }
         }
       });
@@ -1045,6 +1055,15 @@ describe('$compile', () => {
 });
 
 describe('linking', () => {
+  let angular: Angular;
+
+  beforeEach(() => {
+    delete (<any>window).angular;
+    publishExternalAPI();
+
+    angular = (<any>window).angular;
+  });
+
   it('takes a scope and attaches it to elements', () => {
     const injector = makeInjectorWithDirectives('myDirective', () => {
       return {
@@ -1056,6 +1075,34 @@ describe('linking', () => {
       const el = $('<div my-directive></div>');
       $compile.compile(el)($rootScope);
       expect(el.data('$scope')).toBe($rootScope);
+    });
+  });
+
+  it('calls directive link function with scope', () => {
+    let givenScope: Scope;
+    let givenElement: JQuery;
+    let givenAttrs: Attributes;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: () => {
+          return (scope, element, attrs) => {
+            givenScope = scope;
+            givenElement = element;
+            givenAttrs = attrs;
+          };
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+
+      expect(givenScope).toBe($rootScope);
+      expect(givenElement[0]).toBe(el[0]);
+      expect(givenAttrs).toBeDefined();
+      expect((<any>givenAttrs).myDirective).toBeDefined();
     });
   });
 });

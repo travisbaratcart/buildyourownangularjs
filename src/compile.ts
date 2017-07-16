@@ -4,6 +4,8 @@ import { Scope } from '../src/scope';
 import { Injector } from './injector';
 import * as _ from 'lodash';
 
+type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => any;
+
 const BOOLEAN_ATTRS: any = {
   multiple: true,
   selected: true,
@@ -29,7 +31,7 @@ const isBooleanAttribute = (nodeName: string, attributeName: string) => {
 };
 
 export interface IDirectiveDefinitionObject {
-  compile?: (element?: JQuery, attrs?: Attributes) => any;
+  compile?: (element?: JQuery, attrs?: Attributes) => (LinkFunction | void);
   restrict?: string;
   priority?: number;
   name?: string;
@@ -112,10 +114,18 @@ export class $CompileService {
   }
 
   public compile($compileNodes: JQuery): Function {
-    _.forEach($compileNodes, (node) => {
+    const nodeLinkFns: ((scope: Scope) => any)[] = [];
+
+    _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const nodeLinkFn = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+
+      nodeLinkFns.push((scope: Scope) => {
+        const $node = $(node);
+        $node.data('$scope', scope);
+        nodeLinkFn(scope, $(node), nodeAttrs)
+      });
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 
@@ -126,7 +136,11 @@ export class $CompileService {
       }
     });
 
-    return (new Linker($compileNodes)).Link;
+    return (scope: Scope) => {
+      nodeLinkFns.forEach(nodeLinkFn => {
+        nodeLinkFn(scope);
+      });
+    }
   }
 
   private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
@@ -255,8 +269,10 @@ export class $CompileService {
   private applyDirectivesToNode(
     nodeDirectives: IDirectiveDefinitionObject[],
     compileNode: HTMLElement,
-    attrs: Attributes) {
+    attrs: Attributes): LinkFunction {
     let terminalPriority = -1;
+
+    const directiveLinkFunctions: LinkFunction[] = [];
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -268,23 +284,36 @@ export class $CompileService {
       }
 
       if (directive.compile) {
-        this.compileNode(directive, compileNode, attrs);
+        const directiveLinkFunction = this.compileNode(
+          directive,
+          compileNode,
+          attrs);
+
+        if (directiveLinkFunction) {
+          directiveLinkFunctions.push(directiveLinkFunction);
+        }
       }
     });
+
+    return (scope: Scope, element: JQuery, attrs: Attributes) => {
+      directiveLinkFunctions.forEach(directiveLinkFunction => {
+        directiveLinkFunction(scope, element, attrs);
+      });
+    }
   }
 
   private compileNode(
     directive: IDirectiveDefinitionObject,
     node: HTMLElement,
-    attrs: Attributes) {
+    attrs: Attributes): (LinkFunction | void) {
     if (directive.multiElement) {
       const nodes = this.getMultiElementNodes(directive, node);
 
       if (nodes) {
-        directive.compile(nodes, attrs);
+        return directive.compile(nodes, attrs);
       }
     } else {
-      directive.compile($(node), attrs);
+      return directive.compile($(node), attrs);
     }
   }
 
@@ -433,14 +462,5 @@ export class Attributes {
         console.error(error);
       }
     }
-  }
-}
-
-class Linker {
-  constructor(private nodes: JQuery) {
-  }
-
-  public Link = (scope: Scope) => {
-    this.nodes.data('$scope', scope);
   }
 }
