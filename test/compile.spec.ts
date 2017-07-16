@@ -1174,6 +1174,27 @@ describe('linking', () => {
       expect(givenElements[0][0]).toBe((<HTMLElement>el[0].firstChild))
     });
   });
+
+  it('supports link function objects', () => {
+    let linked = false;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: {
+          post: (scope, element, attrs) => {
+            linked = true;
+          }
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div><div my-directive></div></div>');
+
+      $compile.compile(el)($rootScope);
+      expect(linked).toBe(true);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

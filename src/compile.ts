@@ -4,7 +4,10 @@ import { Scope } from '../src/scope';
 import { Injector } from './injector';
 import * as _ from 'lodash';
 
-type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => any;
+type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => void;
+interface ILinkFunctionObject {
+  post?: LinkFunction;
+}
 
 const BOOLEAN_ATTRS: any = {
   multiple: true,
@@ -32,10 +35,7 @@ const isBooleanAttribute = (nodeName: string, attributeName: string) => {
 
 export interface IDirectiveDefinitionObject {
   compile?: (element?: JQuery, attrs?: Attributes) => (LinkFunction | void);
-  link?: (
-    scope: Scope,
-    element?: JQuery,
-    attrs?: Attributes) => void;
+  link?: LinkFunction | ILinkFunctionObject;
   restrict?: string;
   priority?: number;
   name?: string;
@@ -306,7 +306,12 @@ export class $CompileService {
           directiveLinkFunctions.push(directiveLinkFunction);
         }
       } else if (directive.link) {
-        directiveLinkFunctions.push(directive.link);
+        const linkFunctionOrObject = directive.link;
+        if (typeof linkFunctionOrObject === 'function') {
+          directiveLinkFunctions.push(<LinkFunction>directive.link);
+        } else {
+          directiveLinkFunctions.push(linkFunctionOrObject.post);
+        }
       }
     });
 
