@@ -1078,6 +1078,28 @@ describe('$compile', () => {
       expect((<any>givenAttrs).myDirective).toBeDefined();
     });
   });
+
+  it('links directive on child elements first', () => {
+    const givenElements: JQuery[] = [];
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: (scope, element, attrs) => {
+          givenElements.push(element);
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive><div my-directive></div></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect(givenElements.length).toBe(2);
+      expect(givenElements[0][0]).toBe((<HTMLElement>el[0].firstChild));
+      expect(givenElements[1][0]).toBe(el[0]);
+    });
+  });
 });
 
 describe('linking', () => {

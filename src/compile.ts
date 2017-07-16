@@ -117,27 +117,37 @@ export class $CompileService {
 
   }
 
-  public compile($compileNodes: JQuery): Function {
+  public compile($compileNodes: JQuery): (scope: Scope) => any {
     const nodeLinkFns: ((scope: Scope) => any)[] = [];
 
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
       const nodeLinkFn = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const childLinkFns: ((scope) => any)[] = [];
 
-      nodeLinkFns.push((scope: Scope) => {
-        const $node = $(node);
-        $node.data('$scope', scope);
-        nodeLinkFn(scope, $(node), nodeAttrs)
-      });
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 
       if (node.childNodes && node.childNodes.length && !hasTerminalDirective) {
         _.forEach(node.childNodes, (node) => {
-          this.compile($(node));
+          const childLinkFn = this.compile($(node));
+
+          if (childLinkFn) {
+            childLinkFns.push(childLinkFn);
+          }
         });
       }
+
+      nodeLinkFns.push((scope: Scope) => {
+        childLinkFns.forEach(childLinkFn => {
+          childLinkFn(scope);
+        });
+
+        const $node = $(node);
+        $node.data('$scope', scope);
+        nodeLinkFn(scope, $(node), nodeAttrs)
+      });
     });
 
     return (scope: Scope) => {
