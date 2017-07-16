@@ -407,6 +407,22 @@ export class Attributes {
     this.$element.removeClass(className);
   }
 
+  public $updateClass(newClassesString: string, oldClassesString: string) {
+    const newClasses = newClassesString.split(/\s+/);
+    const oldClasses = oldClassesString.split(/\s+/);
+
+    const addedClasses = _.difference(newClasses, oldClasses);
+    const removedClasses = _.difference(oldClasses, newClasses);
+
+    if (addedClasses.length) {
+      this.$addClass(addedClasses.join(' '));
+    }
+
+    if (removedClasses.length) {
+      this.$removeClass(removedClasses.join(' '));
+    }
+  }
+
   private callAttrObservers(key: string, value: any) {
     if (this.$$observers[key]) {
       try {

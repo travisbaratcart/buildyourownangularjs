@@ -1013,6 +1013,19 @@ describe('$compile', () => {
           expect(element.hasClass('some-class')).toBe(false);
         });
     });
+
+    it('allows updating classes', () => {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="one three four"></my-directive>',
+        (element, attrs) => {
+          attrs.$updateClass('one two three', 'one three four');
+          expect(element.hasClass('one')).toBe(true);
+          expect(element.hasClass('two')).toBe(true);
+          expect(element.hasClass('three')).toBe(true);
+          expect(element.hasClass('four')).toBe(false);
+        });
+    });
   });
 });
 
