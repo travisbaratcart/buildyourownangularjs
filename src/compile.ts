@@ -124,8 +124,7 @@ export class $CompileService {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
       const nodeLinkFn = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
-      const childLinkFns: ((scope) => any)[] = [];
-
+      const childLinkFns: ((scope: Scope) => any)[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 

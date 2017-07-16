@@ -1153,6 +1153,27 @@ describe('linking', () => {
       expect((<any>givenAttrs).myDirective).toBeDefined();
     });
   });
+
+  it('links children when parent has no directives', () => {
+    const givenElements: JQuery[] = [];
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: (scope: Scope, element: JQuery, attrs: Attributes) => {
+          givenElements.push(element);
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div><div my-directive></div></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect(givenElements.length).toBe(1);
+      expect(givenElements[0][0]).toBe((<HTMLElement>el[0].firstChild))
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
