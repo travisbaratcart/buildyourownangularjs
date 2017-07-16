@@ -196,13 +196,23 @@ export class $CompileService {
       }
     });
 
-
-
     _.forEach(this.getNodeClasses(node), (attrValue, normalizedClassName) => {
       if (this.getDirectivesByName(normalizedClassName, 'C').length) {
         (<any>attrs)[normalizedClassName] = attrValue;
       }
     });
+
+    if (node.nodeType === Node.COMMENT_NODE) {
+      const match = /^\s+directive\:\s*([\d\w\-_]+)\s*(.*)$/.exec(node.nodeValue);
+
+      if (match) {
+        const normalizedName = this.normalizeName(match[1]);
+
+        if (this.getDirectivesByName(normalizedName, 'M').length) {
+          (<any>attrs)[normalizedName] = match[2] ? match[2].trim() : undefined;
+        }
+      }
+    }
 
     return attrs;
   }

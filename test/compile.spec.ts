@@ -983,6 +983,16 @@ describe('$compile', () => {
           expect((<any>attrs).myDirective).toEqual('my attribute value');
         });
     });
+
+    it('adds an attribute with a value from a comment directive', () => {
+      registerAndCompile(
+        'myDirective',
+        '<!-- directive: my-directive and the attribute value -->',
+        (element, attrs) => {
+          expect(attrs.hasOwnProperty('myDirective')).toBe(true);
+          expect((<any>attrs).myDirective).toEqual('and the attribute value');
+        });
+    });
   });
 });
 
