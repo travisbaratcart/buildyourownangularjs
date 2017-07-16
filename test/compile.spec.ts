@@ -1027,6 +1027,37 @@ describe('$compile', () => {
         });
     });
   });
+
+  it('returns a public link function from compile', () => {
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: _.noop
+      };
+    });
+
+    injector.invoke(($compile: $CompileService) => {
+      const el = $('<div my-directive></div>');
+      const linkFn = $compile.compile(el);
+      expect(linkFn).toBeDefined();
+      expect(typeof linkFn === 'function').toBe(true);
+    });
+  });
+});
+
+describe('linking', () => {
+  it('takes a scope and attaches it to elements', () => {
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        compile: _.noop
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+      expect(el.data('$scope')).toBe($rootScope);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

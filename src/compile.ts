@@ -111,7 +111,7 @@ export class $CompileService {
 
   }
 
-  public compile($compileNodes: JQuery) {
+  public compile($compileNodes: JQuery): Function {
     _.forEach($compileNodes, (node) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
@@ -125,6 +125,8 @@ export class $CompileService {
         });
       }
     });
+
+    return (new Linker($compileNodes)).Link;
   }
 
   private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
@@ -431,5 +433,14 @@ export class Attributes {
         console.error(error);
       }
     }
+  }
+}
+
+class Linker {
+  constructor(private nodes: JQuery) {
+  }
+
+  public Link = (scope: Scope) => {
+    this.nodes.data('$scope', scope);
   }
 }
