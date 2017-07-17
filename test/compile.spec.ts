@@ -1223,6 +1223,51 @@ describe('linking', () => {
       expect(linkings[3]).toEqual(['post', el[0]]);
     });
   });
+
+  it('reverses priority for postlink functions', () => {
+    const linkings: any[] = [];
+
+    const injector = makeInjectorWithDirectives({
+      firstDirective: () => {
+        return {
+          priority: 2,
+          link: {
+            pre: (scope, element) => {
+              linkings.push('first-pre');
+            },
+            post: (scope, element) => {
+              linkings.push('first-post');
+            }
+          }
+        };
+      },
+      secondDirective: () => {
+        return {
+          priority: 1,
+          link: {
+            pre: (scope, element) => {
+              linkings.push('second-pre');
+            },
+            post: (scope, element) => {
+              linkings.push('second-post');
+            }
+          }
+        };
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div first-directive second-directive></div>');
+
+      $compile.compile(el)($rootScope);
+      expect(linkings).toEqual([
+        'first-pre',
+        'second-pre',
+        'second-post',
+        'first-post'
+      ]);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

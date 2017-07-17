@@ -352,7 +352,7 @@ export class $CompileService {
         });
       },
       post: (scope, element, attrs) => {
-        directiveLinkObjects.forEach(directiveLinkObject => {
+        _.forEachRight(directiveLinkObjects, (directiveLinkObject) => {
           if (directiveLinkObject.post) {
             directiveLinkObject.post(scope, element, attrs);
           }
