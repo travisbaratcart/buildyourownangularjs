@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => void;
 interface ILinkFunctionObject {
   post?: LinkFunction;
+  pre?: LinkFunction;
 }
 
 const BOOLEAN_ATTRS: any = {
@@ -117,43 +118,76 @@ export class $CompileService {
 
   }
 
-  public compile($compileNodes: JQuery): (scope: Scope) => any {
-    const nodeLinkFns: ((scope: Scope) => any)[] = [];
+  public compile ($compileNodes: JQuery): (scope: Scope) => any {
+    const linkFnObject = this.compileNodes($compileNodes);
+
+    return (scope: Scope) => {
+      linkFnObject.pre(scope);
+      linkFnObject.post(scope);
+    }
+  }
+
+  public compileNodes($compileNodes: JQuery) {
+    const nodeLinkFnObjects: ILinkFunctionObject[] = [];
 
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const nodeLinkFn = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
-      const childLinkFns: ((scope: Scope) => any)[] = [];
+      const nodeLinkFnObject = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const childLinkFnObjects: ILinkFunctionObject[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 
       if (node.childNodes && node.childNodes.length && !hasTerminalDirective) {
         _.forEach(node.childNodes, (node) => {
-          const childLinkFn = this.compile($(node));
+          const childLinkFnObject = this.compileNodes($(node));
 
-          if (childLinkFn) {
-            childLinkFns.push(childLinkFn);
+          if (childLinkFnObject) {
+            childLinkFnObjects.push(childLinkFnObject);
           }
         });
       }
 
-      nodeLinkFns.push((scope: Scope) => {
-        childLinkFns.forEach(childLinkFn => {
-          childLinkFn(scope);
-        });
+      nodeLinkFnObjects.push({
+        pre: (scope) => {
+          if (nodeLinkFnObject.pre) {
+            nodeLinkFnObject.pre(scope, $(node), nodeAttrs);
+          }
 
-        const $node = $(node);
-        $node.data('$scope', scope);
-        nodeLinkFn(scope, $(node), nodeAttrs)
-      });
+          childLinkFnObjects.forEach(childLinkFnObject => {
+            if (childLinkFnObject.pre) {
+              childLinkFnObject.pre(scope);
+            }
+          });
+        },
+        post: (scope) => {
+          childLinkFnObjects.forEach(childLinkFnObject => {
+            if (childLinkFnObject.post) {
+              childLinkFnObject.post(scope);
+            }
+          });
+
+          if (nodeLinkFnObject.post) {
+            const $node = $(node);
+            $node.data('$scope', scope);
+            nodeLinkFnObject.post(scope, $node, nodeAttrs);
+          }
+        }
+      })
     });
 
-    return (scope: Scope) => {
-      nodeLinkFns.forEach(nodeLinkFn => {
-        nodeLinkFn(scope);
-      });
-    }
+    return {
+      pre: (scope: Scope) => {
+        nodeLinkFnObjects.forEach(nodeLinkFnObject => {
+          nodeLinkFnObject.pre(scope);
+        });
+      },
+      post: (scope: Scope) => {
+        nodeLinkFnObjects.forEach(nodeLinkFnObject => {
+          nodeLinkFnObject.post(scope);
+        });
+      }
+    };
   }
 
   private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
@@ -282,10 +316,10 @@ export class $CompileService {
   private applyDirectivesToNode(
     nodeDirectives: IDirectiveDefinitionObject[],
     compileNode: HTMLElement,
-    attrs: Attributes): LinkFunction {
+    attrs: Attributes): ILinkFunctionObject {
     let terminalPriority = -1;
 
-    const directiveLinkFunctions: LinkFunction[] = [];
+    const directiveLinkObjects: ILinkFunctionObject[] = [];
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -296,30 +330,35 @@ export class $CompileService {
         terminalPriority = directive.priority;
       }
 
-      if (directive.compile) {
-        const directiveLinkFunction = this.compileNode(
-          directive,
-          compileNode,
-          attrs);
+      const directiveLinkFunctionOrObject =
+        (directive.compile && this.compileNode(directive, compileNode, attrs))
+        || directive.link;
 
-        if (directiveLinkFunction) {
-          directiveLinkFunctions.push(directiveLinkFunction);
-        }
-      } else if (directive.link) {
-        const linkFunctionOrObject = directive.link;
-        if (typeof linkFunctionOrObject === 'function') {
-          directiveLinkFunctions.push(<LinkFunction>directive.link);
-        } else {
-          directiveLinkFunctions.push(linkFunctionOrObject.post);
-        }
+      if (typeof directiveLinkFunctionOrObject === 'object') {
+        directiveLinkObjects.push(directiveLinkFunctionOrObject);
+      } else if (typeof directiveLinkFunctionOrObject === 'function') {
+        directiveLinkObjects.push({
+          post: directiveLinkFunctionOrObject
+        });
       }
     });
 
-    return (scope: Scope, element: JQuery, attrs: Attributes) => {
-      directiveLinkFunctions.forEach(directiveLinkFunction => {
-        directiveLinkFunction(scope, element, attrs);
-      });
-    }
+    return {
+      pre: (scope, element, attrs) => {
+        directiveLinkObjects.forEach(directiveLinkObject => {
+          if (directiveLinkObject.pre) {
+            directiveLinkObject.pre(scope, element, attrs);
+          }
+        });
+      },
+      post: (scope, element, attrs) => {
+        directiveLinkObjects.forEach(directiveLinkObject => {
+          if (directiveLinkObject.post) {
+            directiveLinkObject.post(scope, element, attrs);
+          }
+        });
+      }
+    };
   }
 
   private compileNode(

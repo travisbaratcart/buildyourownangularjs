@@ -1195,6 +1195,34 @@ describe('linking', () => {
       expect(linked).toBe(true);
     });
   });
+
+  it('supports prelinking and postlinking', () => {
+    const linkings: any[] = [];
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: {
+          pre: (scope, element) => {
+            linkings.push(['pre', element[0]]);
+          },
+          post: (scope, element) => {
+            linkings.push(['post', element[0]]);
+          }
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive><div my-directive></div></div>');
+
+      $compile.compile(el)($rootScope);
+      expect(linkings.length).toBe(4);
+      expect(linkings[0]).toEqual(['pre', el[0]]);
+      expect(linkings[1]).toEqual(['pre', el[0].firstChild]);
+      expect(linkings[2]).toEqual(['post', el[0].firstChild]);
+      expect(linkings[3]).toEqual(['post', el[0]]);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
