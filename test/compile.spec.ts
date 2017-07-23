@@ -1268,6 +1268,54 @@ describe('linking', () => {
       ]);
     });
   });
+
+  it('stabilizes the node list during linking', () => {
+    const givenElements: Node[] = [];
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        link: (scope, element, attrs) => {
+          givenElements.push(element[0]);
+          element.after('<div></div>');
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div><div my-directive></div><div my-directive></div></div>');
+
+      const el1 = el[0].childNodes[0];
+      const el2 = el[0].childNodes[1];
+
+      $compile.compile(el)($rootScope);
+      expect(givenElements.length).toBe(2);
+      expect(givenElements[0]).toBe(el1);
+      expect(givenElements[1]).toBe(el2);
+    });
+  });
+
+  it('invokes multi-element directive link functions with whole group', () => {
+    let givenElements: JQuery;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        multiElement: true,
+        link: (scope, element, attrs) => {
+          givenElements = element;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $(
+        '<div my-directive-start></div>'
+        + '<p></p>'
+        + '<div my-directive-end></div>');
+
+      $compile.compile(el)($rootScope);
+      expect(givenElements.length).toBe(3);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

@@ -10,6 +10,12 @@ interface ILinkFunctionObject {
   pre?: LinkFunction;
 }
 
+type NodeBoundLinkFn = (scope?: Scope) => void;
+interface INodeBoundLinkFunctionObject {
+  post?: NodeBoundLinkFn;
+  pre?: NodeBoundLinkFn;
+}
+
 const BOOLEAN_ATTRS: any = {
   multiple: true,
   selected: true,
@@ -151,7 +157,7 @@ export class $CompileService {
       nodeLinkFnObjects.push({
         pre: (scope) => {
           if (nodeLinkFnObject.pre) {
-            nodeLinkFnObject.pre(scope, $(node), nodeAttrs);
+            nodeLinkFnObject.pre(scope);
           }
 
           childLinkFnObjects.forEach(childLinkFnObject => {
@@ -170,7 +176,7 @@ export class $CompileService {
           if (nodeLinkFnObject.post) {
             const $node = $(node);
             $node.data('$scope', scope);
-            nodeLinkFnObject.post(scope, $node, nodeAttrs);
+            nodeLinkFnObject.post(scope);
           }
         }
       })
@@ -316,10 +322,10 @@ export class $CompileService {
   private applyDirectivesToNode(
     nodeDirectives: IDirectiveDefinitionObject[],
     compileNode: HTMLElement,
-    attrs: Attributes): ILinkFunctionObject {
+    attrs: Attributes): INodeBoundLinkFunctionObject {
     let terminalPriority = -1;
 
-    const directiveLinkObjects: ILinkFunctionObject[] = [];
+    const directiveLinkObjects: INodeBoundLinkFunctionObject[] = [];
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -330,50 +336,83 @@ export class $CompileService {
         terminalPriority = directive.priority;
       }
 
+      const compileNodes = directive.multiElement
+        ? this.getMultiElementNodes(directive, compileNode)
+        : $(compileNode);
+
       const directiveLinkFunctionOrObject =
-        (directive.compile && this.compileNode(directive, compileNode, attrs))
+        (directive.compile && this.compileNode(directive, compileNodes, attrs))
         || directive.link;
 
-      if (typeof directiveLinkFunctionOrObject === 'object') {
-        directiveLinkObjects.push(directiveLinkFunctionOrObject);
-      } else if (typeof directiveLinkFunctionOrObject === 'function') {
-        directiveLinkObjects.push({
-          post: directiveLinkFunctionOrObject
-        });
+      const nodeBoundLinkFnObject = this.getNodeBoundLinkFnObject(
+        compileNodes,
+        directiveLinkFunctionOrObject,
+        attrs);
+
+      if (nodeBoundLinkFnObject) {
+        directiveLinkObjects.push(nodeBoundLinkFnObject);
       }
+
+
     });
 
     return {
-      pre: (scope, element, attrs) => {
+      pre: (scope) => {
         directiveLinkObjects.forEach(directiveLinkObject => {
           if (directiveLinkObject.pre) {
-            directiveLinkObject.pre(scope, element, attrs);
+            directiveLinkObject.pre(scope);
           }
         });
       },
-      post: (scope, element, attrs) => {
+      post: (scope) => {
         _.forEachRight(directiveLinkObjects, (directiveLinkObject) => {
           if (directiveLinkObject.post) {
-            directiveLinkObject.post(scope, element, attrs);
+            directiveLinkObject.post(scope);
           }
         });
       }
     };
   }
 
+  private getNodeBoundLinkFnObject(
+        compileNodes: JQuery,
+        directiveLinkFunctionOrObject: LinkFunction | ILinkFunctionObject,
+        attrs: Attributes): INodeBoundLinkFunctionObject {
+    if (!compileNodes || !directiveLinkFunctionOrObject) {
+      return;
+    }
+
+    if (typeof directiveLinkFunctionOrObject === 'object') {
+      return {
+        pre: (scope: Scope) => {
+          if (directiveLinkFunctionOrObject.pre) {
+            directiveLinkFunctionOrObject.pre(scope, compileNodes, attrs);
+          }
+        },
+        post: (scope: Scope) => {
+          if (directiveLinkFunctionOrObject.post) {
+            directiveLinkFunctionOrObject.post(scope, compileNodes, attrs);
+          }
+        }
+      }
+    } else if (typeof directiveLinkFunctionOrObject === 'function') {
+      return {
+        post: (scope: Scope) => {
+          directiveLinkFunctionOrObject(scope, compileNodes, attrs);
+        }
+      }
+    }
+  }
+
   private compileNode(
     directive: IDirectiveDefinitionObject,
-    node: HTMLElement,
-    attrs: Attributes): (LinkFunction | void) {
-    if (directive.multiElement) {
-      const nodes = this.getMultiElementNodes(directive, node);
-
-      if (nodes) {
-        return directive.compile(nodes, attrs);
-      }
-    } else {
-      return directive.compile($(node), attrs);
+    node: JQuery,
+    attrs: Attributes): (LinkFunction | ILinkFunctionObject | void) {
+    if (!node) {
+      return;
     }
+
+    return directive.compile(node, attrs);
   }
 
   private getMultiElementNodes(directive: IDirectiveDefinitionObject, startNode: HTMLElement): JQuery {
