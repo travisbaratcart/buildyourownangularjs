@@ -58,7 +58,7 @@ export class Scope {
   private isDirty = false;
 
   private $root: Scope;
-  private $parent: Scope;
+  public $parent: Scope;
   public $$children: Scope[] = [];
 
   public $$listeners: { [eventName: string]: ((event: IEvent, ...args: any[]) => any)[] } = {}
