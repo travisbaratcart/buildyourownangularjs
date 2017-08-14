@@ -364,6 +364,10 @@ export class $CompileService {
         compileNodes.addClass('ng-scope');
       }
 
+      if (hasIsolateScope) {
+        compileNodes.addClass('ng-isolate-scope');
+      }
+
       const directiveLinkFunctionOrObject =
         (directive.compile && this.compileNode(directive, compileNodes, attrs))
         || directive.link;
@@ -396,11 +400,15 @@ export class $CompileService {
       return;
     }
 
+    const scopeAttrName = isIsolateScope
+      ? '$isolateScope'
+      : '$scope';
+
     if (typeof directiveLinkFunctionOrObject === 'object') {
       return {
         pre: (scope: Scope) => {
           if (directiveLinkFunctionOrObject.pre) {
-            compileNodes.data('$scope', scope);
+            compileNodes.data(scopeAttrName, scope);
             directiveLinkFunctionOrObject.pre(scope, compileNodes, attrs);
           }
         },
@@ -414,7 +422,7 @@ export class $CompileService {
     } else if (typeof directiveLinkFunctionOrObject === 'function') {
       return {
         post: (scope: Scope) => {
-          compileNodes.data('$scope', scope);
+          compileNodes.data(scopeAttrName, scope);
           directiveLinkFunctionOrObject(scope, compileNodes, attrs);
         },
         createsNewScope,

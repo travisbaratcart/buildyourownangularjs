@@ -1501,6 +1501,28 @@ describe('linking', () => {
       expect(() => $compile.compile(el)).toThrow();
     });
   });
+
+  it('adds class and data for element with isolate scope', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {},
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+
+      expect(el.hasClass('ng-isolate-scope')).toBe(true);
+      expect(el.hasClass('ng-scope')).toBe(false);
+      expect(el.data('$isolateScope')).toBe(givenScope);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
