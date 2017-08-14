@@ -14,7 +14,8 @@ type NodeBoundLinkFn = (scope?: Scope) => void;
 interface INodeBoundLinkFunctionObject {
   post?: NodeBoundLinkFn;
   pre?: NodeBoundLinkFn;
-  isIsolateScope: boolean;
+  createsNewScope?: boolean;
+  isIsolateScope?: boolean;
 }
 
 const BOOLEAN_ATTRS: any = {
@@ -50,7 +51,7 @@ export interface IDirectiveDefinitionObject {
   index?: number;
   terminal?: boolean;
   multiElement?: boolean;
-  scope?: boolean;
+  scope?: any;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -136,39 +137,54 @@ export class $CompileService {
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const nodeLinkFnObject = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const { directiveLinkObjects, createsNewScope } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
       const childLinkFns: NodeBoundLinkFn[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
 
       if (node.childNodes && node.childNodes.length && !hasTerminalDirective) {
         _.forEach(node.childNodes, (node) => {
-          const childLinkFnObject = this.compileNodes($(node));
+          const childLinkFn = this.compileNodes($(node));
 
-          if (childLinkFnObject) {
-            childLinkFns.push(childLinkFnObject);
+          if (childLinkFn) {
+            childLinkFns.push(childLinkFn);
           }
         });
       }
 
       nodeLinkFns.push((scope: Scope) => {
-        let directiveScope = nodeLinkFnObject.isIsolateScope
+        const nodeScope = createsNewScope
           ? scope.$new()
           : scope;
 
-        if (nodeLinkFnObject.pre) {
-          nodeLinkFnObject.pre(directiveScope);
-        }
+        const isolateScope = scope.$new(true);
 
-        childLinkFns.forEach(childLinkFn => {
-          childLinkFn(directiveScope);
+        const $node = $(node);
+        $node.data('$scope', nodeScope);
+
+        directiveLinkObjects.forEach(directiveLinkFnObject => {
+          if (directiveLinkFnObject.pre) {
+            const directiveScope = directiveLinkFnObject.isIsolateScope
+              ? isolateScope
+              : nodeScope;
+
+            directiveLinkFnObject.pre(directiveScope);
+          }
         });
 
-        if (nodeLinkFnObject.post) {
-          const $node = $(node);
-          $node.data('$scope', directiveScope);
-          nodeLinkFnObject.post(directiveScope);
-        }
+        childLinkFns.forEach(childLinkFn => {
+          childLinkFn(nodeScope);
+        });
+
+        _.forEachRight(directiveLinkObjects, directiveLinkFnObject => {
+          if (directiveLinkFnObject.post) {
+            const directiveScope = directiveLinkFnObject.isIsolateScope
+              ? isolateScope
+              : nodeScope;
+
+            directiveLinkFnObject.post(directiveScope);
+          }
+        });
       });
     });
 
@@ -305,12 +321,12 @@ export class $CompileService {
   private applyDirectivesToNode(
     nodeDirectives: IDirectiveDefinitionObject[],
     compileNode: HTMLElement,
-    attrs: Attributes): INodeBoundLinkFunctionObject {
+    attrs: Attributes) {
     let terminalPriority = -1;
 
     const directiveLinkObjects: INodeBoundLinkFunctionObject[] = [];
 
-    let isIsolateScope = false;
+    let createsNewScope = false;
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -325,8 +341,13 @@ export class $CompileService {
         ? this.getMultiElementNodes(directive, compileNode)
         : $(compileNode);
 
-      if (directive.scope) {
-        isIsolateScope = true;
+      if (directive.scope === true) {
+        createsNewScope = true;
+      }
+
+      const isIsolateScope = typeof directive.scope === 'object';
+
+      if (createsNewScope) {
         compileNodes.addClass('ng-scope');
       }
 
@@ -338,6 +359,7 @@ export class $CompileService {
         compileNodes,
         directiveLinkFunctionOrObject,
         attrs,
+        createsNewScope,
         isIsolateScope);
 
       if (nodeBoundLinkFnObject) {
@@ -346,21 +368,8 @@ export class $CompileService {
     });
 
     return {
-      pre: (scope) => {
-        directiveLinkObjects.forEach(directiveLinkObject => {
-          if (directiveLinkObject.pre) {
-            directiveLinkObject.pre(scope);
-          }
-        });
-      },
-      post: (scope) => {
-        _.forEachRight(directiveLinkObjects, (directiveLinkObject) => {
-          if (directiveLinkObject.post) {
-            directiveLinkObject.post(scope);
-          }
-        });
-      },
-      isIsolateScope
+      directiveLinkObjects,
+      createsNewScope
     };
   }
 
@@ -368,6 +377,7 @@ export class $CompileService {
         compileNodes: JQuery,
         directiveLinkFunctionOrObject: LinkFunction | ILinkFunctionObject,
         attrs: Attributes,
+        createsNewScope: boolean,
         isIsolateScope: boolean): INodeBoundLinkFunctionObject {
     if (!compileNodes || !directiveLinkFunctionOrObject) {
       return;
@@ -386,7 +396,7 @@ export class $CompileService {
             directiveLinkFunctionOrObject.post(scope, compileNodes, attrs);
           }
         },
-        isIsolateScope
+        createsNewScope
       }
     } else if (typeof directiveLinkFunctionOrObject === 'function') {
       return {
@@ -394,6 +404,7 @@ export class $CompileService {
           compileNodes.data('$scope', scope);
           directiveLinkFunctionOrObject(scope, compileNodes, attrs);
         },
+        createsNewScope,
         isIsolateScope
       }
     }

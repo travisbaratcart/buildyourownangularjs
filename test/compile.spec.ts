@@ -1384,6 +1384,79 @@ describe('linking', () => {
       expect(el.data('$scope')).toBe(givenScope);
     });
   });
+
+  it('creates an isolate scope when requested', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {},
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+
+      expect(givenScope.$parent).toBe($rootScope);
+      expect(Object.getPrototypeOf(givenScope)).not.toBe($rootScope);
+    });
+  });
+
+  it('does not share isolate scope with other directives', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives({
+      myDirective: () => {
+        return {
+          scope: {}
+        };
+      },
+      myOtherDirective: () => {
+        return {
+          link: (scope) => {
+            givenScope = scope;
+          }
+        };
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive my-other-directive></div>');
+      $compile.compile(el)($rootScope);
+      expect(givenScope).toBe($rootScope);
+    });
+  });
+
+  it('does not use isolate scope on child elements', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives({
+      myDirective: () => {
+        return {
+          scope: {}
+        };
+      },
+      myOtherDirective: () => {
+        return {
+          link: (scope) => {
+            givenScope = scope;
+          }
+        }
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive><div my-other-directive></div></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect(givenScope).toBe($rootScope);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
