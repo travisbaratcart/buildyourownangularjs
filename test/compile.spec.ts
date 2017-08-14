@@ -1457,6 +1457,50 @@ describe('linking', () => {
       expect(givenScope).toBe($rootScope);
     });
   });
+
+  it('does not allow two isolate scope directives on an element', () => {
+    const injector = makeInjectorWithDirectives({
+      myDirective: () => {
+        return {
+          scope: {}
+        };
+      },
+      myOtherDirective: () => {
+        return {
+          scope: {}
+        };
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive my-other-directive></div>');
+
+      expect(() => {
+        $compile.compile(el);
+      }).toThrow();
+    });
+  });
+
+  it('does not allow both isolate and inherited scopes on an element', () => {
+    const injector = makeInjectorWithDirectives({
+      myDirective: () => {
+        return {
+          scope: {}
+        };
+      },
+      myOtherDirective: () => {
+        return {
+          scope: true
+        };
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive my-other-directive></div>');
+
+      expect(() => $compile.compile(el)).toThrow();
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

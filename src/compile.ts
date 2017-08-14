@@ -327,6 +327,7 @@ export class $CompileService {
     const directiveLinkObjects: INodeBoundLinkFunctionObject[] = [];
 
     let createsNewScope = false;
+    let hasIsolateScope = false;
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -342,10 +343,22 @@ export class $CompileService {
         : $(compileNode);
 
       if (directive.scope === true) {
+        if (hasIsolateScope) {
+          throw 'CompileService.applyDirectivesToNode: Multiple directives asking for new/inherited scope';
+        }
+
         createsNewScope = true;
       }
 
-      const isIsolateScope = typeof directive.scope === 'object';
+      if (typeof directive.scope === 'object') {
+        if (hasIsolateScope || createsNewScope) {
+          throw 'CompileService.applyDirectivesToNode: Multiple directives asking for new/inherited scope';
+        }
+
+        hasIsolateScope = true;
+      }
+
+      hasIsolateScope = typeof directive.scope === 'object';
 
       if (createsNewScope) {
         compileNodes.addClass('ng-scope');
@@ -360,7 +373,7 @@ export class $CompileService {
         directiveLinkFunctionOrObject,
         attrs,
         createsNewScope,
-        isIsolateScope);
+        hasIsolateScope);
 
       if (nodeBoundLinkFnObject) {
         directiveLinkObjects.push(nodeBoundLinkFnObject);
