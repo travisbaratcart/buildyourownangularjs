@@ -11,6 +11,7 @@ import {
   $HttpParamSerializerJQLikeProvider
 } from './http';
 import { $CompileProvider } from './compile';
+import { $ControllerProvider} from './controller';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -27,4 +28,5 @@ export function publishExternalAPI(): void {
   ngModule.provider('$httpParamSerializer', $HttpParamSerializerProvider);
   ngModule.provider('$httpParamSerializerJQLike', $HttpParamSerializerJQLikeProvider);
   ngModule.provider('$compile', $CompileProvider);
+  ngModule.provider('$controller', $ControllerProvider);
 }
