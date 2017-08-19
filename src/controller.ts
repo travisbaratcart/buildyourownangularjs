@@ -1,8 +1,13 @@
 'use strict';
 import { IProvider, Injector, Invokable } from './injector';
+import * as _ from 'lodash';
 
 interface IRegisteredControllers {
   [controllerName: string]: Invokable;
+}
+
+interface InvokableObject {
+  [invokableName: string]: Invokable
 }
 
 export class $ControllerProvider implements IProvider {
@@ -12,8 +17,14 @@ export class $ControllerProvider implements IProvider {
 
   private registeredControllers: IRegisteredControllers = {};
 
-  public register(controllerName: string, constructorFn: Invokable) {
-    this.registeredControllers[controllerName] = constructorFn;
+  public register(controllerNameOrObject: string | InvokableObject, constructorFn: Invokable) {
+    if (typeof controllerNameOrObject === 'object') {
+      _.forEach(controllerNameOrObject, (constructorFn, controllerName) => {
+        this.register(controllerName, constructorFn);
+      });
+    } else {
+      this.registeredControllers[controllerNameOrObject] = constructorFn;
+    }
   }
 }
 
