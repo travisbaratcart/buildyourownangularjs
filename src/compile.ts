@@ -23,6 +23,7 @@ interface INodeBoundLinkFunctionObject {
 interface IIsolateBindingConfig {
   [scopeVariable: string]: {
     mode: string;
+    collection: boolean;
     attrName: string;
   }
 }
@@ -140,11 +141,12 @@ export class $CompileProvider implements IProvider {
     const bindings: any = {};
 
     _.forEach(scopeConfig, (definition, scopeVariable) => {
-      const targetAttrMatch = definition.match(/\s*([@=])\s*(\w*)\s*/);
+      const targetAttrMatch = definition.match(/\s*(@|=(\*?))\s*(\w*)\s*/);
 
       bindings[scopeVariable] = {
-        mode: targetAttrMatch[1],
-        attrName: targetAttrMatch[2] || scopeVariable
+        mode: targetAttrMatch[1][0],
+        collection: targetAttrMatch[2] === '*',
+        attrName: targetAttrMatch[3] || scopeVariable
       };
     });
 
@@ -257,7 +259,11 @@ export class $CompileService {
                       return parentValue;
                     }
 
-                    scope.$watch(parentValueWatch);
+                    if (definition.collection) {
+                      nodeScope.$watchCollection((<any>nodeAttrs)[targetAttrName], parentValueWatch);
+                    } else {
+                      scope.$watch(parentValueWatch);
+                    }
 
                     break;
                   default:

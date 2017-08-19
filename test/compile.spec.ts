@@ -1718,6 +1718,60 @@ describe('linking', () => {
       expect((<any>givenScope).myAttr).toBe(42);
     });
   });
+
+  it('throws when isolate scope expression returns new arrays', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '='
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      (<any>$rootScope).parentFunction = () => {
+        return [1, 2, 3];
+      };
+
+      const el = $('<div my-directive my-attr="parentFunction()"></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect(() => $rootScope.$digest()).toThrow();
+    });
+  });
+
+  it('can watch isolated scope expressions as collections', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '=*'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      (<any>$rootScope).parentFunction = () => [1, 2, 3];
+
+      const el = $('<div my-directive my-attr="parentFunction()"></div>');
+
+      $compile.compile(el)($rootScope);
+
+      $rootScope.$digest();
+
+      expect((<any>givenScope).myAttr).toEqual([1, 2, 3]);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
