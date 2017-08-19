@@ -279,6 +279,10 @@ export class $CompileService {
                   case '&':
                     const evalExpression = this.$parse((<any>nodeAttrs)[targetAttrName]);
 
+                    if (evalExpression === _.noop && definition.optional) {
+                      break;
+                    }
+
                     (<any>isolateScope)[scopeVariable] = (locals: any) => {
                       return evalExpression(nodeScope, locals);
                     }

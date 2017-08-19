@@ -1848,6 +1848,35 @@ describe('linking', () => {
       expect(gotNum).toBe(42);
     });
   });
+
+  it('sets missing optional parent scope expression to undefined', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myExpr: '&?'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      }
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      let gotArg: any;
+
+      (<any>$rootScope).parentFunction = (arg: any) => {
+        gotArg = arg;
+      };
+
+      const el = $('<div my-directive></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).myExpr).toBeUndefined();
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
