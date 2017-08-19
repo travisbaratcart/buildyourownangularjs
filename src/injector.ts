@@ -8,6 +8,8 @@ import {
   IDirectiveFactoryObject,
   DirectiveFactory
 } from './compile';
+import { Invokable } from './injector';
+import { $ControllerProvider } from './controller';
 
 export function createInjector(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean): Injector {
   return new Injector(modulesToLoad, strictInjection);
@@ -41,7 +43,7 @@ export class Injector {
   private instanceInjector: InternalInjector;
   private providerInjector: InternalInjector;
 
-  private onRunQueue: ((...args: any[]) => any)[] = [];
+  private onRunQueue: Invokable[] = [];
 
   constructor(modulesToLoad: (string | IInjectableFunction)[], strictInjection?: boolean) {
     this.providerInjector = this.providerCache.$injector = new InternalInjector(
@@ -127,6 +129,10 @@ export class Injector {
       this.providerInjector.invoke(configFunc)
     });
 
+    module.$$controllerRegistrations.forEach(registerItem => {
+      this.provideController(registerItem.key, registerItem.value);
+    });
+
     this.onRunQueue = this.onRunQueue.concat(module.$$runRegistrations);
   }
 
@@ -200,13 +206,13 @@ export class Injector {
     this.provideFactory(key, () => value, false);
   }
 
-  private provideService = (key: string, Constructor: (...args: any[]) => any) => {
+  private provideService = (key: string, Constructor: Invokable) => {
     this.provideFactory(key, () => {
       return this.instanceInjector.instantiate(Constructor);
     });
   }
 
-  private provideDecorator = (serviceName: string, decoratorFunc: (...args: any[]) => any) => {
+  private provideDecorator = (serviceName: string, decoratorFunc: Invokable) => {
     const provider = this.providerInjector.get(this.keyProvider(serviceName));
 
     const original$get = provider.$get;
@@ -218,6 +224,11 @@ export class Injector {
 
       return instance;
     };
+  }
+
+  private provideController = (controllerName: string, controllerConstructor: Invokable) => {
+    (<$ControllerProvider>this.providerInjector.get('$controllerProvider'))
+      .register(controllerName, controllerConstructor);
   }
 
   private provideFilter = (filterName: string, filterFactory: () => IFilter) => {
@@ -246,7 +257,8 @@ export class Injector {
       service: this.provideService,
       decorator: this.provideDecorator,
       filter: this.provideFilter,
-      directive: this.provideDirective
+      directive: this.provideDirective,
+      controller: this.provideController
     };
 
     this.providerCache.$provide = $provide;

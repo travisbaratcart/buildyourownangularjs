@@ -17,7 +17,7 @@ export class $ControllerProvider implements IProvider {
 
   private registeredControllers: IRegisteredControllers = {};
 
-  public register(controllerNameOrObject: string | InvokableObject, constructorFn: Invokable) {
+  public register(controllerNameOrObject: string | InvokableObject, constructorFn?: Invokable) {
     if (typeof controllerNameOrObject === 'object') {
       _.forEach(controllerNameOrObject, (constructorFn, controllerName) => {
         this.register(controllerName, constructorFn);

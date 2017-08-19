@@ -1,12 +1,17 @@
 'use strict';
+import { Angular } from '../src/loader';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector, IProvide } from '../src/injector';
 import { $ControllerService, $ControllerProvider } from '../src/controller';
 
 describe('$controller', () => {
+  let angular: Angular;
+
   beforeEach(() => {
     delete (<any>window).angular;
     publishExternalAPI();
+
+    angular = (<any>window).angular;
   })
 
   it('instantiates controller functions', () => {
@@ -93,5 +98,18 @@ describe('$controller', () => {
 
     expect(controller instanceof MyController).toBe(true);
     expect(otherController instanceof MyOtherController).toBe(true);
+  });
+
+  it('allows registering controllers through modules', () => {
+    const module = angular.module('myModule', []);
+
+    module.controller('MyController', function MyController() { });
+
+    const injector = createInjector(['ng', 'myModule']);
+
+    const $controller: $ControllerService = injector.get('$controller');
+    const controller = $controller.controller('MyController');
+
+    expect(controller).toBeDefined();
   });
 });

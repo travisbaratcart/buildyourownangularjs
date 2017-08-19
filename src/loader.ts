@@ -1,6 +1,7 @@
 'use strict';
 import { IFilter } from './filter';
 import { IDirectiveDefinitionObject, IDirectiveFactoryObject } from './compile';
+import { Invokable } from './injector';
 
 export function setupModuleLoader(window: any): void {
   const angular = ensure(window, 'angular', () => new Angular());
@@ -24,8 +25,9 @@ class Module {
   public $$decoratorRegistrations: IRegisterItem[] = [];
   public $$filterRegistrations: IRegisterItem[] = [];
   public $$directiveRegistrations: IRegisterItem[] = [];
-  public $$configRegistrations: ((...args: any[]) => any)[] = [];
-  public $$runRegistrations: ((...args: any[]) => any)[] = [];
+  public $$controllerRegistrations: IRegisterItem[] = [];
+  public $$configRegistrations: Invokable[] = [];
+  public $$runRegistrations: Invokable[] = [];
 
   constructor(
     public name: string,
@@ -45,7 +47,7 @@ class Module {
     this.registerItem(key, value, this.$$providerRegistrations);
   }
 
-  public factory(key: string, value: (...args: any[]) => any): void {
+  public factory(key: string, value: Invokable): void {
     this.registerItem(key, value, this.$$factoryRegistrations);
   }
 
@@ -53,11 +55,11 @@ class Module {
     this.registerItem(key, value, this.$$valueRegistrations);
   }
 
-  public service(key: string, value: (...args: any[]) => any): void {
+  public service(key: string, value: Invokable): void {
     this.registerItem(key, value, this.$$serviceRegistrations);
   }
 
-  public decorator(serviceName: string, decoratorFunc: (...args: any[]) => any) {
+  public decorator(serviceName: string, decoratorFunc: Invokable) {
     this.registerItem(serviceName, decoratorFunc, this.$$decoratorRegistrations);
   }
 
@@ -69,11 +71,15 @@ class Module {
     this.registerItem(directiveNameOrObject, directiveFactory, this.$$directiveRegistrations);
   }
 
-  public run(onRun: (...args: any[]) => any): void {
+  public controller(controllerName: string, controllerConstructor: Invokable) {
+    this.registerItem(controllerName, controllerConstructor, this.$$controllerRegistrations);
+  }
+
+  public run(onRun: Invokable): void {
     this.$$runRegistrations.push(onRun);
   }
 
-  public config(configFunction: (...args: any[]) => any) {
+  public config(configFunction: Invokable) {
     this.$$configRegistrations.push(configFunction);
   }
 
