@@ -1,7 +1,7 @@
 'use strict';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector, IProvide } from '../src/injector';
-import { $ControllerService } from '../src/controller';
+import { $ControllerService, $ControllerProvider } from '../src/controller';
 
 describe('$controller', () => {
   beforeEach(() => {
@@ -51,5 +51,22 @@ describe('$controller', () => {
     const controller = $controller.controller(MyController, { aDep: 42 });
 
     expect(controller.theDep).toBe(42);
+  });
+
+  it('allows registering controllers at config time', () => {
+    function MyController() {
+
+    }
+
+    const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider) => {
+      $controllerProvider.register('MyController', MyController);
+    }]);
+
+    const $controller: $ControllerService = injector.get('$controller');
+
+    const controller = $controller.controller('MyController');
+
+    expect(controller).toBeDefined();
+    expect(controller instanceof MyController).toBe(true);
   });
 });
