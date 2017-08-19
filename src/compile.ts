@@ -2,6 +2,7 @@
 import { IProvider, IProvide } from './injector';
 import { Scope } from '../src/scope';
 import { Injector } from './injector';
+import { IParseService } from './parse';
 import * as _ from 'lodash';
 
 type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => void;
@@ -82,10 +83,15 @@ export class $CompileProvider implements IProvider {
 
   public $get = [
     '$injector',
+    '$parse',
     '$rootScope',
-    function($injector: Injector, $rootScope: Scope) {
+    function(
+      $injector: Injector,
+      $parse: IParseService,
+      $rootScope: Scope) {
       return new $CompileService(
         $injector,
+        $parse,
         $rootScope,
         this.registeredDirectivesFactories);
     }
@@ -134,11 +140,11 @@ export class $CompileProvider implements IProvider {
     const bindings: any = {};
 
     _.forEach(scopeConfig, (definition, scopeVariable) => {
-      const targetAttrNameMatch = definition.match(/\s*@\s*(\w*)\s*/);
+      const targetAttrMatch = definition.match(/\s*([@=])\s*(\w*)\s*/);
 
       bindings[scopeVariable] = {
-        mode: '@',
-        attrName: targetAttrNameMatch[1] || scopeVariable
+        mode: targetAttrMatch[1],
+        attrName: targetAttrMatch[2] || scopeVariable
       };
     });
 
@@ -150,6 +156,7 @@ export class $CompileService {
 
   constructor(
     private $injector: Injector,
+    private $parse: IParseService,
     private $rootScope: Scope,
     private registeredDirectivesFactories: { [directiveName: string]: DirectiveFactory[] }) {
 
@@ -224,6 +231,10 @@ export class $CompileService {
                       (<any>isolateScope)[scopeVariable] = (<any>nodeAttrs)[targetAttrName];
                     }
 
+                    break;
+                  case '=':
+                    const expression = this.$parse((<any>nodeAttrs)[targetAttrName]);
+                    (<any>isolateScope)[scopeVariable] = expression(nodeScope);
                     break;
                   default:
                     throw 'CompileService.compileNodes: Unexpected scope configuration.'

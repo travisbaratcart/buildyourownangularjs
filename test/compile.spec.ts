@@ -1570,6 +1570,73 @@ describe('linking', () => {
       expect((<any>givenScope).aScopeAttr).toBe('42');
     });
   });
+
+  it('allows binding expression to isolate scope', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          anAttr: '='
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive an-attr="42"></div>');
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).anAttr).toBe(42);
+    });
+  });
+
+  it('allows aliasing expression attribute on isolate scope', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '=theAttr'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive the-attr="42"></div>');
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).myAttr).toBe(42);
+    });
+  });
+
+  it('evaluates isolate scope expression on parent scope', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '='
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      (<any>$rootScope).parentAttr = 41;
+      const el  = $('<div my-directive my-attr="parentAttr + 1"></div>');
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).myAttr).toBe(42);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
