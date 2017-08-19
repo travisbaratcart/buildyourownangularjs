@@ -12,7 +12,7 @@ export class $ControllerService {
 
   }
 
-  public controller(constructorFn: () => any) {
-    return this.$injector.instantiate(constructorFn);
+  public controller(constructorFn: (...args: any[]) => any, locals?: any) {
+    return this.$injector.instantiate(constructorFn, locals);
   }
 }

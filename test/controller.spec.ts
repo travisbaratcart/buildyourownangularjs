@@ -39,4 +39,17 @@ describe('$controller', () => {
 
     expect(controller.theDep).toBe(42);
   });
+
+  it('allows injecting locals to controller functions', () => {
+    const injector = createInjector(['ng']);
+    const $controller: $ControllerService = injector.get('$controller');
+
+    function MyController(aDep: any) {
+      this.theDep = aDep;
+    }
+
+    const controller = $controller.controller(MyController, { aDep: 42 });
+
+    expect(controller.theDep).toBe(42);
+  });
 });
