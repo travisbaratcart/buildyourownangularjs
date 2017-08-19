@@ -16,6 +16,7 @@ interface INodeBoundLinkFunctionObject {
   pre?: NodeBoundLinkFn;
   createsNewScope?: boolean;
   isIsolateScope?: boolean;
+  isolateBindings?: any;
 }
 
 const BOOLEAN_ATTRS: any = {
@@ -52,6 +53,7 @@ export interface IDirectiveDefinitionObject {
   terminal?: boolean;
   multiElement?: boolean;
   scope?: any;
+  $$isolateBindings?: any;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -112,9 +114,25 @@ export class $CompileProvider implements IProvider {
         directive.name = directive.name || directiveName;
         directive.index = index;
 
+        if (typeof directive.scope === 'object') {
+          directive.$$isolateBindings = this.parseIsolateBindings(directive.scope);
+        }
+
         return directive;
       });
     }]);
+  }
+
+  private parseIsolateBindings(scopeConfig: any) {
+    const bindings: any = {};
+
+    _.forEach(scopeConfig, (definition, scopeVariable) => {
+      bindings[scopeVariable] = {
+        mode: definition
+      };
+    });
+
+    return bindings;
   }
 }
 
@@ -181,6 +199,26 @@ export class $CompileService {
             const directiveScope = directiveLinkFnObject.isIsolateScope
               ? isolateScope
               : nodeScope;
+
+            if (directiveLinkFnObject.isIsolateScope) {
+              _.forEach(directiveLinkFnObject.isolateBindings, (definition, scopeVariable) => {
+                switch (definition.mode) {
+                  case '@':
+                    nodeAttrs.$observe(scopeVariable, (newAttrValue) => {
+                      (<any>isolateScope)[scopeVariable] = newAttrValue;
+                    });
+
+                    if ((<any>nodeAttrs)[scopeVariable]) {
+                      (<any>isolateScope)[scopeVariable] = (<any>nodeAttrs)[scopeVariable];
+                    }
+
+                    break;
+                  default:
+                    throw 'CompileService.compileNodes: Unexpected scope configuration.'
+                }
+              });
+            }
+
 
             directiveLinkFnObject.post(directiveScope);
           }
@@ -377,7 +415,8 @@ export class $CompileService {
         directiveLinkFunctionOrObject,
         attrs,
         createsNewScope,
-        hasIsolateScope);
+        hasIsolateScope,
+        directive.$$isolateBindings);
 
       if (nodeBoundLinkFnObject) {
         directiveLinkObjects.push(nodeBoundLinkFnObject);
@@ -395,7 +434,8 @@ export class $CompileService {
         directiveLinkFunctionOrObject: LinkFunction | ILinkFunctionObject,
         attrs: Attributes,
         createsNewScope: boolean,
-        isIsolateScope: boolean): INodeBoundLinkFunctionObject {
+        isIsolateScope: boolean,
+        directiveIsolateBindings: any): INodeBoundLinkFunctionObject {
     if (!compileNodes || !directiveLinkFunctionOrObject) {
       return;
     }
@@ -417,7 +457,9 @@ export class $CompileService {
             directiveLinkFunctionOrObject.post(scope, compileNodes, attrs);
           }
         },
-        createsNewScope
+        createsNewScope,
+        isIsolateScope,
+        isolateBindings: directiveIsolateBindings
       }
     } else if (typeof directiveLinkFunctionOrObject === 'function') {
       return {
@@ -426,7 +468,8 @@ export class $CompileService {
           directiveLinkFunctionOrObject(scope, compileNodes, attrs);
         },
         createsNewScope,
-        isIsolateScope
+        isIsolateScope,
+        isolateBindings: directiveIsolateBindings
       }
     }
   }

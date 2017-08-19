@@ -1523,6 +1523,31 @@ describe('linking', () => {
       expect(el.data('$isolateScope')).toBe(givenScope);
     });
   });
+
+  it('allows observing attributes in the isolate scope', () => {
+    let givenScope: Scope;
+    let givenAttrs: Attributes;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          anAttr: '@'
+        },
+        link: (scope, element, attrs) => {
+          givenScope = scope;
+          givenAttrs = attrs;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+
+      givenAttrs.$set('anAttr', '42');
+      expect((<any>givenScope).anAttr).toBe('42');
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
