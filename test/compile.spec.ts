@@ -1637,6 +1637,32 @@ describe('linking', () => {
       expect((<any>givenScope).myAttr).toBe(42);
     });
   });
+
+  it('watches isolated scope expressions', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '='
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive my-attr="parentAttr + 1></div>');
+      $compile.compile(el)($rootScope);
+
+      (<any>$rootScope).parentAttr = 41;
+
+      $rootScope.$digest();
+
+      expect((<any>givenScope).myAttr).toBe(42);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {

@@ -235,6 +235,11 @@ export class $CompileService {
                   case '=':
                     const expression = this.$parse((<any>nodeAttrs)[targetAttrName]);
                     (<any>isolateScope)[scopeVariable] = expression(nodeScope);
+
+                    nodeScope.$watch(expression, (newValue) => {
+                      (<any>isolateScope)[scopeVariable] = newValue;
+                    });
+
                     break;
                   default:
                     throw 'CompileService.compileNodes: Unexpected scope configuration.'
