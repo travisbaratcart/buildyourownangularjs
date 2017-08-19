@@ -142,7 +142,7 @@ export class $CompileProvider implements IProvider {
     const bindings: any = {};
 
     _.forEach(scopeConfig, (definition, scopeVariable) => {
-      const targetAttrMatch = definition.match(/\s*(@|=(\*?))(\??)\s*(\w*)\s*/);
+      const targetAttrMatch = definition.match(/\s*([@&]|=(\*?))(\??)\s*(\w*)\s*/);
 
       bindings[scopeVariable] = {
         mode: targetAttrMatch[1][0],
@@ -265,10 +265,22 @@ export class $CompileService {
                       return parentValue;
                     }
 
+                    let unwatchFunc: () => any;
+
                     if (definition.collection) {
-                      nodeScope.$watchCollection((<any>nodeAttrs)[targetAttrName], parentValueWatch);
+                      unwatchFunc = nodeScope.$watchCollection((<any>nodeAttrs)[targetAttrName], parentValueWatch);
                     } else {
-                      scope.$watch(parentValueWatch);
+                      unwatchFunc = scope.$watch(parentValueWatch);
+                    }
+
+                    isolateScope.$on('$destroy', unwatchFunc);
+
+                    break;
+                  case '&':
+                    const evalExpression = this.$parse((<any>nodeAttrs)[targetAttrName]);
+
+                    (<any>isolateScope)[scopeVariable] = () => {
+                      return evalExpression(nodeScope);
                     }
 
                     break;

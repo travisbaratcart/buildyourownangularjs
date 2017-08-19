@@ -1793,6 +1793,31 @@ describe('linking', () => {
       expect($rootScope.$$watchers.length).toBe(0);
     });
   });
+
+  it('allows binding an invokable expression on the parent scope', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myExpr: '&'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      (<any>$rootScope).parentFunction = () => 42;
+
+      const el = $('<div my-directive my-expr="parentFunction() + 1"></div>');
+
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).myExpr()).toBe(43);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
