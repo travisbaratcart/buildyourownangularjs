@@ -24,6 +24,7 @@ interface IIsolateBindingConfig {
   [scopeVariable: string]: {
     mode: string;
     collection: boolean;
+    optional: boolean;
     attrName: string;
   }
 }
@@ -141,12 +142,13 @@ export class $CompileProvider implements IProvider {
     const bindings: any = {};
 
     _.forEach(scopeConfig, (definition, scopeVariable) => {
-      const targetAttrMatch = definition.match(/\s*(@|=(\*?))\s*(\w*)\s*/);
+      const targetAttrMatch = definition.match(/\s*(@|=(\*?))(\??)\s*(\w*)\s*/);
 
       bindings[scopeVariable] = {
         mode: targetAttrMatch[1][0],
         collection: targetAttrMatch[2] === '*',
-        attrName: targetAttrMatch[3] || scopeVariable
+        optional: targetAttrMatch[3],
+        attrName: targetAttrMatch[4] || scopeVariable
       };
     });
 
@@ -235,6 +237,10 @@ export class $CompileService {
 
                     break;
                   case '=':
+                    if (definition.optional && !(<any>nodeAttrs)[targetAttrName]) {
+                      break;
+                    }
+
                     const expression = this.$parse((<any>nodeAttrs)[targetAttrName]);
 
                     const initialParentValue = expression(nodeScope);

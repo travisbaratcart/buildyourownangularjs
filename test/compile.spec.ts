@@ -1772,6 +1772,27 @@ describe('linking', () => {
       expect((<any>givenScope).myAttr).toEqual([1, 2, 3]);
     });
   });
+
+  it('does not watch optional missing isolate scope expressions', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myAttr: '=?'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive></div>');
+      $compile.compile(el)($rootScope);
+      expect($rootScope.$$watchers.length).toBe(0);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
