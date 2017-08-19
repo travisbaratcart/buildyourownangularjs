@@ -279,8 +279,8 @@ export class $CompileService {
                   case '&':
                     const evalExpression = this.$parse((<any>nodeAttrs)[targetAttrName]);
 
-                    (<any>isolateScope)[scopeVariable] = () => {
-                      return evalExpression(nodeScope);
+                    (<any>isolateScope)[scopeVariable] = (locals: any) => {
+                      return evalExpression(nodeScope, locals);
                     }
 
                     break;

@@ -1818,6 +1818,36 @@ describe('linking', () => {
       expect((<any>givenScope).myExpr()).toBe(43);
     });
   });
+
+  it('allows passing arguments to parent scope expression', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          myExpr: '&'
+        },
+        link: (scope) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      let gotNum: number;
+
+      (<any>$rootScope).parentFunction = (num: number) => {
+        gotNum = num;
+      };
+
+      const el = $('<div my-directive my-expr="parentFunction(numFromChild)"></div>');
+
+      $compile.compile(el)($rootScope);
+      (<any>givenScope).myExpr({ numFromChild: 42 });
+
+      expect(gotNum).toBe(42);
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
