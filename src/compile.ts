@@ -16,7 +16,14 @@ interface INodeBoundLinkFunctionObject {
   pre?: NodeBoundLinkFn;
   createsNewScope?: boolean;
   isIsolateScope?: boolean;
-  isolateBindings?: any;
+  isolateBindings?: IIsolateBindingConfig;
+}
+
+interface IIsolateBindingConfig {
+  [scopeVariable: string]: {
+    mode: string;
+    attrName: string;
+  }
 }
 
 const BOOLEAN_ATTRS: any = {
@@ -123,12 +130,15 @@ export class $CompileProvider implements IProvider {
     }]);
   }
 
-  private parseIsolateBindings(scopeConfig: any) {
+  private parseIsolateBindings(scopeConfig: any): IIsolateBindingConfig {
     const bindings: any = {};
 
     _.forEach(scopeConfig, (definition, scopeVariable) => {
+      const targetAttrNameMatch = definition.match(/\s*@\s*(\w*)\s*/);
+
       bindings[scopeVariable] = {
-        mode: definition
+        mode: '@',
+        attrName: targetAttrNameMatch[1] || scopeVariable
       };
     });
 
@@ -202,14 +212,16 @@ export class $CompileService {
 
             if (directiveLinkFnObject.isIsolateScope) {
               _.forEach(directiveLinkFnObject.isolateBindings, (definition, scopeVariable) => {
+                const targetAttrName = definition.attrName;
+
                 switch (definition.mode) {
                   case '@':
-                    nodeAttrs.$observe(scopeVariable, (newAttrValue) => {
+                    nodeAttrs.$observe(targetAttrName, (newAttrValue) => {
                       (<any>isolateScope)[scopeVariable] = newAttrValue;
                     });
 
-                    if ((<any>nodeAttrs)[scopeVariable]) {
-                      (<any>isolateScope)[scopeVariable] = (<any>nodeAttrs)[scopeVariable];
+                    if ((<any>nodeAttrs)[targetAttrName]) {
+                      (<any>isolateScope)[scopeVariable] = (<any>nodeAttrs)[targetAttrName];
                     }
 
                     break;

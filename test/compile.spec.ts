@@ -1548,6 +1548,28 @@ describe('linking', () => {
       expect((<any>givenScope).anAttr).toBe('42');
     });
   });
+
+  it('allows aliasing observed attribute', () => {
+    let givenScope: Scope;
+
+    const injector = makeInjectorWithDirectives('myDirective', () => {
+      return {
+        scope: {
+          aScopeAttr: '@anAttr'
+        },
+        link: (scope, element, attrs) => {
+          givenScope = scope;
+        }
+      };
+    });
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div my-directive an-attr="42"></div>');
+      $compile.compile(el)($rootScope);
+
+      expect((<any>givenScope).aScopeAttr).toBe('42');
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
