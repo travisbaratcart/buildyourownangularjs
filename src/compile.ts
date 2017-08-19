@@ -234,11 +234,30 @@ export class $CompileService {
                     break;
                   case '=':
                     const expression = this.$parse((<any>nodeAttrs)[targetAttrName]);
-                    (<any>isolateScope)[scopeVariable] = expression(nodeScope);
 
-                    nodeScope.$watch(expression, (newValue) => {
-                      (<any>isolateScope)[scopeVariable] = newValue;
-                    });
+                    const initialParentValue = expression(nodeScope);
+                    (<any>isolateScope)[scopeVariable] = initialParentValue;
+
+                    let lastParentValue = initialParentValue;
+
+                    // NOTE: Registering own change detection to be handled on every digest loop
+                    const parentValueWatch = () => {
+                      let parentValue = expression(nodeScope);
+
+                      if((<any>isolateScope)[scopeVariable] !== parentValue) {
+                        if (parentValue !== lastParentValue) {
+                          (<any>isolateScope)[scopeVariable] = parentValue;
+                        } else {
+                          parentValue = (<any>isolateScope)[scopeVariable];
+                          expression.assign(nodeScope, parentValue);
+                        }
+                      }
+
+                      lastParentValue = parentValue;
+                      return parentValue;
+                    }
+
+                    scope.$watch(parentValueWatch);
 
                     break;
                   default:
