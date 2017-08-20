@@ -11,8 +11,21 @@ interface InvokableObject {
 }
 
 export class $ControllerProvider implements IProvider {
+  private globalsAllowed = false;
+
   public $get = ['$injector', ($injector: Injector) => {
-    return new $ControllerService($injector, this.registeredControllers);
+    return (controllerNameOrConstructor: Invokable | string, locals?: any) => {
+      const registeredConstructor = this.registeredControllers[<string>controllerNameOrConstructor];
+      const globalConstructor = (<any>window)[<string>controllerNameOrConstructor];
+
+      const retrievedConstructor = registeredConstructor || (this.globalsAllowed && globalConstructor);
+
+      const controllerConstructor = typeof controllerNameOrConstructor === 'string'
+        ? retrievedConstructor
+        : controllerNameOrConstructor;
+
+      return $injector.instantiate(controllerConstructor, locals);
+    };
   }];
 
   private registeredControllers: IRegisteredControllers = {};
@@ -26,20 +39,8 @@ export class $ControllerProvider implements IProvider {
       this.registeredControllers[controllerNameOrObject] = constructorFn;
     }
   }
-}
 
-export class $ControllerService {
-  constructor(
-    private $injector: Injector,
-    private registeredControllers: IRegisteredControllers) {
-
-  }
-
-  public controller(controllerNameOrConstructor: Invokable | string, locals?: any) {
-    var controllerConstructor = typeof controllerNameOrConstructor === 'string'
-      ? this.registeredControllers[controllerNameOrConstructor]
-      : controllerNameOrConstructor;
-
-    return this.$injector.instantiate(controllerConstructor, locals);
+  public allowGlobals() {
+    this.globalsAllowed = true;
   }
 }

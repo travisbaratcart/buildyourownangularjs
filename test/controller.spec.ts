@@ -2,7 +2,7 @@
 import { Angular } from '../src/loader';
 import { publishExternalAPI } from '../src/angularPublic';
 import { createInjector, IProvide } from '../src/injector';
-import { $ControllerService, $ControllerProvider } from '../src/controller';
+import { $ControllerProvider } from '../src/controller';
 
 describe('$controller', () => {
   let angular: Angular;
@@ -16,13 +16,13 @@ describe('$controller', () => {
 
   it('instantiates controller functions', () => {
     const injector = createInjector(['ng']);
-    const $controller: $ControllerService = injector.get('$controller');
+    const $controller = injector.get('$controller');
 
     function MyController() {
       this.invoked = true;
     }
 
-    const controller = $controller.controller(MyController);
+    const controller = $controller(MyController);
 
     expect(controller).toBeDefined();
     expect(controller instanceof MyController).toBe(true);
@@ -40,20 +40,20 @@ describe('$controller', () => {
       this.theDep = aDep;
     }
 
-    const controller = $controller.controller(MyController);
+    const controller = $controller(MyController);
 
     expect(controller.theDep).toBe(42);
   });
 
   it('allows injecting locals to controller functions', () => {
     const injector = createInjector(['ng']);
-    const $controller: $ControllerService = injector.get('$controller');
+    const $controller = injector.get('$controller');
 
     function MyController(aDep: any) {
       this.theDep = aDep;
     }
 
-    const controller = $controller.controller(MyController, { aDep: 42 });
+    const controller = $controller(MyController, { aDep: 42 });
 
     expect(controller.theDep).toBe(42);
   });
@@ -67,9 +67,9 @@ describe('$controller', () => {
       $controllerProvider.register('MyController', MyController);
     }]);
 
-    const $controller: $ControllerService = injector.get('$controller');
+    const $controller = injector.get('$controller');
 
-    const controller = $controller.controller('MyController');
+    const controller = $controller('MyController');
 
     expect(controller).toBeDefined();
     expect(controller instanceof MyController).toBe(true);
@@ -91,10 +91,10 @@ describe('$controller', () => {
       });
     }]);
 
-    const $controller: $ControllerService = injector.get('$controller');
+    const $controller = injector.get('$controller');
 
-    const controller = $controller.controller('MyController');
-    const otherController = $controller.controller('MyOtherController');
+    const controller = $controller('MyController');
+    const otherController = $controller('MyOtherController');
 
     expect(controller instanceof MyController).toBe(true);
     expect(otherController instanceof MyOtherController).toBe(true);
@@ -107,9 +107,31 @@ describe('$controller', () => {
 
     const injector = createInjector(['ng', 'myModule']);
 
-    const $controller: $ControllerService = injector.get('$controller');
-    const controller = $controller.controller('MyController');
+    const $controller = injector.get('$controller');
+    const controller = $controller('MyController');
 
     expect(controller).toBeDefined();
+  });
+
+  it('does not normally look controllers up from window', () => {
+    (<any>window).MyController = function MyController() { };
+    const injector = createInjector(['ng']);
+    const $controller = injector.get('$controller');
+
+    expect(() => $controller('MyController')).toThrow();
+  });
+
+  it('looks up controllers from window when so configured', () => {
+    (<any>window).MyController = function MyController() { };
+
+    const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider) => {
+      $controllerProvider.allowGlobals();
+    }]);
+
+    const $controller = injector.get('$controller');
+    const controller = $controller('MyController');
+
+    expect(controller).toBeDefined();
+    expect(controller instanceof (<any>window).MyController).toBe(true);
   });
 });
