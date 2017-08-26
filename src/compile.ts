@@ -199,11 +199,17 @@ export class $CompileService {
       }
 
       nodeLinkFns.push((scope: Scope) => {
+        const isolateScope = scope.$new(true);
+
+        const hasIsolateScopeDirectives = directiveLinkObjects.filter(directiveLinkObject => {
+          return directiveLinkObject.isIsolateScope
+        }).length > 1;
+
         const nodeScope = createsNewScope
           ? scope.$new()
-          : scope;
-
-        const isolateScope = scope.$new(true);
+          : hasIsolateScopeDirectives
+            ? isolateScope
+            : scope;
 
         const $node = $(node);
         $node.data('$scope', nodeScope);
@@ -306,10 +312,16 @@ export class $CompileService {
         });
 
         controllerDirectives.forEach(controllerDirective => {
+          const controllerLocals: any = {
+            $scope: nodeScope,
+            $element: $node,
+            $attrs: nodeAttrs
+          };
+
           if (controllerDirective.controller === '@') {
-            this.$controller((<any>nodeAttrs)[controllerDirective.name])
+            this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals)
           } else {
-            this.$controller(controllerDirective.controller);
+            this.$controller(controllerDirective.controller, controllerLocals);
           }
         });
       });

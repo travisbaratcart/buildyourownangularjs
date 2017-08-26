@@ -2021,6 +2021,36 @@ describe('linking', () => {
        expect(controllerInvoked).toBe(true);
      });
    });
+
+   it('gets scope, element, and attrs through DI', () => {
+     let gotScope: Scope;
+     let gotElement: JQuery;
+     let gotAttrs: Attributes;
+
+     function MyController($element: JQuery, $scope: Scope, $attrs: Attributes) {
+       gotElement = $element;
+       gotScope = $scope;
+       gotAttrs = $attrs;
+     }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+       $compileProvider.directive('myDirective', () => {
+         return { controller: 'MyController' };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive an-attr="abc"></div>');
+
+       $compile.compile(el)($rootScope);
+
+       expect(gotElement[0]).toBe(el[0]);
+       expect(gotScope).toBe($rootScope);
+       expect(gotAttrs).toBeDefined();
+       expect((<any>gotAttrs).anAttr).toEqual('abc');
+     });
+   });
   });
 });
 
