@@ -20,6 +20,7 @@ interface INodeBoundLinkFunctionObject {
   isIsolateScope?: boolean;
   isolateBindings?: IIsolateBindingConfig;
   controller?: string | Invokable;
+  controllerAs?: string;
 }
 
 interface IIsolateBindingConfig {
@@ -321,7 +322,7 @@ export class $CompileService {
           if (controllerDirective.controller === '@') {
             this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals)
           } else {
-            this.$controller(controllerDirective.controller, controllerLocals);
+            this.$controller(controllerDirective.controller, controllerLocals, controllerDirective.controllerAs);
           }
         });
       });

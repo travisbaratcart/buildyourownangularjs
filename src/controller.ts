@@ -1,5 +1,6 @@
 'use strict';
 import { IProvider, Injector, Invokable } from './injector';
+import { Scope } from './scope';
 import * as _ from 'lodash';
 
 interface IRegisteredControllers {
@@ -10,7 +11,7 @@ interface InvokableObject {
   [invokableName: string]: Invokable
 }
 
-export type ControllerFunction = (controllerNameOrConstructor: Invokable | string, locals?: any) => any;
+export type ControllerFunction = (controllerNameOrConstructor: Invokable | string, locals?: any, identifier?: string) => any;
 
 export class $ControllerProvider implements IProvider {
   private globalsAllowed = false;
@@ -37,16 +38,30 @@ export class $ControllerProvider implements IProvider {
     this.globalsAllowed = true;
   }
 
-  private controllerFunction: ControllerFunction =  (controllerNameOrConstructor, locals) => {
-      const registeredConstructor = this.registeredControllers[<string>controllerNameOrConstructor];
-      const globalConstructor = (<any>window)[<string>controllerNameOrConstructor];
+  private controllerFunction: ControllerFunction =  (controllerNameOrConstructor, locals, identifier) => {
+    const registeredConstructor = this.registeredControllers[<string>controllerNameOrConstructor];
+    const globalConstructor = (<any>window)[<string>controllerNameOrConstructor];
 
-      const retrievedConstructor = registeredConstructor || (this.globalsAllowed && globalConstructor);
+    const retrievedConstructor = registeredConstructor || (this.globalsAllowed && globalConstructor);
 
-      const controllerConstructor = typeof controllerNameOrConstructor === 'string'
-        ? retrievedConstructor
-        : controllerNameOrConstructor;
+    const controllerConstructor = typeof controllerNameOrConstructor === 'string'
+    ? retrievedConstructor
+    : controllerNameOrConstructor;
 
-      return this.$injector.instantiate(controllerConstructor, locals);
-    };
+    const instance = this.$injector.instantiate(controllerConstructor, locals);
+
+    if (identifier) {
+      this.addToScope(locals.$scope, instance, identifier);
+    }
+
+    return instance;
+  };
+
+  private addToScope(scope: Scope, instance: any, identifier: string) {
+    if (!scope || !identifier) {
+      return;
+    }
+
+    (<any>scope)[identifier] = instance;
+  }
 }

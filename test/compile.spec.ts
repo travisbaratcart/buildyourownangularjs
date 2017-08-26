@@ -2051,6 +2051,28 @@ describe('linking', () => {
        expect((<any>gotAttrs).anAttr).toEqual('abc');
      });
    });
+
+   it('can be attached on the scope', () => {
+     function MyController() { }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+       $compileProvider.directive('myDirective', () => {
+         return {
+           controller: 'MyController',
+           controllerAs: 'myCtrl'
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive></div>');
+       $compile.compile(el)($rootScope);
+
+       expect((<any>$rootScope).myCtrl).toBeDefined();
+       expect((<any>$rootScope).myCtrl instanceof MyController).toBe(true);
+     });
+   });
   });
 });
 
