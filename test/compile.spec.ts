@@ -2073,6 +2073,33 @@ describe('linking', () => {
        expect((<any>$rootScope).myCtrl instanceof MyController).toBe(true);
      });
    });
+
+   it('gets isolate scope as injected scope', () => {
+     let gotScope: Scope;
+
+     function MyController($scope: Scope) {
+       gotScope = $scope;
+     }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {},
+           controller: 'MyController'
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive></div>');
+
+       $compile.compile(el)($rootScope);
+
+       expect(gotScope).not.toBe($rootScope);
+     });
+   });
   });
 });
 

@@ -20,7 +20,6 @@ interface INodeBoundLinkFunctionObject {
   isIsolateScope?: boolean;
   isolateBindings?: IIsolateBindingConfig;
   controller?: string | Invokable;
-  controllerAs?: string;
 }
 
 interface IIsolateBindingConfig {
@@ -68,6 +67,7 @@ export interface IDirectiveDefinitionObject {
   scope?: any;
   $$isolateBindings?: any;
   controller?: string | Invokable;
+  controllerAs?: string;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -184,7 +184,7 @@ export class $CompileService {
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const { directiveLinkObjects, createsNewScope, controllerDirectives } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const { directiveLinkObjects, createsNewScope, controllerDirectives, isolateScopeDirective } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
       const childLinkFns: NodeBoundLinkFn[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
@@ -202,15 +202,11 @@ export class $CompileService {
       nodeLinkFns.push((scope: Scope) => {
         const isolateScope = scope.$new(true);
 
-        const hasIsolateScopeDirectives = directiveLinkObjects.filter(directiveLinkObject => {
-          return directiveLinkObject.isIsolateScope
-        }).length > 1;
+        const hasIsolateScopeDirectives = !!isolateScopeDirective;
 
         const nodeScope = createsNewScope
           ? scope.$new()
-          : hasIsolateScopeDirectives
-            ? isolateScope
-            : scope;
+          : scope;
 
         const $node = $(node);
         $node.data('$scope', nodeScope);
@@ -313,8 +309,12 @@ export class $CompileService {
         });
 
         controllerDirectives.forEach(controllerDirective => {
+          const controllerScope = isolateScopeDirective
+            ? isolateScope
+            : scope;
+
           const controllerLocals: any = {
-            $scope: nodeScope,
+            $scope: controllerScope,
             $element: $node,
             $attrs: nodeAttrs
           };
@@ -467,8 +467,8 @@ export class $CompileService {
     const directiveLinkObjects: INodeBoundLinkFunctionObject[] = [];
 
     let createsNewScope = false;
-    let hasIsolateScope = false;
     const controllerDirectives: IDirectiveDefinitionObject[] = [];
+    let isolateScopeDirective: IDirectiveDefinitionObject = null;
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -484,7 +484,7 @@ export class $CompileService {
         : $(compileNode);
 
       if (directive.scope === true) {
-        if (hasIsolateScope) {
+        if (isolateScopeDirective) {
           throw 'CompileService.applyDirectivesToNode: Multiple directives asking for new/inherited scope';
         }
 
@@ -492,33 +492,30 @@ export class $CompileService {
       }
 
       if (typeof directive.scope === 'object') {
-        if (hasIsolateScope || createsNewScope) {
+        if (isolateScopeDirective || createsNewScope) {
           throw 'CompileService.applyDirectivesToNode: Multiple directives asking for new/inherited scope';
         }
 
-        hasIsolateScope = true;
+        isolateScopeDirective = directive
+        compileNodes.addClass('ng-isolate-scope');
       }
-
-      hasIsolateScope = typeof directive.scope === 'object';
 
       if (createsNewScope) {
         compileNodes.addClass('ng-scope');
-      }
-
-      if (hasIsolateScope) {
-        compileNodes.addClass('ng-isolate-scope');
       }
 
       const directiveLinkFunctionOrObject =
         (directive.compile && this.compileNode(directive, compileNodes, attrs))
         || directive.link;
 
+      const directiveIsIsolateScope = typeof directive.scope === 'object';
+
       const nodeBoundLinkFnObject = this.getNodeBoundLinkFnObject(
         compileNodes,
         directiveLinkFunctionOrObject,
         attrs,
         createsNewScope,
-        hasIsolateScope,
+        directiveIsIsolateScope,
         directive.$$isolateBindings);
 
       if (nodeBoundLinkFnObject) {
@@ -533,7 +530,8 @@ export class $CompileService {
     return {
       directiveLinkObjects,
       createsNewScope,
-      controllerDirectives
+      controllerDirectives,
+      isolateScopeDirective
     };
   }
 
