@@ -1,8 +1,9 @@
 'use strict';
-import { IProvider, IProvide } from './injector';
+import { IProvider, IProvide, Invokable } from './injector';
 import { Scope } from '../src/scope';
 import { Injector } from './injector';
 import { IParseService } from './parse';
+import { ControllerFunction } from './controller';
 import * as _ from 'lodash';
 
 type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => void;
@@ -18,6 +19,7 @@ interface INodeBoundLinkFunctionObject {
   createsNewScope?: boolean;
   isIsolateScope?: boolean;
   isolateBindings?: IIsolateBindingConfig;
+  controller?: string | Invokable;
 }
 
 interface IIsolateBindingConfig {
@@ -64,6 +66,7 @@ export interface IDirectiveDefinitionObject {
   multiElement?: boolean;
   scope?: any;
   $$isolateBindings?: any;
+  controller?: string | Invokable;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -84,14 +87,17 @@ export class $CompileProvider implements IProvider {
   }
 
   public $get = [
+    '$controller',
     '$injector',
     '$parse',
     '$rootScope',
     function(
+      $controller: ControllerFunction,
       $injector: Injector,
       $parse: IParseService,
       $rootScope: Scope) {
       return new $CompileService(
+        $controller,
         $injector,
         $parse,
         $rootScope,
@@ -159,6 +165,7 @@ export class $CompileProvider implements IProvider {
 export class $CompileService {
 
   constructor(
+    private $controller: ControllerFunction,
     private $injector: Injector,
     private $parse: IParseService,
     private $rootScope: Scope,
@@ -176,7 +183,7 @@ export class $CompileService {
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const { directiveLinkObjects, createsNewScope } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const { directiveLinkObjects, createsNewScope, controllers } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
       const childLinkFns: NodeBoundLinkFn[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
@@ -294,9 +301,12 @@ export class $CompileService {
               });
             }
 
-
             directiveLinkFnObject.post(directiveScope);
           }
+        });
+
+        controllers.forEach(controller => {
+          this.$controller(controller);
         });
       });
     });
@@ -441,6 +451,7 @@ export class $CompileService {
 
     let createsNewScope = false;
     let hasIsolateScope = false;
+    const directiveControllers: (string | Invokable)[] = [];
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -496,11 +507,16 @@ export class $CompileService {
       if (nodeBoundLinkFnObject) {
         directiveLinkObjects.push(nodeBoundLinkFnObject);
       }
+
+      if (directive.controller) {
+        directiveControllers.push(directive.controller);
+      }
     });
 
     return {
       directiveLinkObjects,
-      createsNewScope
+      createsNewScope,
+      controllers: directiveControllers
     };
   }
 

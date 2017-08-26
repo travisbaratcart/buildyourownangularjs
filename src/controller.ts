@@ -10,22 +10,15 @@ interface InvokableObject {
   [invokableName: string]: Invokable
 }
 
+export type ControllerFunction = (controllerNameOrConstructor: Invokable | string, locals?: any) => any;
+
 export class $ControllerProvider implements IProvider {
   private globalsAllowed = false;
+  private $injector: Injector;
 
   public $get = ['$injector', ($injector: Injector) => {
-    return (controllerNameOrConstructor: Invokable | string, locals?: any) => {
-      const registeredConstructor = this.registeredControllers[<string>controllerNameOrConstructor];
-      const globalConstructor = (<any>window)[<string>controllerNameOrConstructor];
-
-      const retrievedConstructor = registeredConstructor || (this.globalsAllowed && globalConstructor);
-
-      const controllerConstructor = typeof controllerNameOrConstructor === 'string'
-        ? retrievedConstructor
-        : controllerNameOrConstructor;
-
-      return $injector.instantiate(controllerConstructor, locals);
-    };
+    this.$injector = $injector;
+    return this.controllerFunction;
   }];
 
   private registeredControllers: IRegisteredControllers = {};
@@ -43,4 +36,17 @@ export class $ControllerProvider implements IProvider {
   public allowGlobals() {
     this.globalsAllowed = true;
   }
+
+  private controllerFunction: ControllerFunction =  (controllerNameOrConstructor, locals) => {
+      const registeredConstructor = this.registeredControllers[<string>controllerNameOrConstructor];
+      const globalConstructor = (<any>window)[<string>controllerNameOrConstructor];
+
+      const retrievedConstructor = registeredConstructor || (this.globalsAllowed && globalConstructor);
+
+      const controllerConstructor = typeof controllerNameOrConstructor === 'string'
+        ? retrievedConstructor
+        : controllerNameOrConstructor;
+
+      return this.$injector.instantiate(controllerConstructor, locals);
+    };
 }
