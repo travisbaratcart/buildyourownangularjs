@@ -1997,6 +1997,30 @@ describe('linking', () => {
         expect(invocations).toBe(2);
       });
     });
+
+   it('can be aliased with @ when given in directive attribute', () => {
+     let controllerInvoked = false;
+
+     function MyController() {
+       controllerInvoked = true;
+     }
+
+     const injector = createInjector(['ng', function($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) {
+       $controllerProvider.register('MyController', MyController);
+       $compileProvider.directive('myDirective', () => {
+         return {
+           controller: '@'
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive="MyController"></div>');
+
+       $compile.compile(el)($rootScope);
+       expect(controllerInvoked).toBe(true);
+     });
+   });
   });
 });
 

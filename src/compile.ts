@@ -183,7 +183,7 @@ export class $CompileService {
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const { directiveLinkObjects, createsNewScope, controllers } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const { directiveLinkObjects, createsNewScope, controllerDirectives } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
       const childLinkFns: NodeBoundLinkFn[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
@@ -305,8 +305,12 @@ export class $CompileService {
           }
         });
 
-        controllers.forEach(controller => {
-          this.$controller(controller);
+        controllerDirectives.forEach(controllerDirective => {
+          if (controllerDirective.controller === '@') {
+            this.$controller((<any>nodeAttrs)[controllerDirective.name])
+          } else {
+            this.$controller(controllerDirective.controller);
+          }
         });
       });
     });
@@ -451,7 +455,7 @@ export class $CompileService {
 
     let createsNewScope = false;
     let hasIsolateScope = false;
-    const directiveControllers: (string | Invokable)[] = [];
+    const controllerDirectives: IDirectiveDefinitionObject[] = [];
 
     nodeDirectives.forEach(directive => {
       if (directive.priority < terminalPriority) {
@@ -509,14 +513,14 @@ export class $CompileService {
       }
 
       if (directive.controller) {
-        directiveControllers.push(directive.controller);
+        controllerDirectives.push(directive);
       }
     });
 
     return {
       directiveLinkObjects,
       createsNewScope,
-      controllers: directiveControllers
+      controllerDirectives
     };
   }
 
