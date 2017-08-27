@@ -330,11 +330,15 @@ export class $CompileService {
     } else if (Array.isArray(required)) {
       return required.map(controllerName => this.getControllers(controllerName, controllers, node));
     } else {
-      const requireMatches = required.match(/^(\^)?/);
+      const requireMatches = required.match(/^(\^\^?)?/);
       const requiredDirectiveName = required.substring(requireMatches[0].length);
       const searchParentNodes = requireMatches[0];
 
       if (searchParentNodes) {
+        if (requireMatches[0] === '^^') {
+          node = node.parent();
+        }
+
         while (node.length) {
           const controller = node.data(`$${requiredDirectiveName}Controller`);
 
