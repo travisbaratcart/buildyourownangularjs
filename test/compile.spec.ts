@@ -2268,6 +2268,39 @@ describe('linking', () => {
        expect(gotMyAttr).toBe('abc');
      });
    });
+
+   it('can be required from a sibling directive', () => {
+     function MyController() { }
+
+     let gotMyController: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {},
+           controller: MyController
+         };
+       });
+
+       $compileProvider.directive('myOtherDirective', () => {
+         return {
+           require: 'myDirective',
+           link: (scope, element, attrs, MyController) => {
+             gotMyController = MyController
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive my-other-directive></div>');
+
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyController).toBeDefined();
+       expect(gotMyController instanceof MyController).toBe(true);
+     });
+   });
   });
 });
 

@@ -6,20 +6,24 @@ import { IParseService } from './parse';
 import { ControllerFunction } from './controller';
 import * as _ from 'lodash';
 
-type LinkFunction = (scope?: Scope, element?: JQuery, attrs?: Attributes) => void;
+type LinkFunction = (
+  scope?: Scope,
+  element?: JQuery,
+  attrs?: Attributes,
+  require?: string | string[]) => void;
+
 interface ILinkFunctionObject {
   post?: LinkFunction;
   pre?: LinkFunction;
 }
 
-type NodeBoundLinkFn = (scope?: Scope) => void;
+type NodeBoundLinkFn = (scope?: Scope, require?: any) => void;
 interface INodeBoundLinkFunctionObject {
   post?: NodeBoundLinkFn;
   pre?: NodeBoundLinkFn;
-  createsNewScope?: boolean;
   isIsolateScope?: boolean;
-  isolateBindings?: IIsolateBindingConfig;
   controller?: string | Invokable;
+  require?: string | string[];
 }
 
 interface IIsolateBindingConfig {
@@ -69,6 +73,7 @@ export interface IDirectiveDefinitionObject {
   controller?: string | Invokable;
   controllerAs?: string;
   bindToController?: any;
+  require?: string | string[];
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -282,7 +287,9 @@ export class $CompileService {
               ? isolateScope
               : nodeScope;
 
-            directiveLinkFnObject.pre(directiveScope);
+            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions);
+
+            directiveLinkFnObject.pre(directiveScope, requiredControllers);
           }
         });
 
@@ -296,7 +303,9 @@ export class $CompileService {
               ? isolateScope
               : nodeScope;
 
-            directiveLinkFnObject.post(directiveScope);
+            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions);
+
+            directiveLinkFnObject.post(directiveScope, requiredControllers);
           }
         });
       });
@@ -307,6 +316,16 @@ export class $CompileService {
         nodeLinkFn(scope);
       });
     };
+  }
+
+  private getControllers(required: string | string[], controllers: { [controllerName: string]: any }) {
+    if (!required) {
+      return null;
+    } else if (controllers[<string>required]) {
+      return controllers[<string>required].instance
+    } else {
+      throw `CompileService.GetControllers: Controller ${required} not found.`;
+    }
   }
 
   private initializeDirectiveBindings(
@@ -567,6 +586,7 @@ export class $CompileService {
       const nodeBoundLinkFnObject = this.getNodeBoundLinkFnObject(
         compileNodes,
         directiveLinkFunctionOrObject,
+        directive.require,
         attrs,
         directiveIsIsolateScope);
 
@@ -590,6 +610,7 @@ export class $CompileService {
   private getNodeBoundLinkFnObject(
         compileNodes: JQuery,
         directiveLinkFunctionOrObject: LinkFunction | ILinkFunctionObject,
+        directiveRequire: string | string[],
         attrs: Attributes,
         isIsolateScope: boolean): INodeBoundLinkFunctionObject {
     if (!compileNodes || !directiveLinkFunctionOrObject) {
@@ -602,26 +623,28 @@ export class $CompileService {
 
     if (typeof directiveLinkFunctionOrObject === 'object') {
       return {
-        pre: (scope: Scope) => {
+        pre: (scope: Scope, require: any) => {
           if (directiveLinkFunctionOrObject.pre) {
             compileNodes.data(scopeAttrName, scope);
-            directiveLinkFunctionOrObject.pre(scope, compileNodes, attrs);
+            directiveLinkFunctionOrObject.pre(scope, compileNodes, attrs, require);
           }
         },
-        post: (scope: Scope) => {
+        post: (scope: Scope, require: any) => {
           if (directiveLinkFunctionOrObject.post) {
-            directiveLinkFunctionOrObject.post(scope, compileNodes, attrs);
+            directiveLinkFunctionOrObject.post(scope, compileNodes, attrs, require);
           }
         },
-        isIsolateScope
+        isIsolateScope,
+        require: directiveRequire
       }
     } else if (typeof directiveLinkFunctionOrObject === 'function') {
       return {
-        post: (scope: Scope) => {
+        post: (scope: Scope, require: any) => {
           compileNodes.data(scopeAttrName, scope);
-          directiveLinkFunctionOrObject(scope, compileNodes, attrs);
+          directiveLinkFunctionOrObject(scope, compileNodes, attrs, require);
         },
-        isIsolateScope
+        isIsolateScope,
+        require: directiveRequire
       }
     }
   }
