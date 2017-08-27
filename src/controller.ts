@@ -52,14 +52,12 @@ export class $ControllerProvider implements IProvider {
     ? retrievedInvokable
     : controllerNameOrInvokable;
 
-
-
     if (delayConstruction) {
       const controllerConstructor = Array.isArray(controllerInvokable)
         ? controllerInvokable[controllerInvokable.length - 1]
         : controllerInvokable;
 
-      const instance = Object.create(controllerConstructor);
+      const instance = Object.create(controllerConstructor.prototype);
 
       if (identifier) {
         this.addToScope(locals.$scope, instance, identifier);

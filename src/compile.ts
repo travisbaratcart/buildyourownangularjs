@@ -65,9 +65,10 @@ export interface IDirectiveDefinitionObject {
   terminal?: boolean;
   multiElement?: boolean;
   scope?: any;
-  $$isolateBindings?: any;
+  $$bindings?: any;
   controller?: string | Invokable;
   controllerAs?: string;
+  bindToController?: boolean;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -136,13 +137,25 @@ export class $CompileProvider implements IProvider {
         directive.name = directive.name || directiveName;
         directive.index = index;
 
-        if (typeof directive.scope === 'object') {
-          directive.$$isolateBindings = this.parseIsolateBindings(directive.scope);
-        }
+        directive.$$bindings = this.parseDirectiveBindings(directive);
 
         return directive;
       });
     }]);
+  }
+
+  private parseDirectiveBindings(directive: IDirectiveDefinitionObject) {
+    const bindings: any = {};
+
+    if (typeof directive.scope === 'object') {
+      if (directive.bindToController) {
+        bindings.bindToController = this.parseIsolateBindings(directive.scope);
+      } else {
+        bindings.isolateScope = this.parseIsolateBindings(directive.scope);
+      }
+    }
+
+    return bindings;
   }
 
   private parseIsolateBindings(scopeConfig: any): IIsolateBindingConfig {
@@ -211,6 +224,48 @@ export class $CompileService {
         const $node = $(node);
         $node.data('$scope', nodeScope);
 
+        const constructControllerFunctions: { [directiveName: string]: any } = {};
+
+        controllerDirectives.forEach(controllerDirective => {
+          const controllerScope = isolateScopeDirective
+            ? isolateScope
+            : scope;
+
+          const controllerLocals: any = {
+            $scope: controllerScope,
+            $element: $node,
+            $attrs: nodeAttrs
+          };
+
+          const constructControllerFunction = controllerDirective.controller === '@'
+            ? this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals, true)
+            : this.$controller(controllerDirective.controller, controllerLocals, true,  controllerDirective.controllerAs);
+
+          constructControllerFunctions[controllerDirective.name] = constructControllerFunction;
+        });
+
+        if (hasIsolateScopeDirectives) {
+            this.initializeDirectiveBindings(
+              nodeScope,
+              nodeAttrs,
+              isolateScope,
+              isolateScopeDirective.$$bindings.isolateScope,
+              isolateScope);
+
+            if (constructControllerFunctions[isolateScopeDirective.name]) {
+              this.initializeDirectiveBindings(
+                nodeScope,
+                nodeAttrs,
+                constructControllerFunctions[isolateScopeDirective.name].instance,
+                isolateScopeDirective.$$bindings.bindToController,
+                isolateScope);
+            }
+        }
+
+        _.forEach(constructControllerFunctions, constructControllerFunction => {
+          constructControllerFunction();
+        });
+
         directiveLinkObjects.forEach(directiveLinkFnObject => {
           if (directiveLinkFnObject.pre) {
             const directiveScope = directiveLinkFnObject.isIsolateScope
@@ -231,98 +286,7 @@ export class $CompileService {
               ? isolateScope
               : nodeScope;
 
-            if (directiveLinkFnObject.isIsolateScope) {
-              _.forEach(directiveLinkFnObject.isolateBindings, (definition, scopeVariable) => {
-                const targetAttrName = definition.attrName;
-
-                switch (definition.mode) {
-                  case '@':
-                    nodeAttrs.$observe(targetAttrName, (newAttrValue) => {
-                      (<any>isolateScope)[scopeVariable] = newAttrValue;
-                    });
-
-                    if ((<any>nodeAttrs)[targetAttrName]) {
-                      (<any>isolateScope)[scopeVariable] = (<any>nodeAttrs)[targetAttrName];
-                    }
-
-                    break;
-                  case '=':
-                    if (definition.optional && !(<any>nodeAttrs)[targetAttrName]) {
-                      break;
-                    }
-
-                    const expression = this.$parse((<any>nodeAttrs)[targetAttrName]);
-
-                    const initialParentValue = expression(nodeScope);
-                    (<any>isolateScope)[scopeVariable] = initialParentValue;
-
-                    let lastParentValue = initialParentValue;
-
-                    // NOTE: Registering own change detection to be handled on every digest loop
-                    const parentValueWatch = () => {
-                      let parentValue = expression(nodeScope);
-
-                      if((<any>isolateScope)[scopeVariable] !== parentValue) {
-                        if (parentValue !== lastParentValue) {
-                          (<any>isolateScope)[scopeVariable] = parentValue;
-                        } else {
-                          parentValue = (<any>isolateScope)[scopeVariable];
-                          expression.assign(nodeScope, parentValue);
-                        }
-                      }
-
-                      lastParentValue = parentValue;
-                      return parentValue;
-                    }
-
-                    let unwatchFunc: () => any;
-
-                    if (definition.collection) {
-                      unwatchFunc = nodeScope.$watchCollection((<any>nodeAttrs)[targetAttrName], parentValueWatch);
-                    } else {
-                      unwatchFunc = scope.$watch(parentValueWatch);
-                    }
-
-                    isolateScope.$on('$destroy', unwatchFunc);
-
-                    break;
-                  case '&':
-                    const evalExpression = this.$parse((<any>nodeAttrs)[targetAttrName]);
-
-                    if (evalExpression === _.noop && definition.optional) {
-                      break;
-                    }
-
-                    (<any>isolateScope)[scopeVariable] = (locals: any) => {
-                      return evalExpression(nodeScope, locals);
-                    }
-
-                    break;
-                  default:
-                    throw 'CompileService.compileNodes: Unexpected scope configuration.'
-                }
-              });
-            }
-
             directiveLinkFnObject.post(directiveScope);
-          }
-        });
-
-        controllerDirectives.forEach(controllerDirective => {
-          const controllerScope = isolateScopeDirective
-            ? isolateScope
-            : scope;
-
-          const controllerLocals: any = {
-            $scope: controllerScope,
-            $element: $node,
-            $attrs: nodeAttrs
-          };
-
-          if (controllerDirective.controller === '@') {
-            this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals, false)
-          } else {
-            this.$controller(controllerDirective.controller, controllerLocals, false,  controllerDirective.controllerAs);
           }
         });
       });
@@ -333,6 +297,86 @@ export class $CompileService {
         nodeLinkFn(scope);
       });
     };
+  }
+
+  private initializeDirectiveBindings(
+    scope: Scope,
+    attrs: Attributes,
+    destination: any,
+    bindings: any,
+    isolateScope: Scope) {
+
+    _.forEach(bindings, (definition, scopeVariable) => {
+      const targetAttrName = definition.attrName;
+
+      switch (definition.mode) {
+          case '@':
+          attrs.$observe(targetAttrName, (newAttrValue) => {
+            (<any>destination)[scopeVariable] = newAttrValue;
+          });
+
+          if ((<any>attrs)[targetAttrName]) {
+            (<any>destination)[scopeVariable] = (<any>attrs)[targetAttrName];
+          }
+
+          break;
+        case '=':
+          if (definition.optional && !(<any>attrs)[targetAttrName]) {
+            break;
+          }
+
+          const expression = this.$parse((<any>attrs)[targetAttrName]);
+
+          const initialParentValue = expression(scope);
+          (<any>destination)[scopeVariable] = initialParentValue;
+
+          let lastParentValue = initialParentValue;
+
+          // NOTE: Registering own change detection to be handled on every digest loop
+          const parentValueWatch = () => {
+            let parentValue = expression(scope);
+
+            if((<any>destination)[scopeVariable] !== parentValue) {
+              if (parentValue !== lastParentValue) {
+                (<any>destination)[scopeVariable] = parentValue;
+              } else {
+                parentValue = (<any>destination)[scopeVariable];
+                expression.assign(scope, parentValue);
+              }
+            }
+
+            lastParentValue = parentValue;
+            return parentValue;
+          }
+
+          let unwatchFunc: () => any;
+
+          if (definition.collection) {
+            unwatchFunc = scope.$watchCollection((<any>attrs)[targetAttrName], parentValueWatch);
+          } else {
+            unwatchFunc = scope.$watch(parentValueWatch);
+          }
+
+          isolateScope.$on('$destroy', unwatchFunc);
+
+          break;
+        case '&':
+          const evalExpression = this.$parse((<any>attrs)[targetAttrName]);
+
+          if (evalExpression === _.noop && definition.optional) {
+            break;
+          }
+
+          (<any>destination)[scopeVariable] = (locals: any) => {
+            return evalExpression(scope, locals);
+          }
+
+          break;
+        default:
+          throw 'CompileService.compileNodes: Unexpected scope configuration.'
+      }
+    });
+
   }
 
   private getDirectivesForNode(node: HTMLElement): IDirectiveDefinitionObject[] {
@@ -515,8 +559,7 @@ export class $CompileService {
         directiveLinkFunctionOrObject,
         attrs,
         createsNewScope,
-        directiveIsIsolateScope,
-        directive.$$isolateBindings);
+        directiveIsIsolateScope);
 
       if (nodeBoundLinkFnObject) {
         directiveLinkObjects.push(nodeBoundLinkFnObject);
@@ -540,8 +583,7 @@ export class $CompileService {
         directiveLinkFunctionOrObject: LinkFunction | ILinkFunctionObject,
         attrs: Attributes,
         createsNewScope: boolean,
-        isIsolateScope: boolean,
-        directiveIsolateBindings: any): INodeBoundLinkFunctionObject {
+        isIsolateScope: boolean): INodeBoundLinkFunctionObject {
     if (!compileNodes || !directiveLinkFunctionOrObject) {
       return;
     }
@@ -564,8 +606,7 @@ export class $CompileService {
           }
         },
         createsNewScope,
-        isIsolateScope,
-        isolateBindings: directiveIsolateBindings
+        isIsolateScope
       }
     } else if (typeof directiveLinkFunctionOrObject === 'function') {
       return {
@@ -574,8 +615,7 @@ export class $CompileService {
           directiveLinkFunctionOrObject(scope, compileNodes, attrs);
         },
         createsNewScope,
-        isIsolateScope,
-        isolateBindings: directiveIsolateBindings
+        isIsolateScope
       }
     }
   }
