@@ -68,7 +68,7 @@ export interface IDirectiveDefinitionObject {
   $$bindings?: any;
   controller?: string | Invokable;
   controllerAs?: string;
-  bindToController?: boolean;
+  bindToController?: any;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -153,6 +153,10 @@ export class $CompileProvider implements IProvider {
       } else {
         bindings.isolateScope = this.parseIsolateBindings(directive.scope);
       }
+    }
+
+    if (typeof directive.bindToController === 'object') {
+      bindings.bindToController = this.parseIsolateBindings(directive.bindToController);
     }
 
     return bindings;

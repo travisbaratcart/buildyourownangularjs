@@ -2211,6 +2211,35 @@ describe('linking', () => {
 
      expect(scope.myCtrl).toBe(controller.instance);
    });
+
+   it('can bind isolate scope bindings through bindToController', () => {
+     let gotMyAttr: string;
+
+     function MyController() {
+       gotMyAttr = this.myAttr;
+     }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {},
+           controller: 'MyController',
+           bindToController: {
+             myAttr: '@myDirective'
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive="abc"></div>');
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyAttr).toBe('abc');
+     });
+   });
   });
 });
 
