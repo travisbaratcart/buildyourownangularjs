@@ -2,7 +2,7 @@
 import { publishExternalAPI } from '../src/angularPublic';
 import { Angular } from '../src/loader';
 import { Scope } from '../src/scope';
-import { createInjector } from '../src/injector';
+import { createInjector, IProvide } from '../src/injector';
 import {
   $CompileProvider,
   $CompileService,
@@ -10,7 +10,7 @@ import {
   IDirectiveFactoryObject,
   Attributes
 } from '../src/compile';
-import { $ControllerProvider } from '../src/controller';
+import { $ControllerProvider, ControllerFunction } from '../src/controller';
 import * as _ from 'lodash';
 
 describe('$compile', () => {
@@ -2099,6 +2099,117 @@ describe('linking', () => {
 
        expect(gotScope).not.toBe($rootScope);
      });
+   });
+
+   it('has isolate scope bindings available during construction', () => {
+     let gotMyAttr: string;
+
+     function MyController($scope: Scope) {
+       gotMyAttr = (<any>$scope).myAttr;
+     }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {
+             myAttr: '@myDirective'
+           },
+           controller: 'MyController'
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive="abc"></div>');
+       $compile.compile(el)($rootScope);
+       expect(gotMyAttr).toBe('abc');
+     });
+   });
+
+   it('can bind isolate scope bindings directly to self', () => {
+     let gotMyAttr: string;
+
+     function MyController() {
+       gotMyAttr = this.myAttr;
+     }
+
+     const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider, $compileProvider: $CompileProvider) => {
+       $controllerProvider.register('MyController', MyController);
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {
+             myAttr: '@myDirective'
+           },
+           controller: 'MyController',
+           bindToController: true
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive="abc"></div>');
+       $compile.compile(el)($rootScope);
+       expect(gotMyAttr).toBe('abc');
+     });
+   });
+
+   it('can return a semi-constructed controller', () => {
+     const injector = createInjector(['ng']);
+     const $controller: ControllerFunction = injector.get('$controller');
+
+     function MyController() {
+       this.constructed = true;
+       this.myAttrWhenConstructed = this.myAttr;
+     }
+
+     const controller = $controller(MyController, null, true);
+
+     expect(controller.constructed).toBeUndefined();
+     expect(controller.instance).toBeDefined();
+
+     controller.instance.myAttr = 42;
+     const actualController = controller();
+
+     expect(actualController.constructed).toBeDefined();
+     expect(actualController.myAttrWhenConstructed).toBe(42);
+   });
+
+   it('can return a semi-constructed controller when using array injection', () => {
+     const injector = createInjector(['ng', ($provide: IProvide) => {
+       $provide.constant('aDep', 42);
+     }]);
+
+     const $controller: ControllerFunction = injector.get('$controller');
+
+     function MyController(aDep: number) {
+       this.aDep = aDep;
+       this.constructed = true;
+     }
+
+     const controller = $controller(['aDep', MyController], null, true);
+     expect(controller.constructed).toBeUndefined();
+
+     const actualController = controller();
+
+     expect(actualController.constructed).toBeDefined();
+     expect(actualController.aDep).toBe(42);
+   });
+
+   it('can bind semi-constructed controller to scope', () => {
+     const injector = createInjector(['ng']);
+
+     const $controller: ControllerFunction = injector.get('$controller');
+
+     function MyController() {
+
+     }
+
+     const scope: any = {};
+
+     const controller = $controller(MyController, { $scope: scope }, true, 'myCtrl');
+
+     expect(scope.myCtrl).toBe(controller.instance);
    });
   });
 });

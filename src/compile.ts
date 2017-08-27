@@ -320,9 +320,9 @@ export class $CompileService {
           };
 
           if (controllerDirective.controller === '@') {
-            this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals)
+            this.$controller((<any>nodeAttrs)[controllerDirective.name], controllerLocals, false)
           } else {
-            this.$controller(controllerDirective.controller, controllerLocals, controllerDirective.controllerAs);
+            this.$controller(controllerDirective.controller, controllerLocals, false,  controllerDirective.controllerAs);
           }
         });
       });
