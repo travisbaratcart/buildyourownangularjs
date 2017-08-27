@@ -2343,6 +2343,32 @@ describe('linking', () => {
        expect(gotControllers[1] instanceof MyOtherController).toBe(true);
      });
    });
+
+   it('passes own controller to link functions if there is no require', () => {
+     function MyController() { }
+
+     let gotMyController: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return  {
+           scope: {},
+           controller: MyController,
+           link: (scope, element, attrs, controller) => {
+             gotMyController = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive></div>');
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyController).toBeDefined();
+       expect(gotMyController instanceof MyController).toBe(true);
+     });
+   });
   });
 });
 

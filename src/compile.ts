@@ -141,6 +141,7 @@ export class $CompileProvider implements IProvider {
         directive.priority = directive.priority || 0;
         directive.name = directive.name || directiveName;
         directive.index = index;
+        directive.require = directive.require || (directive.controller && directive.name)
 
         directive.$$bindings = this.parseDirectiveBindings(directive);
 
