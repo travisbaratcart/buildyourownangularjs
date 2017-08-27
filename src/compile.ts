@@ -319,7 +319,7 @@ export class $CompileService {
     };
   }
 
-  private getControllers(required: string | string[], controllers: { [controllerName: string]: any }) {
+  private getControllers(required: string | string[], controllers: { [controllerName: string]: any }): any {
     if (!required) {
       return null;
     } else if (Array.isArray(required)) {
@@ -573,7 +573,10 @@ export class $CompileService {
         }
 
         isolateScopeDirective = directive
-        compileNodes.addClass('ng-isolate-scope');
+
+        if (compileNodes) {
+          compileNodes.addClass('ng-isolate-scope');
+        }
       }
 
       if (newScopeDirective) {

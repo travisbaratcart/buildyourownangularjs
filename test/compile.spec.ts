@@ -2369,6 +2369,34 @@ describe('linking', () => {
        expect(gotMyController instanceof MyController).toBe(true);
      });
    });
+
+   it('should allow requiring controllers for multi-element directives', () => {
+     function MyController() { }
+
+     let gotMyController: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           multiElement: true,
+           scope: {},
+           controller: MyController,
+           link: (scope, element, attrs, controller) => {
+             gotMyController = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive-start></div><div my-directive-end></div>');
+
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyController).toBeDefined();
+       expect(gotMyController instanceof MyController).toBe(true);
+     });
+   });
   });
 });
 
