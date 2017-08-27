@@ -2397,6 +2397,71 @@ describe('linking', () => {
        expect(gotMyController instanceof MyController).toBe(true);
      });
    });
+
+   it('can be required from a parent directive', () => {
+     function MyController() { }
+
+     let gotMyController: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {},
+           controller: MyController
+         }
+       });
+
+       $compileProvider.directive('myOtherDirective', () => {
+         return {
+           require: '^myDirective',
+           link: (scope, element, attrs, controller) => {
+             gotMyController = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive><div my-other-directive></div></div>')
+
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyController).toBeDefined();
+       expect(gotMyController instanceof MyController).toBe(true);
+     });
+   });
+
+   it('finds from sibling directive when requiring with parent prefix', () => {
+     function MyController() { }
+
+     let gotMyController: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: {},
+           controller: MyController
+         };
+       });
+
+       $compileProvider.directive('myOtherDirective', () => {
+         return {
+           require: '^myDirective',
+           link: (scope, element, attrs, controller) => {
+             gotMyController = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive my-other-directive></div>');
+       $compile.compile(el)($rootScope);
+
+       expect(gotMyController).toBeDefined();
+       expect(gotMyController instanceof MyController).toBe(true);
+     });
+   });
   });
 });
 

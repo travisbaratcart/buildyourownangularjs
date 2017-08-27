@@ -252,6 +252,8 @@ export class $CompileService {
             : this.$controller(controllerDirective.controller, controllerLocals, true,  controllerDirective.controllerAs);
 
           constructControllerFunctions[controllerDirective.name] = constructControllerFunction;
+
+          $node.data(`$${controllerDirective.name}Controller`, constructControllerFunction.instance);
         });
 
         if (hasIsolateScopeDirectives) {
@@ -288,7 +290,7 @@ export class $CompileService {
               ? isolateScope
               : nodeScope;
 
-            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions);
+            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions, $node);
 
             directiveLinkFnObject.pre(directiveScope, requiredControllers);
           }
@@ -304,7 +306,7 @@ export class $CompileService {
               ? isolateScope
               : nodeScope;
 
-            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions);
+            const requiredControllers = this.getControllers(directiveLinkFnObject.require, constructControllerFunctions, $node);
 
             directiveLinkFnObject.post(directiveScope, requiredControllers);
           }
@@ -319,15 +321,36 @@ export class $CompileService {
     };
   }
 
-  private getControllers(required: string | string[], controllers: { [controllerName: string]: any }): any {
+  private getControllers(
+    required: string | string[],
+    controllers: { [controllerName: string]: any },
+    node: JQuery): any {
     if (!required) {
       return null;
     } else if (Array.isArray(required)) {
-      return required.map(controllerName => this.getControllers(controllerName, controllers));
-    } else if (controllers[required]) {
-      return controllers[required].instance
+      return required.map(controllerName => this.getControllers(controllerName, controllers, node));
     } else {
-      throw `CompileService.GetControllers: Controller ${required} not found.`;
+      const requireMatches = required.match(/^(\^)?/);
+      const requiredDirectiveName = required.substring(requireMatches[0].length);
+      const searchParentNodes = requireMatches[0];
+
+      if (searchParentNodes) {
+        while (node.length) {
+          const controller = node.data(`$${requiredDirectiveName}Controller`);
+
+          if (controller) {
+            return controller;
+          } else {
+            node = node.parent();
+          }
+        }
+
+        throw `CompileService.GetControllers: Controller ${required} not found.`;
+      } else if (controllers[required]) {
+        return controllers[required].instance
+      } else {
+        throw `CompileService.GetControllers: Controller ${required} not found.`;
+      }
     }
   }
 
