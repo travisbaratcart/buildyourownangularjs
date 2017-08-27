@@ -2301,6 +2301,48 @@ describe('linking', () => {
        expect(gotMyController instanceof MyController).toBe(true);
      });
    });
+
+   it('can be required from multiple sibling directives', () => {
+     function MyController() { }
+
+     function MyOtherController() { }
+
+     let gotControllers: any[];
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           scope: true,
+           controller: MyController
+         };
+       });
+
+       $compileProvider.directive('myOtherDirective', () => {
+         return {
+           scope: true,
+           controller: MyOtherController
+         };
+       });
+
+       $compileProvider.directive('myThirdDirective', () => {
+         return {
+           require: ['myDirective', 'myOtherDirective'],
+           link: (scope, element, attrs, controllers) => {
+             gotControllers = controllers;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive my-other-directive my-third-directive></div>');
+       $compile.compile(el)($rootScope);
+       expect(gotControllers).toBeDefined();
+       expect(gotControllers.length).toBe(2);
+       expect(gotControllers[0] instanceof MyController).toBe(true);
+       expect(gotControllers[1] instanceof MyOtherController).toBe(true);
+     });
+   });
   });
 });
 

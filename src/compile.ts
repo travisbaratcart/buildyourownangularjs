@@ -10,7 +10,7 @@ type LinkFunction = (
   scope?: Scope,
   element?: JQuery,
   attrs?: Attributes,
-  require?: string | string[]) => void;
+  require?: any) => void;
 
 interface ILinkFunctionObject {
   post?: LinkFunction;
@@ -321,8 +321,10 @@ export class $CompileService {
   private getControllers(required: string | string[], controllers: { [controllerName: string]: any }) {
     if (!required) {
       return null;
-    } else if (controllers[<string>required]) {
-      return controllers[<string>required].instance
+    } else if (Array.isArray(required)) {
+      return required.map(controllerName => this.getControllers(controllerName, controllers));
+    } else if (controllers[required]) {
+      return controllers[required].instance
     } else {
       throw `CompileService.GetControllers: Controller ${required} not found.`;
     }
