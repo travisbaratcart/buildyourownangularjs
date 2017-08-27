@@ -80,4 +80,23 @@ describe('ngController', () => {
       expect(Object.getPrototypeOf(gotScope)).toBe($rootScope);
     });
   });
+
+  it('allows aliasing controller in expression', () => {
+    let gotScope: Scope;
+
+    function MyController($scope: Scope) {
+      gotScope = $scope;
+    }
+
+    const injector = createInjector(['ng', ($controllerProvider: $ControllerProvider) => {
+      $controllerProvider.register('MyController', MyController);
+    }]);
+
+    injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+      const el = $('<div ng-controller="MyController as myCtrl"</div>');
+      $compile.compile(el)($rootScope);
+
+      expect((<any>gotScope).myCtrl instanceof MyController).toBe(true);
+    });
+  });
 });

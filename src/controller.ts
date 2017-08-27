@@ -43,24 +43,35 @@ export class $ControllerProvider implements IProvider {
   }
 
   private controllerFunction: ControllerFunction =  (controllerNameOrInvokable, locals, delayConstruction, identifier) => {
-    const registeredInvokable = this.registeredControllers[<string>controllerNameOrInvokable];
-    const globalInvokable = (<any>window)[<string>controllerNameOrInvokable];
+    let controllerInvokable: Invokable;
+    let controllerIdentifier = identifier;
 
-    const retrievedInvokable = registeredInvokable || (this.globalsAllowed && globalInvokable);
+    if (typeof controllerNameOrInvokable === 'string') {
+      const controllerMatches = controllerNameOrInvokable.match(/^(\S+)(\s+as\s+(\w+))?/);
 
-    const controllerInvokable = typeof controllerNameOrInvokable === 'string'
-    ? retrievedInvokable
-    : controllerNameOrInvokable;
+      const controllerName = controllerMatches[1];
+
+      if (controllerMatches[3]) {
+        controllerIdentifier = controllerMatches[3];
+      }
+
+      const registeredInvokable = this.registeredControllers[controllerName];
+      const globalInvokable = (<any>window)[controllerName];
+
+      controllerInvokable = registeredInvokable || (this.globalsAllowed && globalInvokable);
+    } else {
+      controllerInvokable = <Invokable>controllerNameOrInvokable;
+    }
 
     if (delayConstruction) {
-      const controllerConstructor = Array.isArray(controllerInvokable)
+      const controllerConstructor = <Function>(Array.isArray(controllerInvokable)
         ? controllerInvokable[controllerInvokable.length - 1]
-        : controllerInvokable;
+        : controllerInvokable);
 
       const instance = Object.create(controllerConstructor.prototype);
 
-      if (identifier) {
-        this.addToScope(locals.$scope, instance, identifier);
+      if (controllerIdentifier) {
+        this.addToScope(locals.$scope, instance, controllerIdentifier);
       }
 
       return _.extend(() => {
@@ -73,7 +84,7 @@ export class $ControllerProvider implements IProvider {
       const instance = this.$injector.instantiate(controllerInvokable, locals);
 
       if (identifier) {
-        this.addToScope(locals.$scope, instance, identifier);
+        this.addToScope(locals.$scope, instance, controllerIdentifier);
       }
 
       return instance;
