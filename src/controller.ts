@@ -56,9 +56,12 @@ export class $ControllerProvider implements IProvider {
       }
 
       const registeredInvokable = this.registeredControllers[controllerName];
+
+      const scopeInvokable = locals && locals.$scope && locals.$scope[controllerName];
+
       const globalInvokable = (<any>window)[controllerName];
 
-      controllerInvokable = registeredInvokable || (this.globalsAllowed && globalInvokable);
+      controllerInvokable = registeredInvokable || scopeInvokable || (this.globalsAllowed && globalInvokable);
     } else {
       controllerInvokable = <Invokable>controllerNameOrInvokable;
     }
