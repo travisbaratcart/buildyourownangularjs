@@ -2545,6 +2545,60 @@ describe('linking', () => {
        expect(gotCtrl).toBe(null);
      });
    });
+
+   it('allows optional marker after parent marker', () => {
+     let gotCtrl: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           require: '^?noSuchDirective',
+           link: (scope, element, attrs, controller) => {
+             gotCtrl = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive></div>');
+
+       $compile.compile(el)($rootScope);
+       expect(gotCtrl).toBe(null);
+     });
+   });
+
+   it('allows optional marker before parent marker', () => {
+      function MyController() { }
+
+      let gotMyController: any;
+
+      const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+        $compileProvider.directive('myDirective', () => {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+
+        $compileProvider.directive('myOtherDirective', () => {
+          return {
+            require: '?^myDirective',
+            link: (scope, element, attrs, controller) => {
+              gotMyController = controller;
+            }
+          };
+        });
+      }]);
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive my-other-directive></div>');
+        $compile.compile(el)($rootScope);
+
+        expect(gotMyController).toBeDefined();
+        expect(gotMyController instanceof MyController).toBe(true);
+      });
+   });
   });
 });
 

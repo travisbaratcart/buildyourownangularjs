@@ -330,13 +330,14 @@ export class $CompileService {
     } else if (Array.isArray(required)) {
       return required.map(controllerName => this.getControllers(controllerName, controllers, node));
     } else {
-      const requireMatches = required.match(/^(\^\^?)?(\?)?/);
+      const requireMatches = required.match(/^(\^\^?)?(\?)?(\^\^?)?/);
+      const searchParentMarker = requireMatches[1] || requireMatches[3];
+
       const requiredDirectiveName = required.substring(requireMatches[0].length);
-      const searchParentNodes = requireMatches[0];
       const optional = requireMatches[2];
 
-      if (searchParentNodes) {
-        if (requireMatches[0] === '^^') {
+      if (searchParentMarker) {
+        if (searchParentMarker === '^^') {
           node = node.parent();
         }
 
