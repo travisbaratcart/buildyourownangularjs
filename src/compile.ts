@@ -330,9 +330,10 @@ export class $CompileService {
     } else if (Array.isArray(required)) {
       return required.map(controllerName => this.getControllers(controllerName, controllers, node));
     } else {
-      const requireMatches = required.match(/^(\^\^?)?/);
+      const requireMatches = required.match(/^(\^\^?)?(\?)?/);
       const requiredDirectiveName = required.substring(requireMatches[0].length);
       const searchParentNodes = requireMatches[0];
+      const optional = requireMatches[2];
 
       if (searchParentNodes) {
         if (requireMatches[0] === '^^') {
@@ -349,11 +350,19 @@ export class $CompileService {
           }
         }
 
-        throw `CompileService.GetControllers: Controller ${required} not found.`;
+        if (optional) {
+          return null;
+        } else {
+          throw `CompileService.GetControllers: Controller ${required} not found.`;
+        }
       } else if (controllers[required]) {
         return controllers[required].instance
       } else {
-        throw `CompileService.GetControllers: Controller ${required} not found.`;
+        if (optional) {
+          return null;
+        } else {
+          throw `CompileService.GetControllers: Controller ${required} not found.`;
+        }
       }
     }
   }

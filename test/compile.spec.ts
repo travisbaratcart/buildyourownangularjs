@@ -2523,6 +2523,28 @@ describe('linking', () => {
        }).toThrow();
      });
    });
+
+   it('does not throw on required missing controller when optional', () => {
+     let gotCtrl: any;
+
+     const injector = createInjector(['ng', ($compileProvider: $CompileProvider) => {
+       $compileProvider.directive('myDirective', () => {
+         return {
+           require: '?noSuchDirective',
+           link: (scope, element, attrs, controller) => {
+             gotCtrl = controller;
+           }
+         };
+       });
+     }]);
+
+     injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+       const el = $('<div my-directive></div>');
+
+       $compile.compile(el)($rootScope);
+       expect(gotCtrl).toBe(null);
+     });
+   });
   });
 });
 
