@@ -239,7 +239,7 @@ export class $CompileService {
         controllerDirectives.forEach(controllerDirective => {
           const controllerScope = isolateScopeDirective
             ? isolateScope
-            : scope;
+            : nodeScope;
 
           const controllerLocals: any = {
             $scope: controllerScope,

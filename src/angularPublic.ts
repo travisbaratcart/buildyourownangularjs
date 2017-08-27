@@ -12,6 +12,7 @@ import {
 } from './http';
 import { $CompileProvider } from './compile';
 import { $ControllerProvider} from './controller';
+import { ngControllerDirective } from './directives/ngController';
 
 export function publishExternalAPI(): void {
   setupModuleLoader(window);
@@ -29,4 +30,5 @@ export function publishExternalAPI(): void {
   ngModule.provider('$httpParamSerializerJQLike', $HttpParamSerializerJQLikeProvider);
   ngModule.provider('$compile', $CompileProvider);
   ngModule.provider('$controller', $ControllerProvider);
+  ngModule.directive('ngController', ngControllerDirective);
 }
