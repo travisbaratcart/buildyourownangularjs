@@ -74,7 +74,7 @@ export interface IDirectiveDefinitionObject {
   controllerAs?: string;
   bindToController?: any;
   require?: string | string[];
-  template?: string;
+  template?: string | (($node: JQuery, attrs: Attributes) => string);
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -622,13 +622,19 @@ export class $CompileService {
         compileNodes.addClass('ng-scope');
       }
 
+
       if (directive.template) {
         if (templateDirective) {
           throw 'CompileService.applyDirectivesToNode: Multiple template directives on node';
         }
 
         templateDirective = directive;
-        compileNodes.html(directive.template);
+
+        const directiveTemplate = typeof directive.template === 'string'
+          ? directive.template
+          : directive.template(compileNodes, attrs);
+
+        compileNodes.html(directiveTemplate);
       }
 
       const directiveLinkFunctionOrObject =

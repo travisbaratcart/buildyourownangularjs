@@ -2678,6 +2678,30 @@ describe('linking', () => {
         }).toThrow();
       });
     });
+
+    it('supports functions as template values', () => {
+      const templateSpy = jasmine.createSpy('template')
+        .and.returnValue('<div class="from-template"></div>');
+
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            template: templateSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+
+        expect(el.find('> .from-template').length).toBe(1);
+
+        expect(templateSpy.calls.first().args[0][0]).toBe(el[0]);
+        expect(templateSpy.calls.first().args[1].myDirective).toBeDefined();
+      });
+    });
   });
 });
 
