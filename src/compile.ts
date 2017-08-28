@@ -208,7 +208,7 @@ export class $CompileService {
     _.forEach($compileNodes, (node, nodeIndex) => {
       const nodeDirectives = this.getDirectivesForNode(node);
       const nodeAttrs = this.getAttrsForNode(node);
-      const { directiveLinkObjects, newScopeDirective, controllerDirectives, isolateScopeDirective } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
+      const { directiveLinkObjects, newScopeDirective, controllerDirectives, isolateScopeDirective, templateDirective } = this.applyDirectivesToNode(nodeDirectives, node, nodeAttrs);
       const childLinkFns: NodeBoundLinkFn[] = [];
 
       const hasTerminalDirective = nodeDirectives.filter(directive => directive.terminal).length > 0;
@@ -297,8 +297,12 @@ export class $CompileService {
           }
         });
 
+        const childScope = templateDirective && isolateScopeDirective
+          ? isolateScope
+          : nodeScope;
+
         childLinkFns.forEach(childLinkFn => {
-          childLinkFn(nodeScope);
+          childLinkFn(childScope);
         });
 
         _.forEachRight(directiveLinkObjects, directiveLinkFnObject => {
@@ -663,7 +667,8 @@ export class $CompileService {
       directiveLinkObjects,
       controllerDirectives,
       newScopeDirective,
-      isolateScopeDirective
+      isolateScopeDirective,
+      templateDirective
     };
   }
 
