@@ -12,6 +12,7 @@ import {
 } from '../src/compile';
 import { $ControllerProvider, ControllerFunction } from '../src/controller';
 import * as _ from 'lodash';
+import * as sinon from 'sinon';
 
 describe('$compile', () => {
   let angular: Angular;
@@ -2733,6 +2734,22 @@ describe('linking', () => {
   });
 
   describe('templateUrl', () => {
+    let xhr: sinon.SinonFakeXMLHttpRequest;
+    let requests: sinon.SinonFakeXMLHttpRequest[];
+
+    beforeEach(() => {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+
+      xhr.onCreate = (req) => {
+        requests.push(req);
+      };
+    })
+
+    afterEach(() => {
+      xhr.restore();
+    });
+
     it('defers remaining directive compilation', () => {
       const otherCompileSpy = jasmine.createSpy('otherCompile');
 
@@ -2791,6 +2808,28 @@ describe('linking', () => {
         $compile.compile(el);
 
         expect(el.is(':empty')).toBe(true);
+      });
+    });
+
+    it('fetches the template', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+
+        $rootScope.$apply();
+
+        expect(requests.length).toBe(1);
+        expect(requests[0].method).toBe('GET');
+        expect(requests[0].url).toBe('/my_directive.html');
       });
     });
   });

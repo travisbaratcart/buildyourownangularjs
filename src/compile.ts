@@ -4,6 +4,7 @@ import { Scope } from '../src/scope';
 import { Injector } from './injector';
 import { IParseService } from './parse';
 import { ControllerFunction } from './controller';
+import { $HttpService } from './http';
 import * as _ from 'lodash';
 
 type LinkFunction = (
@@ -97,16 +98,19 @@ export class $CompileProvider implements IProvider {
 
   public $get = [
     '$controller',
+    '$http',
     '$injector',
     '$parse',
     '$rootScope',
     function(
       $controller: ControllerFunction,
+      $http: $HttpService,
       $injector: Injector,
       $parse: IParseService,
       $rootScope: Scope) {
       return new $CompileService(
         $controller,
+        $http,
         $injector,
         $parse,
         $rootScope,
@@ -192,6 +196,7 @@ export class $CompileService {
 
   constructor(
     private $controller: ControllerFunction,
+    private $http: $HttpService,
     private $injector: Injector,
     private $parse: IParseService,
     private $rootScope: Scope,
@@ -643,7 +648,7 @@ export class $CompileService {
       }
 
       if (directive.templateUrl) {
-        this.compileTemplateUrl(compileNodes);
+        this.compileTemplateUrl(compileNodes, directive);
 
         // halt processing of other directives on node.
         return false;
@@ -680,8 +685,10 @@ export class $CompileService {
     };
   }
 
-  private compileTemplateUrl($node: JQuery): void {
+  private compileTemplateUrl($node: JQuery, directive: IDirectiveDefinitionObject): void {
     $node.empty();
+
+    this.$http.get(directive.templateUrl);
   }
 
   private getNodeBoundLinkFnObject(
