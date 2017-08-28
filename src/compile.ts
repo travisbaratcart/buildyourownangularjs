@@ -582,6 +582,7 @@ export class $CompileService {
 
     let isolateScopeDirective: IDirectiveDefinitionObject = null;
     let newScopeDirective: IDirectiveDefinitionObject = null;
+    let templateDirective: IDirectiveDefinitionObject = null;
     const controllerDirectives: IDirectiveDefinitionObject[] = [];
 
     nodeDirectives.forEach(directive => {
@@ -622,6 +623,11 @@ export class $CompileService {
       }
 
       if (directive.template) {
+        if (templateDirective) {
+          throw 'CompileService.applyDirectivesToNode: Multiple template directives on node';
+        }
+
+        templateDirective = directive;
         compileNodes.html(directive.template);
       }
 

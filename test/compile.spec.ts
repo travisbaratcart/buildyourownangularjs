@@ -2655,6 +2655,29 @@ describe('linking', () => {
         expect(compileSpy).toHaveBeenCalled();
       });
     });
+
+    it('does not allow two directives with templates', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            template: '<div></div>'
+          };
+        },
+        myOtherDirective: () => {
+          return {
+            template: '<div></div>'
+          }
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive my-other-directive></div>');
+
+        expect(() => {
+          $compile.compile(el);
+        }).toThrow();
+      });
+    });
   });
 });
 
