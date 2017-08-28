@@ -74,6 +74,7 @@ export interface IDirectiveDefinitionObject {
   controllerAs?: string;
   bindToController?: any;
   require?: string | string[];
+  template?: string;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -618,6 +619,10 @@ export class $CompileService {
 
       if (newScopeDirective) {
         compileNodes.addClass('ng-scope');
+      }
+
+      if (directive.template) {
+        compileNodes.html(directive.template);
       }
 
       const directiveLinkFunctionOrObject =

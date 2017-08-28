@@ -2600,6 +2600,62 @@ describe('linking', () => {
       });
    });
   });
+
+  describe('templates', () => {
+    it('populates an element during compilation', () => {
+      const injector = makeInjectorWithDirectives('myDirective', () => {
+        return {
+          template: '<div class="from-template"></div>'
+        };
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+        expect(el.find('> .from-template').length).toBe(1);
+      });
+    });
+
+    it('replaces any existing children', () => {
+      const injector = makeInjectorWithDirectives('myDirective', () => {
+        return {
+          template: '<div class="from-template"></div>'
+        };
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive><div class="existing"></div></div>');
+        $compile.compile(el);
+        expect(el.find('> .existing').length).toBe(0);
+      });
+    });
+
+    it('compiles template contents also', () => {
+      const compileSpy = jasmine.createSpy('compiled');
+
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            template: '<div my-other-directive></div>'
+          }
+        },
+        myOtherDirective: () => {
+          return {
+            compile: compileSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+
+        expect(compileSpy).toHaveBeenCalled();
+      });
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
