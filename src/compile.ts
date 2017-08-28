@@ -75,6 +75,7 @@ export interface IDirectiveDefinitionObject {
   bindToController?: any;
   require?: string | string[];
   template?: string | (($node: JQuery, attrs: Attributes) => string);
+  templateUrl?: string;
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -589,7 +590,7 @@ export class $CompileService {
     let templateDirective: IDirectiveDefinitionObject = null;
     const controllerDirectives: IDirectiveDefinitionObject[] = [];
 
-    nodeDirectives.forEach(directive => {
+    _.forEach(nodeDirectives, (directive) => {
       if (directive.priority < terminalPriority) {
         return;
       }
@@ -641,6 +642,13 @@ export class $CompileService {
         compileNodes.html(directiveTemplate);
       }
 
+      if (directive.templateUrl) {
+        this.compileTemplateUrl(compileNodes);
+
+        // halt processing of other directives on node.
+        return false;
+      }
+
       const directiveLinkFunctionOrObject =
         (directive.compile && this.compileNode(directive, compileNodes, attrs))
         || directive.link;
@@ -670,6 +678,10 @@ export class $CompileService {
       isolateScopeDirective,
       templateDirective
     };
+  }
+
+  private compileTemplateUrl($node: JQuery): void {
+    $node.empty();
   }
 
   private getNodeBoundLinkFnObject(

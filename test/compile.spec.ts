@@ -2731,6 +2731,69 @@ describe('linking', () => {
       });
     });
   });
+
+  describe('templateUrl', () => {
+    it('defers remaining directive compilation', () => {
+      const otherCompileSpy = jasmine.createSpy('otherCompile');
+
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        },
+        myOtherDirective: () => {
+          return {
+            compile: otherCompileSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive my-other-directive></div>');
+
+        $compile.compile(el);
+
+        expect(otherCompileSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('defers current directive compilation', () => {
+      const compileSpy = jasmine.createSpy('compile');
+
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html',
+            compile: compileSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive></div>');
+        $compile.compile(el);
+        expect(compileSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('immediately empties out the element', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive>Hello</div>');
+        $compile.compile(el);
+
+        expect(el.is(':empty')).toBe(true);
+      });
+    });
+  });
 });
 
 function makeInjectorWithDirectives(directiveNameOrObject: string | IDirectiveFactoryObject, directiveFactory?: DirectiveFactory) {
