@@ -688,7 +688,10 @@ export class $CompileService {
   private compileTemplateUrl($node: JQuery, directive: IDirectiveDefinitionObject): void {
     $node.empty();
 
-    this.$http.get(directive.templateUrl);
+    this.$http.get(directive.templateUrl)
+      .success(template => {
+        $node.html(template);
+      });
   }
 
   private getNodeBoundLinkFnObject(

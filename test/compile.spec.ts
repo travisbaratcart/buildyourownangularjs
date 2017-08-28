@@ -2832,6 +2832,27 @@ describe('linking', () => {
         expect(requests[0].url).toBe('/my_directive.html');
       });
     });
+
+    it('populates element with template', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div class="from-template"></div>');
+
+        expect(el.find('> .from-template').length).toBe(1);
+      });
+    });
   });
 });
 
