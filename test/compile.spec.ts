@@ -2904,6 +2904,33 @@ describe('linking', () => {
         expect(otherCompileSpy).toHaveBeenCalled();
       });
     });
+
+    it('resumes child compilation after template received', () => {
+      const otherCompileSpy = jasmine.createSpy('otherCompile');
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        },
+        myOtherDirective: () => {
+          return {
+            compile: otherCompileSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div my-other-directive></div>');
+        expect(otherCompileSpy).toHaveBeenCalled();
+      });
+    });
   });
 });
 

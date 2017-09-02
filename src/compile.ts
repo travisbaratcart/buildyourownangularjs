@@ -700,9 +700,12 @@ export class $CompileService {
       .success(template => {
         $node.html(template);
 
+        // When we resume compilation we don't want to consider the template url again.
         uncompiledDirectives[0].templateUrl = null;
 
         this.applyDirectivesToNode(uncompiledDirectives, $node[0], attrs);
+
+        this.compileNodes($node.children());
       });
   }
 
