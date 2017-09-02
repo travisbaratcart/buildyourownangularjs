@@ -76,7 +76,7 @@ export interface IDirectiveDefinitionObject {
   bindToController?: any;
   require?: string | string[];
   template?: string | (($node: JQuery, attrs: Attributes) => string);
-  templateUrl?: string;
+  templateUrl?: string | (($node: JQuery, attrs: Attributes) => string);
 }
 
 export type DirectiveFactory = () => IDirectiveDefinitionObject;
@@ -696,7 +696,11 @@ export class $CompileService {
 
     const templateUrlDirective = uncompiledDirectives[0];
 
-    this.$http.get(templateUrlDirective.templateUrl)
+    const templateUrl = typeof templateUrlDirective.templateUrl === 'string'
+      ? templateUrlDirective.templateUrl
+      : templateUrlDirective.templateUrl($node, attrs);
+
+    this.$http.get(templateUrl)
       .success(template => {
         $node.html(template);
 

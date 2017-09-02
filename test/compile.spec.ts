@@ -2931,6 +2931,30 @@ describe('linking', () => {
         expect(otherCompileSpy).toHaveBeenCalled();
       });
     });
+
+    it('supports functions as values', () => {
+      const templateUrlSpy = jasmine.createSpy('templateUrl')
+        .and.returnValue('/my_directive.html');
+
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: templateUrlSpy
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive></div>');
+
+        $compile.compile(el);
+        $rootScope.$apply();
+
+        expect(requests[0].url).toBe('/my_directive.html');
+        expect(templateUrlSpy.calls.first().args[0][0]).toBe(el[0]);
+        expect(templateUrlSpy.calls.first().args[1].myDirective).toBeDefined();
+      });
+    });
   });
 });
 
