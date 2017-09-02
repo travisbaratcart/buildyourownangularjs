@@ -648,7 +648,9 @@ export class $CompileService {
       }
 
       if (directive.templateUrl) {
-        this.compileTemplateUrl(compileNodes, directive);
+        const uncompiledDirectives = nodeDirectives.slice(nodeDirectives.indexOf(directive));
+
+        this.compileTemplateUrl(compileNodes, uncompiledDirectives, attrs);
 
         // halt processing of other directives on node.
         return false;
@@ -685,12 +687,22 @@ export class $CompileService {
     };
   }
 
-  private compileTemplateUrl($node: JQuery, directive: IDirectiveDefinitionObject): void {
+  private compileTemplateUrl(
+    $node: JQuery,
+    uncompiledDirectives: IDirectiveDefinitionObject[],
+    attrs: Attributes): void {
+
     $node.empty();
 
-    this.$http.get(directive.templateUrl)
+    const templateUrlDirective = uncompiledDirectives[0];
+
+    this.$http.get(templateUrlDirective.templateUrl)
       .success(template => {
         $node.html(template);
+
+        uncompiledDirectives[0].templateUrl = null;
+
+        this.applyDirectivesToNode(uncompiledDirectives, $node[0], attrs);
       });
   }
 
