@@ -2955,6 +2955,52 @@ describe('linking', () => {
         expect(templateUrlSpy.calls.first().args[1].myDirective).toBeDefined();
       });
     });
+
+    it('does not allow templateUrl directive after template directive', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            template: '<div></div>'
+          };
+        },
+        myOtherDirective: () => {
+          return {
+            templateUrl: '/my_other_directive.html'
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService) => {
+        const el = $('<div my-directive my-other-directive></div>');
+
+        expect(() => $compile.compile(el)).toThrow();
+      });
+    });
+
+    it('does not allow template directive after templateUrl directive', () => {
+      const injector = makeInjectorWithDirectives({
+        myDirective: () => {
+          return {
+            templateUrl: '/my_directive.html'
+          };
+        },
+        myOtherDirective: () => {
+          return {
+            template: '<div></div>'
+          };
+        }
+      });
+
+      injector.invoke(($compile: $CompileService, $rootScope: Scope) => {
+        const el = $('<div my-directive my-other-directive></div>');
+
+        $compile.compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div class="replacement"></div>');
+        expect(el.find('> .replacement').length).toBe(1);
+      });
+    });
   });
 });
 

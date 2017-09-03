@@ -648,7 +648,16 @@ export class $CompileService {
       }
 
       if (directive.templateUrl) {
-        const uncompiledDirectives = nodeDirectives.slice(nodeDirectives.indexOf(directive));
+        if (templateDirective) {
+          throw 'CompileService.applyDirectivesToNode: Multiple directives asking for template';
+        }
+
+        const uncompiledDirectives = nodeDirectives
+          .slice(nodeDirectives.indexOf(directive))
+          .map(directive => {
+            directive.template = null;
+            return directive;
+          });
 
         this.compileTemplateUrl(compileNodes, uncompiledDirectives, attrs);
 
